@@ -75,16 +75,6 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!clientType) {
-      toast.error('Por favor, selecione o tipo de cliente');
-      return;
-    }
-
-    if (allowSystemAccess && !systemPassword.trim()) {
-      toast.error('Por favor, defina uma senha de acesso para o cliente');
-      return;
-    }
-    
     setLoading(true);
 
     try {

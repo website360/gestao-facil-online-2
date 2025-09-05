@@ -62,7 +62,7 @@ const ClientDocumentFields = ({
       <>
         <div className="space-y-2">
           <Label htmlFor="cpf">
-            CPF *
+            CPF
           </Label>
           <InputMask
             mask="999.999.999-99"
@@ -93,7 +93,7 @@ const ClientDocumentFields = ({
     <>
       <div className="space-y-2">
         <Label htmlFor="cnpj">
-          CNPJ *
+          CNPJ
         </Label>
         <div className="relative">
           <InputMask

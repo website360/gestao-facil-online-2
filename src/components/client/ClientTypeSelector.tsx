@@ -14,8 +14,8 @@ export const ClientTypeSelector = ({
 }: ClientTypeSelectorProps) => {
   return (
     <div>
-      <Label htmlFor="clientType">Tipo *</Label>
-      <Select value={clientType} onValueChange={onClientTypeChange} required>
+      <Label htmlFor="clientType">Tipo</Label>
+      <Select value={clientType} onValueChange={onClientTypeChange}>
         <SelectTrigger>
           <SelectValue placeholder="Selecione o tipo" />
         </SelectTrigger>

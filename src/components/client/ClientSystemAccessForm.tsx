@@ -37,7 +37,7 @@ const ClientSystemAccessForm = ({
       {allowSystemAccess && (
         <div className="space-y-2">
           <Label htmlFor="system_password">
-            Senha de Acesso *
+            Senha de Acesso
           </Label>
           <Input
             id="system_password"
@@ -45,7 +45,6 @@ const ClientSystemAccessForm = ({
             value={systemPassword}
             onChange={(e) => onSystemPasswordChange(e.target.value)}
             placeholder="Digite uma senha para o cliente"
-            required={allowSystemAccess}
           />
         </div>
       )}
