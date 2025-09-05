@@ -1,0 +1,26 @@
+project_id = "hsugdbkauxbjuogzmukp"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[functions.calculate-shipping]
+verify_jwt = false
+
+[functions.client-login]
+verify_jwt = false
+
+[functions.create-user]
+verify_jwt = true
+
+[functions.delete-user]  
+verify_jwt = true
+
+[functions.update-user-password]
+verify_jwt = true
+
+[functions.update-user-email]
+verify_jwt = true

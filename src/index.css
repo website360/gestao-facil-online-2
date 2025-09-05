@@ -1,0 +1,167 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design system baseado na tela de login */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 217 91% 60%; /* Azul do gradiente */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar colors - seguindo o padrão da tela de login */
+    --sidebar-background: 255 255 255%; /* Branco com transparência */
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 91% 60%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 217 91% 60%;
+
+    /* Cores do gradiente da tela de login */
+    --gradient-blue: 217 91% 60%;
+    --gradient-purple: 262 83% 58%;
+    --gradient-pink: 330 81% 60%;
+    --gradient-yellow: 45 93% 58%;
+    --gradient-orange: 25 95% 53%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 217 91% 60%;
+
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-gradient-to-br from-blue-50 via-white to-purple-50 text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+}
+
+/* Glassmorphism utilities */
+@layer utilities {
+  .glass {
+    @apply backdrop-blur-sm bg-white/80 shadow-2xl shadow-black/10 border-0 ring-1 ring-gray-200/50;
+  }
+  
+  .glass-dark {
+    @apply backdrop-blur-sm bg-gray-900/80 shadow-2xl shadow-black/20 border-0 ring-1 ring-gray-700/50;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(135deg, 
+      hsl(var(--gradient-blue)) 0%, 
+      hsl(var(--gradient-purple)) 100%);
+  }
+
+  .gradient-card {
+    background: linear-gradient(135deg, 
+      hsl(var(--gradient-blue)) 0%, 
+      hsl(var(--gradient-purple)) 100%);
+  }
+
+  /* Background decorative elements */
+  .bg-decorative {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-decorative::before {
+    content: '';
+    position: absolute;
+    top: -10rem;
+    right: -10rem;
+    width: 20rem;
+    height: 20rem;
+    background: linear-gradient(135deg, hsl(var(--gradient-blue) / 0.2), hsl(var(--gradient-purple) / 0.2));
+    border-radius: 50%;
+    filter: blur(3rem);
+    z-index: -1;
+  }
+
+  .bg-decorative::after {
+    content: '';
+    position: absolute;
+    bottom: -10rem;
+    left: -10rem;
+    width: 20rem;
+    height: 20rem;
+    background: linear-gradient(135deg, hsl(var(--gradient-purple) / 0.2), hsl(var(--gradient-pink) / 0.2));
+    border-radius: 50%;
+    filter: blur(3rem);
+    z-index: -1;
+  }
+
+  /* Button gradients similar to login */
+  .btn-gradient {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all transform hover:scale-[1.02];
+  }
+}

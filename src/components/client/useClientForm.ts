@@ -1,0 +1,218 @@
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Client } from './types';
+
+interface UseClientFormProps {
+  editingClient: Client | null;
+  onSuccess: () => void;
+}
+
+export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [clientType, setClientType] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [cnpj, setCnpj] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [razaoSocial, setRazaoSocial] = useState('');
+  const [cep, setCep] = useState('');
+  const [street, setStreet] = useState('');
+  const [number, setNumber] = useState('');
+  const [complement, setComplement] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [allowSystemAccess, setAllowSystemAccess] = useState(false);
+  const [systemPassword, setSystemPassword] = useState('');
+  const [assignedUserId, setAssignedUserId] = useState('all');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (editingClient) {
+      setName(editingClient.name);
+      setEmail(editingClient.email);
+      setPhone(editingClient.phone);
+      setClientType(editingClient.client_type);
+      setCpf(editingClient.cpf || '');
+      setCnpj(editingClient.cnpj || '');
+      setBirthDate(editingClient.birth_date || '');
+      setRazaoSocial(editingClient.razao_social || '');
+      setCep(editingClient.cep || '');
+      setStreet(editingClient.street || '');
+      setNumber(editingClient.number || '');
+      setComplement(editingClient.complement || '');
+      setNeighborhood(editingClient.neighborhood || '');
+      setCity(editingClient.city || '');
+      setState(editingClient.state || '');
+      setAllowSystemAccess(editingClient.allow_system_access || false);
+      setSystemPassword(editingClient.system_password || '');
+      setAssignedUserId(editingClient.assigned_user_id || 'all');
+    } else {
+      setName('');
+      setEmail('');
+      setPhone('');
+      setClientType('');
+      setCpf('');
+      setCnpj('');
+      setBirthDate('');
+      setRazaoSocial('');
+      setCep('');
+      setStreet('');
+      setNumber('');
+      setComplement('');
+      setNeighborhood('');
+      setCity('');
+      setState('');
+      setAllowSystemAccess(false);
+      setSystemPassword('');
+      setAssignedUserId('all');
+    }
+  }, [editingClient]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!clientType) {
+      toast.error('Por favor, selecione o tipo de cliente');
+      return;
+    }
+
+    if (allowSystemAccess && !systemPassword.trim()) {
+      toast.error('Por favor, defina uma senha de acesso para o cliente');
+      return;
+    }
+    
+    setLoading(true);
+
+    try {
+      const clientData = {
+        name,
+        email,
+        phone,
+        client_type: clientType,
+        cpf: clientType === 'fisica' ? cpf || null : null,
+        cnpj: clientType === 'juridica' ? cnpj || null : null,
+        birth_date: clientType === 'fisica' ? birthDate || null : null,
+        razao_social: clientType === 'juridica' ? razaoSocial || null : null,
+        cep: cep || null,
+        street: street || null,
+        number: number || null,
+        complement: complement || null,
+        neighborhood: neighborhood || null,
+        city: city || null,
+        state: state || null,
+        allow_system_access: allowSystemAccess,
+        system_password: allowSystemAccess ? systemPassword : null,
+        assigned_user_id: assignedUserId === 'all' ? null : assignedUserId,
+      };
+
+      console.log('Salvando cliente:', clientData);
+
+      if (editingClient) {
+        const { error } = await supabase
+          .from('clients')
+          .update(clientData)
+          .eq('id', editingClient.id);
+
+        if (error) {
+          console.error('Erro ao atualizar cliente:', error);
+          throw error;
+        }
+        
+        if (allowSystemAccess && systemPassword) {
+          toast.success('Cliente atualizado com sucesso! O cliente agora pode acessar o sistema para criar orçamentos.');
+        } else {
+          toast.success('Cliente atualizado com sucesso!');
+        }
+      } else {
+        const { error } = await supabase
+          .from('clients')
+          .insert(clientData);
+
+        if (error) {
+          console.error('Erro ao criar cliente:', error);
+          throw error;
+        }
+        
+        if (allowSystemAccess && systemPassword) {
+          toast.success('Cliente criado com sucesso! O cliente pode acessar o sistema com as credenciais fornecidas.');
+        } else {
+          toast.success('Cliente criado com sucesso!');
+        }
+      }
+
+      onSuccess();
+      
+      // Limpar formulário após sucesso
+      if (!editingClient) {
+        setName('');
+        setEmail('');
+        setPhone('');
+        setClientType('');
+        setCpf('');
+        setCnpj('');
+        setBirthDate('');
+        setRazaoSocial('');
+        setCep('');
+        setStreet('');
+        setNumber('');
+        setComplement('');
+        setNeighborhood('');
+        setCity('');
+        setState('');
+        setAllowSystemAccess(false);
+        setSystemPassword('');
+        setAssignedUserId('all');
+      }
+    } catch (error: any) {
+      console.error('Error saving client:', error);
+      toast.error(`Erro ao salvar cliente: ${error.message || 'Erro desconhecido'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    name,
+    email,
+    phone,
+    clientType,
+    cpf,
+    cnpj,
+    birthDate,
+    razaoSocial,
+    cep,
+    street,
+    number,
+    complement,
+    neighborhood,
+    city,
+    state,
+    allowSystemAccess,
+    systemPassword,
+    assignedUserId,
+    loading,
+    setName,
+    setEmail,
+    setPhone,
+    setClientType,
+    setCpf,
+    setCnpj,
+    setBirthDate,
+    setRazaoSocial,
+    setCep,
+    setStreet,
+    setNumber,
+    setComplement,
+    setNeighborhood,
+    setCity,
+    setState,
+    setAllowSystemAccess,
+    setSystemPassword,
+    setAssignedUserId,
+    handleSubmit,
+  };
+};
