@@ -57,22 +57,49 @@ export const useClientManagement = () => {
 
   const fetchClients = async () => {
     try {
-      let query = supabase
+      console.log('Iniciando carregamento de clientes...');
+      
+      // Primeiro, verificar quantos clientes existem
+      const { count } = await supabase
         .from('clients')
-        .select('*')
-        .order('name', { ascending: true })
-        .limit(5000); // Aumentar limite para garantir que todos os clientes sejam carregados
+        .select('*', { count: 'exact', head: true });
+      
+      console.log(`Total de clientes no banco: ${count}`);
+      
+      let allClients: any[] = [];
+      const pageSize = 1000;
+      let currentPage = 0;
+      let hasMore = true;
+      
+      // Carregar todos os clientes usando paginação
+      while (hasMore) {
+        let query = supabase
+          .from('clients')
+          .select('*')
+          .order('name', { ascending: true })
+          .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
 
-      // Se não for admin ou gerente, filtrar apenas clientes atribuídos ou não atribuídos
-      if (userProfile && userProfile.role === 'vendas') {
-        query = query.or(`assigned_user_id.is.null,assigned_user_id.eq.${userProfile.id}`);
+        // Se não for admin ou gerente, filtrar apenas clientes atribuídos ou não atribuídos
+        if (userProfile && userProfile.role === 'vendas') {
+          query = query.or(`assigned_user_id.is.null,assigned_user_id.eq.${userProfile.id}`);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allClients = [...allClients, ...data];
+          console.log(`Página ${currentPage + 1}: ${data.length} clientes carregados. Total: ${allClients.length}`);
+          currentPage++;
+          hasMore = data.length === pageSize; // Se retornou menos que pageSize, acabaram os dados
+        } else {
+          hasMore = false;
+        }
       }
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-      console.log(`Clientes carregados: ${data?.length || 0}`);
-      setClients(data || []);
+      console.log(`Carregamento finalizado: ${allClients.length} clientes`);
+      setClients(allClients);
     } catch (error) {
       console.error('Error fetching clients:', error);
       toast.error('Erro ao carregar clientes');
