@@ -193,7 +193,7 @@ const ClientManagement = () => {
           <ClientFilters
             searchTerm={searchTerm}
             typeFilter={typeFilter}
-            filteredClientsCount={filteredClients.length}
+            filteredClientsCount={totalItems}
             onSearchChange={setSearchTerm}
             onTypeFilterChange={setTypeFilter}
           />
