@@ -60,7 +60,8 @@ export const useClientManagement = () => {
       let query = supabase
         .from('clients')
         .select('*')
-        .order('name', { ascending: true });
+        .order('name', { ascending: true })
+        .limit(5000); // Aumentar limite para garantir que todos os clientes sejam carregados
 
       // Se não for admin ou gerente, filtrar apenas clientes atribuídos ou não atribuídos
       if (userProfile && userProfile.role === 'vendas') {
@@ -70,6 +71,7 @@ export const useClientManagement = () => {
       const { data, error } = await query;
 
       if (error) throw error;
+      console.log(`Clientes carregados: ${data?.length || 0}`);
       setClients(data || []);
     } catch (error) {
       console.error('Error fetching clients:', error);
