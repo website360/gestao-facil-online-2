@@ -62,7 +62,7 @@ const Auth = () => {
       <div className="relative z-10 w-full max-w-md">
           <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-32 h-20 flex items-center justify-center">
+            <div className="w-48 h-28 flex items-center justify-center">
               <img src="/lovable-uploads/a16e0c44-3fe5-4408-861e-2b328ba401ea.png" alt="Irmãos Mantovani Têxtil" className="w-full h-full object-contain" />
             </div>
           </div>
