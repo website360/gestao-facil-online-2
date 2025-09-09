@@ -168,30 +168,40 @@ export const useClientExcel = () => {
         allow_system_access: (row['Acesso Sistema'] || row['acesso_sistema'] || '').toLowerCase() === 'sim'
       }));
 
-      // Validar dados obrigatórios
-      const validData = importData.filter(item => item.name && item.email && item.phone);
+      // Validar dados obrigatórios - apenas nome ou email são obrigatórios
+      const validData = importData.filter(item => (item.name && item.name.trim()) || (item.email && item.email.trim()));
       
       if (validData.length === 0) {
-        throw new Error('Nenhum dado válido encontrado no arquivo');
+        throw new Error('Nenhum dado válido encontrado no arquivo. Pelo menos Nome ou Email devem estar preenchidos.');
       }
+
+      console.log(`Total de linhas processadas: ${importData.length}`);
+      console.log(`Linhas válidas: ${validData.length}`);
 
       setImportStatus('Verificando conflitos...');
       setImportProgress(50);
 
-      // Verificar conflitos (email duplicado)
+      // Verificar conflitos (email duplicado) - apenas para clientes com email
+      const emailsToCheck = validData.filter(item => item.email && item.email.trim()).map(item => item.email);
       const { data: existingClients } = await supabase
         .from('clients')
         .select('*')
-        .in('email', validData.map(item => item.email));
+        .in('email', emailsToCheck);
 
       const conflicts: ConflictClient[] = [];
       const nonConflictData: ImportData[] = [];
 
       validData.forEach(item => {
-        const existing = existingClients?.find(client => client.email === item.email);
-        if (existing) {
-          conflicts.push({ existing, imported: item });
+        // Só verifica conflito se o item tem email
+        if (item.email && item.email.trim()) {
+          const existing = existingClients?.find(client => client.email === item.email);
+          if (existing) {
+            conflicts.push({ existing, imported: item });
+          } else {
+            nonConflictData.push(item);
+          }
         } else {
+          // Se não tem email, adiciona diretamente aos não conflitantes
           nonConflictData.push(item);
         }
       });
@@ -225,48 +235,98 @@ export const useClientExcel = () => {
       
       const total = clientsData.length;
       let imported = 0;
+      const batchSize = 100; // Processar em lotes de 100
+      
+      console.log(`Iniciando importação de ${total} clientes em lotes de ${batchSize}`);
 
-      for (let i = 0; i < clientsData.length; i++) {
-        const client = clientsData[i];
-        setImportStatus(`Importando cliente ${i + 1} de ${total}: ${client.name}`);
+      // Processar em lotes para melhor performance
+      for (let i = 0; i < clientsData.length; i += batchSize) {
+        const batch = clientsData.slice(i, i + batchSize);
+        const batchNumber = Math.floor(i / batchSize) + 1;
+        const totalBatches = Math.ceil(clientsData.length / batchSize);
         
-        const { error } = await supabase
-          .from('clients')
-          .insert([{
-            name: client.name,
-            email: client.email,
-            phone: client.phone,
-            client_type: client.client_type,
-            cpf: client.cpf || null,
-            cnpj: client.cnpj || null,
-            razao_social: client.razao_social || null,
-            birth_date: client.birth_date || null,
-            cep: client.cep || null,
-            street: client.street || null,
-            number: client.number || null,
-            complement: client.complement || null,
-            neighborhood: client.neighborhood || null,
-            city: client.city || null,
-            state: client.state || null,
-            allow_system_access: client.allow_system_access || false,
-            system_password: client.system_password || null,
-            assigned_user_id: client.assigned_user_id || null
-          }]);
+        setImportStatus(`Processando lote ${batchNumber} de ${totalBatches} (${batch.length} clientes)`);
+        
+        // Preparar dados do lote, tratando campos vazios
+        const batchData = batch.map(client => ({
+          name: client.name?.trim() || null,
+          email: client.email?.trim() || null,
+          phone: client.phone?.trim() || null,
+          client_type: client.client_type || 'fisica',
+          cpf: client.cpf?.trim() || null,
+          cnpj: client.cnpj?.trim() || null,
+          razao_social: client.razao_social?.trim() || null,
+          birth_date: client.birth_date?.trim() || null,
+          cep: client.cep?.trim() || null,
+          street: client.street?.trim() || null,
+          number: client.number?.trim() || null,
+          complement: client.complement?.trim() || null,
+          neighborhood: client.neighborhood?.trim() || null,
+          city: client.city?.trim() || null,
+          state: client.state?.trim() || null,
+          allow_system_access: client.allow_system_access || false,
+          system_password: client.system_password?.trim() || null,
+          assigned_user_id: client.assigned_user_id?.trim() || null
+        }));
 
-        if (!error) {
-          imported++;
+        try {
+          const { data, error } = await supabase
+            .from('clients')
+            .insert(batchData)
+            .select();
+
+          if (error) {
+            console.error(`Erro no lote ${batchNumber}:`, error);
+            // Se der erro no lote, tenta inserir um por vez para identificar problemas específicos
+            for (const clientData of batchData) {
+              try {
+                const { error: individualError } = await supabase
+                  .from('clients')
+                  .insert([clientData]);
+                  
+                if (!individualError) {
+                  imported++;
+                } else {
+                  console.error('Erro ao inserir cliente:', clientData.name || clientData.email, individualError);
+                }
+              } catch (indError) {
+                console.error('Erro individual:', indError);
+              }
+            }
+          } else {
+            imported += data?.length || batch.length;
+            console.log(`Lote ${batchNumber} importado com sucesso: ${data?.length || batch.length} clientes`);
+          }
+        } catch (batchError) {
+          console.error(`Erro crítico no lote ${batchNumber}:`, batchError);
+          // Tentar inserção individual como fallback
+          for (const clientData of batchData) {
+            try {
+              const { error: individualError } = await supabase
+                .from('clients')
+                .insert([clientData]);
+                
+              if (!individualError) {
+                imported++;
+              }
+            } catch (indError) {
+              console.error('Erro individual no fallback:', indError);
+            }
+          }
         }
 
-        setImportProgress(Math.round(((i + 1) / total) * 100));
+        setImportProgress(Math.round(((i + batch.length) / total) * 100));
       }
 
+      console.log(`Importação finalizada: ${imported} de ${total} clientes importados`);
+      
       setTotalImported(imported);
       setShowProgressModal(false);
       setShowSuccessModal(true);
 
       toast({
         title: "Importação concluída",
-        description: `${imported} clientes importados com sucesso.`,
+        description: `${imported} de ${total} clientes importados com sucesso.`,
       });
 
     } catch (error) {
