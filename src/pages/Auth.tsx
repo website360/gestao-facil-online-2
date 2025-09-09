@@ -60,10 +60,10 @@ const Auth = () => {
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-8">
+          <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <ShoppingBag className="w-8 h-8 text-white" />
+            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-lg p-2">
+              <img src="/lovable-uploads/00b2713b-c2e9-4ac2-add9-1c271798c5dc.png" alt="Irmãos Mantovani Têxtil" className="w-full h-full object-contain" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Sistema de Gestão</h1>
