@@ -67,7 +67,6 @@ const Auth = () => {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Sistema de Gestão</h1>
-          <p className="text-gray-600">Acesse sua conta para gerenciar suas vendas</p>
         </div>
 
         <Card className="glass">
