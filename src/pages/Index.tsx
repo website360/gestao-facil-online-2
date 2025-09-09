@@ -305,16 +305,16 @@ const Index = () => {
         <div className="flex h-16 items-center px-4 border-b border-gray-200/50 flex-shrink-0">
           {sidebarOpen ? (
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 gradient-bg rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                <ShoppingBag className="text-white w-4 h-4" />
+              <div className="w-8 h-8 bg-white rounded-lg border border-gray-200/50 shadow-sm flex items-center justify-center p-1">
+                <img src="/lovable-uploads/1f183d06-f80b-44da-9040-12f4a7ffc5bd.png" alt="Logo" className="w-full h-full object-contain" />
               </div>
               <h1 className="text-lg font-semibold text-gray-900">
                 Sistema Gestão
               </h1>
             </div>
           ) : (
-            <div className="w-8 h-8 gradient-bg rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-blue-500/25">
-              <ShoppingBag className="text-white w-4 h-4" />
+            <div className="w-8 h-8 bg-white rounded-lg border border-gray-200/50 shadow-sm flex items-center justify-center mx-auto p-1">
+              <img src="/lovable-uploads/1f183d06-f80b-44da-9040-12f4a7ffc5bd.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
           )}
         </div>
