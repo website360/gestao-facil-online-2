@@ -148,6 +148,11 @@ serve(async (req) => {
           .update({ invoice_user_id: null })
           .eq('invoice_user_id', userId)
         
+        await supabase
+          .from('sales')
+          .update({ delivery_user_id: null })
+          .eq('delivery_user_id', userId)
+        
         // Atualizar budgets
         await supabase
           .from('budgets')
@@ -164,6 +169,18 @@ serve(async (req) => {
           .from('sale_status_logs')
           .update({ user_id: null })
           .eq('user_id', userId)
+
+        // Atualizar clients - remover assigned_user_id
+        await supabase
+          .from('clients')
+          .update({ assigned_user_id: null })
+          .eq('assigned_user_id', userId)
+
+        // Atualizar sale_volumes - remover created_by
+        await supabase
+          .from('sale_volumes')
+          .update({ created_by: null })
+          .eq('created_by', userId)
           
       } catch (cleanError) {
         return new Response(
