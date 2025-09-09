@@ -148,6 +148,7 @@ const UserManagement = () => {
       case 'conferencia': return 'Conferência';
       case 'nota_fiscal': return 'Nota Fiscal';
       case 'cliente': return 'Cliente';
+      case 'entregador': return 'Entregador';
       default: return role;
     }
   };
