@@ -271,26 +271,26 @@ export const useClientExcel = () => {
         
         setImportStatus(`Processando lote ${batchNumber} de ${totalBatches} (${batch.length} clientes)`);
         
-        // Preparar dados do lote, tratando campos vazios
+        // Preparar dados do lote, tratando campos vazios e convertendo para string
         const batchData = batch.map(client => ({
-          name: client.name?.trim() || null,
-          email: client.email?.trim() || null,
-          phone: client.phone?.trim() || null,
+          name: client.name ? String(client.name).trim() : null,
+          email: client.email ? String(client.email).trim() : null,
+          phone: client.phone ? String(client.phone).trim() : null,
           client_type: client.client_type || 'fisica',
-          cpf: client.cpf?.trim() || null,
-          cnpj: client.cnpj?.trim() || null,
-          razao_social: client.razao_social?.trim() || null,
-          birth_date: client.birth_date?.trim() || null,
-          cep: client.cep?.trim() || null,
-          street: client.street?.trim() || null,
-          number: client.number?.trim() || null,
-          complement: client.complement?.trim() || null,
-          neighborhood: client.neighborhood?.trim() || null,
-          city: client.city?.trim() || null,
-          state: client.state?.trim() || null,
+          cpf: client.cpf ? String(client.cpf).trim() : null,
+          cnpj: client.cnpj ? String(client.cnpj).trim() : null,
+          razao_social: client.razao_social ? String(client.razao_social).trim() : null,
+          birth_date: client.birth_date ? String(client.birth_date).trim() : null,
+          cep: client.cep ? String(client.cep).trim() : null,
+          street: client.street ? String(client.street).trim() : null,
+          number: client.number ? String(client.number).trim() : null,
+          complement: client.complement ? String(client.complement).trim() : null,
+          neighborhood: client.neighborhood ? String(client.neighborhood).trim() : null,
+          city: client.city ? String(client.city).trim() : null,
+          state: client.state ? String(client.state).trim() : null,
           allow_system_access: client.allow_system_access || false,
-          system_password: client.system_password?.trim() || null,
-          assigned_user_id: client.assigned_user_id?.trim() || null
+          system_password: client.system_password ? String(client.system_password).trim() : null,
+          assigned_user_id: client.assigned_user_id ? String(client.assigned_user_id).trim() : null
         }));
 
         try {
@@ -395,23 +395,23 @@ export const useClientExcel = () => {
           await supabase
             .from('clients')
             .update({
-              name: client.name,
-              phone: client.phone,
+              name: client.name ? String(client.name).trim() : null,
+              phone: client.phone ? String(client.phone).trim() : null,
               client_type: client.client_type,
-              cpf: client.cpf || null,
-              cnpj: client.cnpj || null,
-              razao_social: client.razao_social || null,
-              birth_date: client.birth_date || null,
-              cep: client.cep || null,
-              street: client.street || null,
-              number: client.number || null,
-              complement: client.complement || null,
-              neighborhood: client.neighborhood || null,
-              city: client.city || null,
-              state: client.state || null,
+              cpf: client.cpf ? String(client.cpf).trim() : null,
+              cnpj: client.cnpj ? String(client.cnpj).trim() : null,
+              razao_social: client.razao_social ? String(client.razao_social).trim() : null,
+              birth_date: client.birth_date ? String(client.birth_date).trim() : null,
+              cep: client.cep ? String(client.cep).trim() : null,
+              street: client.street ? String(client.street).trim() : null,
+              number: client.number ? String(client.number).trim() : null,
+              complement: client.complement ? String(client.complement).trim() : null,
+              neighborhood: client.neighborhood ? String(client.neighborhood).trim() : null,
+              city: client.city ? String(client.city).trim() : null,
+              state: client.state ? String(client.state).trim() : null,
               allow_system_access: client.allow_system_access || false,
-              system_password: client.system_password || null,
-              assigned_user_id: client.assigned_user_id || null
+              system_password: client.system_password ? String(client.system_password).trim() : null,
+              assigned_user_id: client.assigned_user_id ? String(client.assigned_user_id).trim() : null
             })
             .eq('id', existing.id);
         }
