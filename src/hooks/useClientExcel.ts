@@ -154,30 +154,41 @@ export const useClientExcel = () => {
       setImportProgress(30);
 
       // Mapear dados do Excel para estrutura do banco
-      const importData: ImportData[] = jsonData.map((row: any) => ({
-        name: row['Nome'] || row['nome'] || '',
-        email: row['Email'] || row['email'] || '',
-        phone: row['Telefone'] || row['telefone'] || '',
-        client_type: (row['Tipo'] || row['tipo'] || '').toLowerCase() === 'jurídica' ? 'juridica' : 'fisica',
-        cpf: row['CPF'] || row['cpf'] || '',
-        cnpj: row['CNPJ'] || row['cnpj'] || '',
-        razao_social: row['Razão Social'] || row['razao_social'] || '',
-        birth_date: row['Data de Nascimento'] || row['data_nascimento'] || '',
-        cep: row['CEP'] || row['cep'] || '',
-        street: row['Rua'] || row['endereco'] || row['rua'] || '',
-        number: row['Número'] || row['numero'] || '',
-        complement: row['Complemento'] || row['complemento'] || '',
-        neighborhood: row['Bairro'] || row['bairro'] || '',
-        city: row['Cidade'] || row['cidade'] || '',
-        state: row['Estado'] || row['estado'] || row['uf'] || '',
-        allow_system_access: (row['Acesso Sistema'] || row['acesso_sistema'] || '').toLowerCase() === 'sim'
-      }));
+      const importData: ImportData[] = jsonData.map((row: any, index: number) => {
+        const name = row['Nome'] || row['nome'] || '';
+        let email = row['Email'] || row['email'] || '';
+        
+        // Se não tem email, gerar um email temporário baseado no nome ou índice
+        if (!email || email.trim() === '') {
+          const sanitizedName = name ? name.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+          email = sanitizedName ? `${sanitizedName}@temp.local` : `cliente${index + 1}@temp.local`;
+        }
+        
+        return {
+          name: name,
+          email: email,
+          phone: row['Telefone'] || row['telefone'] || '',
+          client_type: (row['Tipo'] || row['tipo'] || '').toLowerCase() === 'jurídica' ? 'juridica' : 'fisica',
+          cpf: row['CPF'] || row['cpf'] || '',
+          cnpj: row['CNPJ'] || row['cnpj'] || '',
+          razao_social: row['Razão Social'] || row['razao_social'] || '',
+          birth_date: row['Data de Nascimento'] || row['data_nascimento'] || '',
+          cep: row['CEP'] || row['cep'] || '',
+          street: row['Rua'] || row['endereco'] || row['rua'] || '',
+          number: row['Número'] || row['numero'] || '',
+          complement: row['Complemento'] || row['complemento'] || '',
+          neighborhood: row['Bairro'] || row['bairro'] || '',
+          city: row['Cidade'] || row['cidade'] || '',
+          state: row['Estado'] || row['estado'] || row['uf'] || '',
+          allow_system_access: (row['Acesso Sistema'] || row['acesso_sistema'] || '').toLowerCase() === 'sim'
+        };
+      });
 
-      // Validar dados obrigatórios - apenas nome ou email são obrigatórios
-      const validData = importData.filter(item => (item.name && item.name.trim()) || (item.email && item.email.trim()));
+      // Validar dados obrigatórios - apenas nome é obrigatório (email já foi gerado)
+      const validData = importData.filter(item => item.name && item.name.trim());
       
       if (validData.length === 0) {
-        throw new Error('Nenhum dado válido encontrado no arquivo. Pelo menos Nome ou Email devem estar preenchidos.');
+        throw new Error('Nenhum dado válido encontrado no arquivo. O campo Nome deve estar preenchido.');
       }
 
       console.log(`Total de linhas processadas: ${importData.length}`);
@@ -274,7 +285,7 @@ export const useClientExcel = () => {
         // Preparar dados do lote, tratando campos vazios e convertendo para string
         const batchData = batch.map(client => ({
           name: client.name ? String(client.name).trim() : null,
-          email: client.email ? String(client.email).trim() : null,
+          email: client.email ? String(client.email).trim() : `temp${Date.now()}@temp.local`,
           phone: client.phone ? String(client.phone).trim() : null,
           client_type: client.client_type || 'fisica',
           cpf: client.cpf ? String(client.cpf).trim() : null,
