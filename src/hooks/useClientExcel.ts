@@ -136,8 +136,11 @@ export const useClientExcel = () => {
   const processImportFile = async (file: File) => {
     try {
       setIsProcessing(true);
+      setShowProgressModal(true);
       setImportStatus('Lendo arquivo...');
       setImportProgress(10);
+
+      console.log('Iniciando processamento do arquivo:', file.name, 'Tamanho:', file.size);
 
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
@@ -145,7 +148,9 @@ export const useClientExcel = () => {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      setImportStatus('Processando dados...');
+      console.log('Arquivo lido. Total de linhas encontradas:', jsonData.length);
+      
+      setImportStatus(`Processando ${jsonData.length} linhas...`);
       setImportProgress(30);
 
       // Mapear dados do Excel para estrutura do banco
@@ -181,12 +186,30 @@ export const useClientExcel = () => {
       setImportStatus('Verificando conflitos...');
       setImportProgress(50);
 
-      // Verificar conflitos (email duplicado) - apenas para clientes com email
+      // Verificar conflitos em lotes menores para melhor performance
       const emailsToCheck = validData.filter(item => item.email && item.email.trim()).map(item => item.email);
-      const { data: existingClients } = await supabase
-        .from('clients')
-        .select('*')
-        .in('email', emailsToCheck);
+      let existingClients: any[] = [];
+      
+      // Processar verificação de conflitos em lotes de 500 emails
+      const emailBatchSize = 500;
+      for (let i = 0; i < emailsToCheck.length; i += emailBatchSize) {
+        const emailBatch = emailsToCheck.slice(i, i + emailBatchSize);
+        console.log(`Verificando conflitos - lote ${Math.floor(i/emailBatchSize) + 1}/${Math.ceil(emailsToCheck.length/emailBatchSize)}`);
+        
+        const { data: batchClients, error } = await supabase
+          .from('clients')
+          .select('*')
+          .in('email', emailBatch);
+          
+        if (error) {
+          console.error('Erro ao verificar conflitos:', error);
+          throw error;
+        }
+        
+        if (batchClients) {
+          existingClients = [...existingClients, ...batchClients];
+        }
+      }
 
       const conflicts: ConflictClient[] = [];
       const nonConflictData: ImportData[] = [];
@@ -217,9 +240,10 @@ export const useClientExcel = () => {
 
     } catch (error) {
       console.error('Erro ao processar arquivo:', error);
+      setShowProgressModal(false);
       toast({
         title: "Erro no processamento",
-        description: "Ocorreu um erro ao processar o arquivo.",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao processar o arquivo.",
         variant: "destructive",
       });
     } finally {
@@ -235,7 +259,7 @@ export const useClientExcel = () => {
       
       const total = clientsData.length;
       let imported = 0;
-      const batchSize = 100; // Processar em lotes de 100
+      const batchSize = 50; // Reduzir para lotes de 50 para melhor performance com grandes volumes
       
       console.log(`Iniciando importação de ${total} clientes em lotes de ${batchSize}`);
 
@@ -270,10 +294,17 @@ export const useClientExcel = () => {
         }));
 
         try {
-          const { data, error } = await supabase
+          // Adicionar timeout para evitar travamentos
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout na inserção do lote')), 30000)
+          );
+          
+          const insertPromise = supabase
             .from('clients')
             .insert(batchData)
             .select();
+            
+          const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any;
 
           if (error) {
             console.error(`Erro no lote ${batchNumber}:`, error);
@@ -315,7 +346,13 @@ export const useClientExcel = () => {
           }
         }
 
-        setImportProgress(Math.round(((i + batch.length) / total) * 100));
+        const progressPercent = Math.round(((i + batch.length) / total) * 100);
+        setImportProgress(progressPercent);
+        
+        // Pequena pausa entre lotes para não sobrecarregar o banco
+        if (i + batchSize < clientsData.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
 
       console.log(`Importação finalizada: ${imported} de ${total} clientes importados`);

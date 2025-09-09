@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, MessageCircle, History, TrashIcon, Users } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Edit, Trash2, MessageCircle, History, TrashIcon, Users, Info } from 'lucide-react';
 import { ClientTable } from './client/ClientTable';
 import { ClientFilters } from './client/ClientFilters';
 import { useClientManagement } from './client/useClientManagement';
@@ -188,6 +189,16 @@ const ClientManagement = () => {
             onSearchChange={setSearchTerm}
             onTypeFilterChange={setTypeFilter}
           />
+
+          {isProcessing && (
+            <Alert className="border-blue-200 bg-blue-50">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Importação em andamento:</strong> Planilhas com muitas linhas podem levar alguns minutos para processar. 
+                Por favor, aguarde e não feche a página.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {selectedCount > 0 && (
             <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">

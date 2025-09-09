@@ -38,6 +38,9 @@ const ClientImportProgressModal: React.FC<ClientImportProgressModalProps> = ({
           <div className="text-center">
             <p className="text-sm text-gray-600">{status}</p>
             <p className="text-xs text-gray-500 mt-1">{progress}% concluído</p>
+            <p className="text-xs text-gray-400 mt-2">
+              Planilhas grandes podem levar alguns minutos. Não feche esta janela.
+            </p>
           </div>
         </div>
       </DialogContent>
