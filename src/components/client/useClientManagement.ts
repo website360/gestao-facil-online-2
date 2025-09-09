@@ -14,6 +14,11 @@ export const useClientManagement = () => {
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  
+  // Pagination state
+  const [itemsPerPage, setItemsPerPage] = useState(300);
+  const [currentPage, setCurrentPage] = useState(1);
+  
   const { userProfile } = useUserProfile();
 
   useEffect(() => {
@@ -21,6 +26,10 @@ export const useClientManagement = () => {
       fetchClients();
     }
   }, [userProfile]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, typeFilter]);
 
   useEffect(() => {
     let filtered = clients;
@@ -38,6 +47,13 @@ export const useClientManagement = () => {
 
     setFilteredClients(filtered);
   }, [clients, searchTerm, typeFilter]);
+
+  // Pagination calculations
+  const totalItems = filteredClients.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedClients = filteredClients.slice(startIndex, endIndex);
 
   const fetchClients = async () => {
     try {
@@ -119,14 +135,21 @@ export const useClientManagement = () => {
   return {
     clients,
     filteredClients,
+    paginatedClients,
     loading,
     showForm,
     editingClient,
     clientToDelete,
     searchTerm,
     typeFilter,
+    itemsPerPage,
+    currentPage,
+    totalPages,
+    totalItems,
     setSearchTerm,
     setTypeFilter,
+    setItemsPerPage,
+    setCurrentPage,
     setClientToDelete,
     handleNewClient,
     handleEdit,

@@ -164,10 +164,16 @@ export const useClientExcel = () => {
           email = sanitizedName ? `${sanitizedName}@temp.local` : `cliente${index + 1}@temp.local`;
         }
         
+        // Se não tem telefone, gerar um temporário
+        let phone = row['Telefone'] || row['telefone'] || '';
+        if (!phone || phone.trim() === '') {
+          phone = `(00) 0000-0000`;
+        }
+        
         return {
           name: name,
           email: email,
-          phone: row['Telefone'] || row['telefone'] || '',
+          phone: phone,
           client_type: (row['Tipo'] || row['tipo'] || '').toLowerCase() === 'jurídica' ? 'juridica' : 'fisica',
           cpf: row['CPF'] || row['cpf'] || '',
           cnpj: row['CNPJ'] || row['cnpj'] || '',
@@ -286,7 +292,7 @@ export const useClientExcel = () => {
         const batchData = batch.map(client => ({
           name: client.name ? String(client.name).trim() : null,
           email: client.email ? String(client.email).trim() : `temp${Date.now()}@temp.local`,
-          phone: client.phone ? String(client.phone).trim() : null,
+          phone: client.phone ? String(client.phone).trim() : '(00) 0000-0000',
           client_type: client.client_type || 'fisica',
           cpf: client.cpf ? String(client.cpf).trim() : null,
           cnpj: client.cnpj ? String(client.cnpj).trim() : null,

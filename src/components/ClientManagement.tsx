@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Edit, Trash2, MessageCircle, History, TrashIcon, Users, Info } from 'lucide-react';
 import { ClientTable } from './client/ClientTable';
 import { ClientFilters } from './client/ClientFilters';
+import ClientPagination from './client/ClientPagination';
 import { useClientManagement } from './client/useClientManagement';
 import { useClientExcel } from '@/hooks/useClientExcel';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
@@ -30,14 +31,21 @@ const ClientManagement = () => {
   
   const {
     filteredClients,
+    paginatedClients,
     loading,
     showForm,
     editingClient,
     clientToDelete,
     searchTerm,
     typeFilter,
+    itemsPerPage,
+    currentPage,
+    totalPages,
+    totalItems,
     setSearchTerm,
     setTypeFilter,
+    setItemsPerPage,
+    setCurrentPage,
     setClientToDelete,
     handleNewClient,
     handleEdit,
@@ -55,7 +63,7 @@ const ClientManagement = () => {
     toggleAll,
     clearSelection,
     selectedCount
-  } = useBulkSelection(filteredClients.map(c => c.id));
+  } = useBulkSelection(paginatedClients.map(c => c.id));
 
   const { 
     exportToExcel, 
@@ -219,23 +227,33 @@ const ClientManagement = () => {
             </div>
           )}
 
-          {filteredClients.length === 0 ? (
+          {paginatedClients.length === 0 ? (
             <EmptyState
               title="Nenhum cliente encontrado"
               description="Os clientes aparecerão aqui quando forem cadastrados."
               icon={Users}
             />
           ) : (
-            <ClientTable
-              clients={filteredClients}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              selectedItems={selectedItems}
-              onItemSelect={toggleItem}
-              onSelectAll={toggleAll}
-              isAllSelected={isAllSelected}
-              isPartiallySelected={isPartiallySelected}
-            />
+            <div>
+              <ClientTable
+                clients={paginatedClients}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                selectedItems={selectedItems}
+                onItemSelect={toggleItem}
+                onSelectAll={toggleAll}
+                isAllSelected={isAllSelected}
+                isPartiallySelected={isPartiallySelected}
+              />
+              <ClientPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+              />
+            </div>
           )}
         </CardContent>
       </Card>
