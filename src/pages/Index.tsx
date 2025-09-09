@@ -309,7 +309,7 @@ const Index = () => {
                 <img src="/lovable-uploads/1f183d06-f80b-44da-9040-12f4a7ffc5bd.png" alt="Logo" className="w-full h-full object-contain" />
               </div>
               <h1 className="text-lg font-semibold text-gray-900">
-                Irmãos Mantovani Textil
+                Irmãos Mantovani
               </h1>
             </div>
           ) : (
