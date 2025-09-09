@@ -61,9 +61,9 @@ const ClientPagination = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="100">100</SelectItem>
                 <SelectItem value="300">300</SelectItem>
                 <SelectItem value="500">500</SelectItem>
+                <SelectItem value="1000">1000</SelectItem>
               </SelectContent>
             </Select>
           </div>
