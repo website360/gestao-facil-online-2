@@ -65,7 +65,6 @@ export const ClientTable = ({
             <TableHead>Tipo</TableHead>
             <TableHead>Documento</TableHead>
             <TableHead>Telefone</TableHead>
-            <TableHead>Vendedor Responsável</TableHead>
             <TableHead>Data</TableHead>
             <TableHead className="w-40">Ações</TableHead>
           </TableRow>
@@ -94,34 +93,25 @@ export const ClientTable = ({
               <TableCell className="text-sm">
                 {client.client_type === 'fisica' ? client.cpf : client.cnpj}
               </TableCell>
-              <TableCell className="text-sm">
-                <div className="flex items-center gap-2">
-                  <span>{client.phone}</span>
-                  {client.phone && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openWhatsApp(client.phone)}
-                      className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                      title="Abrir WhatsApp Web"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                {client.assigned_user ? (
-                  <Badge className="bg-purple-100 text-purple-800">
-                    {client.assigned_user.name}
-                  </Badge>
-                ) : (
-                  <span className="text-sm text-gray-500">Nenhum</span>
-                )}
-              </TableCell>
-              <TableCell>
-                {new Date(client.created_at).toLocaleDateString('pt-BR')}
-              </TableCell>
+               <TableCell className="text-sm">
+                 <div className="flex items-center gap-2">
+                   <span>{client.phone}</span>
+                   {client.phone && (
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => openWhatsApp(client.phone)}
+                       className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                       title="Abrir WhatsApp Web"
+                     >
+                       <MessageCircle className="h-4 w-4" />
+                     </Button>
+                   )}
+                 </div>
+               </TableCell>
+               <TableCell>
+                 {new Date(client.created_at).toLocaleDateString('pt-BR')}
+               </TableCell>
               <TableCell>
                 <div className="flex gap-1">
                   <Button

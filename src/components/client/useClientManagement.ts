@@ -75,18 +75,11 @@ export const useClientManagement = () => {
       
       // Carregar todos os clientes usando paginação
       while (hasMore) {
-        let query = supabase
-          .from('clients')
-          .select(`
-            *,
-            assigned_user:profiles!clients_assigned_user_id_fkey(
-              id,
-              name,
-              email
-            )
-          `)
-          .order('name', { ascending: true })
-          .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
+         let query = supabase
+           .from('clients')
+           .select('*')
+           .order('name', { ascending: true })
+           .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
 
         // Se for vendas, filtrar apenas clientes atribuídos especificamente ao usuário
         // Clientes sem vendedor responsável (assigned_user_id null) ficam visíveis apenas para admin e gerente
