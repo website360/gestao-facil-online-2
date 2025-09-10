@@ -66,7 +66,6 @@ const Auth = () => {
               <img src="/lovable-uploads/a16e0c44-3fe5-4408-861e-2b328ba401ea.png" alt="Irmãos Mantovani Têxtil" className="w-full h-full object-contain" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Irmãos Mantovani</h1>
         </div>
 
         <Card className="glass">
