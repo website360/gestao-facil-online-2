@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { FileText, ShoppingCart, Calendar, DollarSign, Eye } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 import BudgetDetailModal from './BudgetDetailModal';
 import SalesDetailModal from './SalesDetailModal';
 import type { Database } from '@/integrations/supabase/types';
@@ -196,7 +197,7 @@ const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    R$ {budgets.reduce((sum, budget) => sum + budget.total_amount, 0).toFixed(2)}
+                    {formatCurrency(budgets.reduce((sum, budget) => sum + budget.total_amount, 0))}
                   </div>
                 </CardContent>
               </Card>
@@ -208,7 +209,7 @@ const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    R$ {sales.reduce((sum, sale) => sum + sale.total_amount, 0).toFixed(2)}
+                    {formatCurrency(sales.reduce((sum, sale) => sum + sale.total_amount, 0))}
                   </div>
                 </CardContent>
               </Card>
@@ -257,7 +258,7 @@ const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
                                   {getStatusLabel(budget.status)}
                                 </Badge>
                               </TableCell>
-                              <TableCell>R$ {budget.total_amount.toFixed(2)}</TableCell>
+                              <TableCell>{formatCurrency(budget.total_amount)}</TableCell>
                               <TableCell className="max-w-xs truncate">
                                 {budget.notes || '-'}
                               </TableCell>
@@ -320,7 +321,7 @@ const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
                                   {getStatusLabel(sale.status)}
                                 </Badge>
                               </TableCell>
-                              <TableCell>R$ {sale.total_amount.toFixed(2)}</TableCell>
+                              <TableCell>{formatCurrency(sale.total_amount)}</TableCell>
                               <TableCell className="max-w-xs truncate">
                                 {sale.notes || '-'}
                               </TableCell>

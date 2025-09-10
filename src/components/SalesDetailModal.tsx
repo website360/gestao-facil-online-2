@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Printer, Eye, ShoppingCart, Package, FileText, Trash2 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 import { createPrintContent } from '@/components/common/PrintUtils';
 
 interface SaleItem {
@@ -459,7 +459,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                         {saleVolumes.map((volume, index) => (
                           <div key={index} className="grid grid-cols-2 gap-4 p-2 bg-white border border-gray-200 rounded">
                             <div className="text-sm">Pacote {volume.volume_number}</div>
-                            <div className="text-sm font-semibold">{Number(volume.weight_kg).toFixed(2)} kg</div>
+                            <div className="text-sm font-semibold">{formatNumber(Number(volume.weight_kg), 2)} kg</div>
                           </div>
                         ))}
                         <div className="grid grid-cols-2 gap-4 p-2 bg-blue-100 border border-blue-300 rounded mt-4">
@@ -468,7 +468,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                         </div>
                         <div className="grid grid-cols-2 gap-4 p-2 bg-blue-100 border border-blue-300 rounded">
                           <div className="text-sm font-bold">Peso Total:</div>
-                          <div className="text-sm font-bold">{saleVolumes.reduce((total, vol) => total + Number(vol.weight_kg), 0).toFixed(2)} kg</div>
+                          <div className="text-sm font-bold">{formatNumber(saleVolumes.reduce((total, vol) => total + Number(vol.weight_kg), 0), 2)} kg</div>
                         </div>
                       </div>
                     ) : (
@@ -482,7 +482,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Peso Total (kg)</label>
                           <div className="p-3 bg-white border border-gray-200 rounded">
-                            {saleData.total_weight_kg ? `${Number(saleData.total_weight_kg).toFixed(2)} kg` : 'Não informado'}
+                            {saleData.total_weight_kg ? `${formatNumber(Number(saleData.total_weight_kg), 2)} kg` : 'Não informado'}
                           </div>
                         </div>
                       </div>

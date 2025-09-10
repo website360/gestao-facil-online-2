@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { formatCurrency } from '@/lib/utils';
 import { useBudgetCalculations } from '@/hooks/useBudgetCalculations';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 
@@ -95,7 +96,7 @@ const BudgetConvertDialog = ({ budgetToConvert, onClose, onConfirm }: BudgetConv
             {displayBudget && (
               <div className="mt-2 p-2 bg-gray-50 rounded">
                 <strong>Cliente:</strong> {displayBudget.clients?.name}<br />
-                <strong>Valor:</strong> R$ {totalAmount.toFixed(2)}<br />
+                <strong>Valor:</strong> {formatCurrency(totalAmount)}<br />
                 <strong>Items:</strong> {uniqueProducts} produto(s) - {totalQuantity} {totalQuantity === 1 ? 'item' : 'itens'}
                 {loading && <div className="text-sm text-gray-500 mt-1">Atualizando dados...</div>}
               </div>

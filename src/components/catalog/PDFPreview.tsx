@@ -125,7 +125,7 @@ export const PDFPreview: React.FC<PDFPreviewProps> = ({
       case 'text':
         if (element.id.includes('product-name')) return product?.name || 'Nome do Produto';
         else if (element.id.includes('internal-code')) return `Cód.: ${product?.internal_code || 'EX001'}`;
-        else if (element.id.includes('price')) return `R$ ${product?.price?.toFixed(2) || '99,99'}`;
+        else if (element.id.includes('price')) return product?.price?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'R$ 99,99';
         else if (element.id.includes('stock')) return `Estoque: ${product?.stock || '50'}`;
         else if (element.id.includes('unit')) return product?.stock_unit || 'Un';
         else if (element.id.includes('size')) return product?.size || 'P';

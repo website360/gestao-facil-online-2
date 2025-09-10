@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/utils';
 import ProductSearchInput from './ProductSearchInput';
 
 interface BudgetItem {
@@ -116,7 +117,7 @@ const ClientBudgetItemForm = ({
 
       <td className="p-2 text-right">
         <div className="text-xs font-medium">
-          R$ {calculateItemTotal(item).toFixed(2)}
+          {formatCurrency(calculateItemTotal(item))}
         </div>
       </td>
 

@@ -764,7 +764,7 @@ const CatalogDesigner = () => {
       case 'text':
         if (element.id.includes('product-name')) content = product?.name || 'Nome do Produto';
         else if (element.id.includes('internal-code')) content = `**Cód.:** ${product?.internal_code || 'EX001'}`;
-        else if (element.id.includes('price')) content = `R$ ${product?.price?.toFixed(2) || '99,99'}`;
+        else if (element.id.includes('price')) content = product?.price?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'R$ 99,99';
         else if (element.id.includes('stock')) content = `**Estoque:** ${product?.stock || '50'}`;
         else if (element.id.includes('unit')) content = `**Unidade:** ${product?.stock_unit || 'Un'}`;
         else if (element.id.includes('size')) content = `**Tamanho:** ${product?.size || 'P'}`;

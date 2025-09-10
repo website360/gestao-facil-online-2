@@ -413,12 +413,12 @@ export class CatalogPDFGenerator {
         rows,
         columns,
         maxCardsPerPage,
-        cardWidth: cardWidth.toFixed(2),
-        cardHeight: cardHeight.toFixed(2),
-        pageWidth: pageWidth.toFixed(2),
-        pageHeight: pageHeight.toFixed(2),
-        availableWidth: availableWidth.toFixed(2),
-        availableHeight: availableHeight.toFixed(2),
+        cardWidth: cardWidth.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+        cardHeight: cardHeight.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+        pageWidth: pageWidth.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+        pageHeight: pageHeight.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+        availableWidth: availableWidth.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+        availableHeight: availableHeight.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
         startY,
         cardSpacing,
         verticalSpacing
@@ -736,7 +736,7 @@ export class CatalogPDFGenerator {
       case 'category':
         return product.categories?.name || 'Sem Categoria';
       case 'price':
-        return `R$ ${product.price.toFixed(2)}`;
+        return `${product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
       case 'stock':
         return `**Estoque:** ${product.stock}`;
       case 'unit':
@@ -818,7 +818,7 @@ export class CatalogPDFGenerator {
     this.doc.setFontSize(titleSize + 2);
     this.doc.setFont('helvetica', 'bold');
     this.doc.setTextColor(0, 128, 0);
-    this.doc.text(`R$ ${product.price.toFixed(2)}`, textX, currentTextY);
+    this.doc.text(`${product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, textX, currentTextY);
     currentTextY += 10;
     
     // Informações adicionais em fonte menor

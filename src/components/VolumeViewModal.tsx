@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Package, Weight } from 'lucide-react';
+import { formatNumber } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -95,7 +96,7 @@ const VolumeViewModal = ({ isOpen, onClose, saleId }: VolumeViewModalProps) => {
                     <span className="font-medium text-blue-900">Peso Total:</span>
                   </div>
                   <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                    {totalWeight.toFixed(2)} kg
+                    {formatNumber(totalWeight, 2)} kg
                   </Badge>
                 </div>
               </div>
@@ -116,7 +117,7 @@ const VolumeViewModal = ({ isOpen, onClose, saleId }: VolumeViewModalProps) => {
                       <div className="flex items-center gap-1">
                         <Weight className="h-4 w-4 text-gray-500" />
                         <span className="text-sm font-medium text-gray-900">
-                          {Number(volume.weight_kg).toFixed(2)} kg
+                          {formatNumber(Number(volume.weight_kg), 2)} kg
                         </span>
                       </div>
                     </div>

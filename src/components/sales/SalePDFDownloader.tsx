@@ -206,13 +206,13 @@ const SalePDFDownloader = ({ sale, className }: SalePDFDownloaderProps) => {
               <tr>
                 <td>${item.products?.name || 'Produto não encontrado'}</td>
                 <td class="text-right">${item.quantity}</td>
-                <td class="text-right">R$ ${item.unit_price.toFixed(2)}</td>
-                <td class="text-right">R$ ${item.total_price.toFixed(2)}</td>
+                <td class="text-right">${item.unit_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                <td class="text-right">${item.total_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
               </tr>
             `).join('') || ''}
             <tr class="total-row">
               <td colspan="3" class="text-right">TOTAL GERAL:</td>
-              <td class="text-right">R$ ${sale.total_amount.toFixed(2)}</td>
+              <td class="text-right">${sale.total_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
             </tr>
           </tbody>
         </table>

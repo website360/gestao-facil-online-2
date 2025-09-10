@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/utils';
 import { Search, ShoppingBag, Package, Filter } from 'lucide-react';
 
 interface Product {
@@ -297,7 +298,7 @@ const Catalog = () => {
                     <div className="flex justify-between items-center">
                       <div className="flex flex-col">
                         <span className="text-2xl font-bold text-green-600">
-                          R$ {product.price.toFixed(2)}
+                          {formatCurrency(product.price)}
                         </span>
                       </div>
                     </div>

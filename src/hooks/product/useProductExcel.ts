@@ -73,13 +73,39 @@ export const useProductExcel = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [totalImported, setTotalImported] = useState(0);
 
-  // Helpers to parse Brazilian-formatted numbers and integers safely
+  // Helper to parse Brazilian-formatted numbers and integers safely
   const parseNumberBR = (val: any): number => {
     if (val === undefined || val === null) return 0;
     if (typeof val === 'number') return isFinite(val) ? val : 0;
+    
     let s = String(val).trim();
     if (!s) return 0;
-    s = s.replace(/R\$\s*/i, '').replace(/\./g, '').replace(/,/g, '.');
+    
+    // Remove símbolos de moeda
+    s = s.replace(/R\$\s*/i, '');
+    
+    // Se tem tanto ponto quanto vírgula, assumir que ponto é separador de milhares e vírgula é decimal
+    if (s.includes('.') && s.includes(',')) {
+      // Ex: 1.234,56 -> remove pontos dos milhares, vírgula vira ponto decimal
+      s = s.replace(/\./g, '').replace(',', '.');
+    } 
+    // Se tem apenas vírgula, assumir que é separador decimal
+    else if (s.includes(',') && !s.includes('.')) {
+      // Ex: 1234,56 -> vírgula vira ponto decimal
+      s = s.replace(',', '.');
+    }
+    // Se tem apenas pontos, pode ser separador de milhares ou decimal
+    else if (s.includes('.') && !s.includes(',')) {
+      // Se o último ponto tem 2 dígitos após ele, é decimal
+      const lastDotIndex = s.lastIndexOf('.');
+      if (lastDotIndex > 0 && s.length - lastDotIndex === 3) {
+        // Ex: 1234.56 -> manter como está
+      } else {
+        // Ex: 1.234 -> remover ponto (são milhares)
+        s = s.replace(/\./g, '');
+      }
+    }
+    
     const n = parseFloat(s);
     return isNaN(n) ? 0 : n;
   };

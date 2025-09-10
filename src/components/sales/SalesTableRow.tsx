@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, FileText, Truck, Settings, Scale } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface Sale {
   id: string;
@@ -249,7 +250,7 @@ const SalesTableRow = ({
         <TableCell className="text-gray-600 py-4 px-6">
           {new Date(sale.created_at).toLocaleDateString('pt-BR')}
         </TableCell>
-        <TableCell className="font-semibold text-green-600 py-4 px-6">R$ {sale.total_amount.toFixed(2)}</TableCell>
+        <TableCell className="font-semibold text-green-600 py-4 px-6">{formatCurrency(sale.total_amount)}</TableCell>
         <TableCell className="text-gray-600 py-4 px-6">
           {sale.invoice_number || '-'}
         </TableCell>
@@ -314,7 +315,7 @@ const SalesTableRow = ({
         <TableCell className="text-gray-600 py-4 px-6">
           {new Date(sale.created_at).toLocaleDateString('pt-BR')}
         </TableCell>
-        <TableCell className="font-semibold text-green-600 py-4 px-6">R$ {sale.total_amount.toFixed(2)}</TableCell>
+        <TableCell className="font-semibold text-green-600 py-4 px-6">{formatCurrency(sale.total_amount)}</TableCell>
         <TableCell className="text-gray-600 py-4 px-6">
           {sale.invoice_number ? (
             <Badge variant="outline" className="font-mono text-xs">
@@ -381,7 +382,7 @@ const SalesTableRow = ({
       <TableCell className="text-gray-600 py-4 px-6">
         {new Date(sale.created_at).toLocaleDateString('pt-BR')}
       </TableCell>
-      <TableCell className="font-semibold text-green-600 py-4 px-6">R$ {sale.total_amount.toFixed(2)}</TableCell>
+      <TableCell className="font-semibold text-green-600 py-4 px-6">{formatCurrency(sale.total_amount)}</TableCell>
       <TableCell className="text-gray-600 py-4 px-6">
         {sale.invoice_number ? (
           <Badge variant="outline" className="font-mono text-xs">
