@@ -360,25 +360,6 @@ const SalesTableRow = ({
                 </TooltipContent>
               </Tooltip>
             )}
-
-            {/* Botão para visualizar volumes - só aparece se houver volumes registrados */}
-            {sale.total_volumes && sale.total_volumes > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onViewVolumes(sale.id)}
-                    className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700"
-                  >
-                    <Scale className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Ver Volumes ({sale.total_volumes})</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
           </div>
         </TableCell>
       </TableRow>
