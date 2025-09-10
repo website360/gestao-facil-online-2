@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 import Dashboard from '../components/Dashboard';
 import ClientManagement from '../components/ClientManagement';
 import ProductManagement from '../components/ProductManagement';
@@ -47,7 +48,8 @@ const Index = () => {
   const [activeModule, setActiveModule] = useState('sales'); // Começar nas vendas para roles restritas
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Fechar sidebar por padrão no mobile
   const { user, signOut, isClient, clientData } = useAuth();
   const navigate = useNavigate();
 
@@ -299,9 +301,25 @@ const Index = () => {
   const menuItems = getAvailableMenuItems();
 
   return (
-    <div className="h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex bg-decorative overflow-hidden p-4">
-      {/* Sidebar - Fixa com 100vh */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-16'} transition-all duration-300 glass flex-shrink-0 h-[calc(100vh-2rem)] rounded-2xl flex flex-col`}>
+    <div className="h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex bg-decorative overflow-hidden p-2 md:p-4">
+      {/* Mobile Backdrop */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar - Responsiva */}
+      <div className={`${
+        isMobile 
+          ? sidebarOpen 
+            ? 'fixed left-2 top-2 bottom-2 w-64 z-50' 
+            : 'hidden'
+          : sidebarOpen 
+            ? 'w-64' 
+            : 'w-16'
+      } transition-all duration-300 glass flex-shrink-0 h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)] rounded-2xl flex flex-col`}>
         {/* Logo Header - Fixo */}
         <div className="flex h-16 items-center px-4 border-b border-gray-200/50 flex-shrink-0">
           {sidebarOpen ? (
@@ -391,9 +409,9 @@ const Index = () => {
       </div>
 
       {/* Main Content - Área que ocupa o resto da tela */}
-      <div className="flex-1 flex flex-col min-w-0 h-full ml-4">
+      <div className={`flex-1 flex flex-col min-w-0 h-full ${isMobile ? '' : 'ml-4'}`}>
         {/* Header superior - Fixo */}
-        <header className="glass h-16 flex items-center justify-between px-6 rounded-2xl flex-shrink-0">
+        <header className="glass h-14 md:h-16 flex items-center justify-between px-4 md:px-6 rounded-2xl flex-shrink-0">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
@@ -430,8 +448,8 @@ const Index = () => {
         </header>
 
         {/* Content - Área scrollável que ocupa 100% da largura */}
-        <main className="flex-1 overflow-auto min-h-0 mt-4">
-          <div className="w-full px-6">
+        <main className="flex-1 overflow-auto min-h-0 mt-2 md:mt-4">
+          <div className="w-full px-2 md:px-6">
             {renderContent()}
           </div>
         </main>

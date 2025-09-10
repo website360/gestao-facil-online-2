@@ -25,9 +25,9 @@ const BudgetViewModal: React.FC<BudgetViewModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] md:max-w-7xl w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-lg md:text-xl">
             Visualizar Orçamento {formatBudgetId(budget.id, budgetIndex)}
           </DialogTitle>
         </DialogHeader>

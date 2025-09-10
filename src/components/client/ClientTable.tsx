@@ -49,11 +49,11 @@ export const ClientTable = ({
 
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-lg overflow-hidden overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow className="bg-gray-50">
-            <TableHead className="w-12">
+            <TableHead className="w-12 min-w-[48px]">
               <Checkbox
                 checked={isAllSelected}
                 onCheckedChange={onSelectAll}
@@ -61,12 +61,12 @@ export const ClientTable = ({
                 {...(isPartiallySelected ? { 'data-state': 'indeterminate' } : {})}
               />
             </TableHead>
-            <TableHead>Cliente</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Documento</TableHead>
-            <TableHead>Telefone</TableHead>
-            <TableHead>Data</TableHead>
-            <TableHead className="w-40">Ações</TableHead>
+            <TableHead className="min-w-[150px]">Cliente</TableHead>
+            <TableHead className="min-w-[100px]">Tipo</TableHead>
+            <TableHead className="min-w-[120px]">Documento</TableHead>
+            <TableHead className="min-w-[140px]">Telefone</TableHead>
+            <TableHead className="min-w-[100px]">Data</TableHead>
+            <TableHead className="w-40 min-w-[160px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

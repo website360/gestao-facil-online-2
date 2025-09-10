@@ -58,13 +58,13 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
 
   return (
     <div className="min-h-screen w-full">
-      <div className="w-full px-6 py-6">
+      <div className="w-full px-2 md:px-6 py-4 md:py-6">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 md:mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-              <p className="text-gray-600">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+              <p className="text-gray-600 text-sm md:text-base">
                 {isVendasUser ? 'Seus dados de vendas' : 'Visão geral dos seus negócios'}
               </p>
             </div>
@@ -81,7 +81,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
         </div>
 
         {/* Date Range Filter */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <DateRangeFilter
             startDate={startDate}
             endDate={endDate}
@@ -97,7 +97,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
         {isVendasUser ? (
           <>
             {/* KPI Cards - Primeira linha - Foco em orçamentos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
               <KPICard
                 title="Orçamentos Pendentes"
                 value={kpis.pendingBudgets}
@@ -115,7 +115,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
             </div>
 
             {/* KPI Cards - Segunda linha - Vendas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
               <KPICard
                 title="Vendas do Período"
                 value={kpis.monthlySales}
@@ -133,7 +133,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
             </div>
 
             {/* KPI Cards - Terceira linha - Vendas por Status */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
               <KPICard
                 title="Em Separação"
                 value={kpis.salesSeparacao}
@@ -167,7 +167,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
         ) : (
           <>
             {/* KPI Cards - Primeira linha - Dashboard completo para admin/gerente */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
               <KPICard
                 title="Total de Vendas"
                 value={kpis.totalSales}
@@ -192,7 +192,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
             </div>
 
             {/* KPI Cards - Segunda linha - Orçamentos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
               <KPICard
                 title="Orçamentos Pendentes"
                 value={kpis.pendingBudgets}
@@ -210,7 +210,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
             </div>
 
             {/* KPI Cards - Quarta linha - Vendas por Status */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
               <KPICard
                 title="Em Separação"
                 value={kpis.salesSeparacao}

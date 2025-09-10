@@ -389,10 +389,10 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-white">
+      <DialogContent className="max-w-[95vw] md:max-w-6xl w-full max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
-          <div className="flex justify-between items-center">
-            <DialogTitle className="text-xl font-semibold">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+            <DialogTitle className="text-lg md:text-xl font-semibold">
               {isFinalized ? 'Visualizar Venda' : 'Editar Venda'}
             </DialogTitle>
             <Button 

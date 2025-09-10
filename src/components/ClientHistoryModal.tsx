@@ -147,9 +147,9 @@ const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
   if (loading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] md:max-w-6xl w-full max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Carregando histórico...</DialogTitle>
+            <DialogTitle className="text-lg md:text-xl">Carregando histórico...</DialogTitle>
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -159,9 +159,9 @@ const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] md:max-w-6xl w-full max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg md:text-xl">
               <Calendar className="h-5 w-5" />
               Histórico - {clientName}
             </DialogTitle>

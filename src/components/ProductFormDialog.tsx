@@ -83,12 +83,12 @@ const ProductFormDialog = ({ showForm, editingProduct, onClose, onSuccess, readO
 
   return (
     <Dialog open={showForm} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] md:max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
+          <DialogTitle className="text-lg md:text-xl font-semibold">
             {readOnly ? 'Visualizar Produto' : editingProduct ? 'Editar Produto' : 'Novo Produto'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm md:text-base">
             {readOnly ? 'Informações detalhadas do produto.' : editingProduct ? 'Edite as informações do produto abaixo.' : 'Preencha as informações para criar um novo produto.'}
           </DialogDescription>
         </DialogHeader>

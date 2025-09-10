@@ -18,12 +18,12 @@ const BudgetFormDialog = ({ showForm, editingBudget, onClose, onSuccess }: Budge
 
   return (
     <Dialog open={showForm} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-white">
+      <DialogContent className="max-w-[95vw] md:max-w-6xl w-full max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-lg md:text-xl">
             {editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm md:text-base">
             {editingBudget 
               ? 'Faça as alterações necessárias no orçamento e clique em Salvar.'
               : 'Preencha os dados abaixo para criar um novo orçamento.'

@@ -56,9 +56,9 @@ const BudgetManagementContent = ({
   onBulkDelete
 }: BudgetManagementContentProps) => {
   return (
-    <div className="min-h-screen p-6 bg-transparent">
+    <div className="min-h-screen p-2 md:p-6 bg-transparent">
       <Card className="bg-white shadow-sm">
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="p-3 md:p-6 space-y-4 md:space-y-6">
           <BudgetManagementHeader onNewBudget={onNewBudget} />
 
           <BudgetFilters 

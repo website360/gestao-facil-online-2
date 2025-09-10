@@ -164,4 +164,22 @@
   .btn-gradient {
     @apply bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all transform hover:scale-[1.02];
   }
+
+  /* Responsividade - Scroll horizontal para tabelas em mobile */
+  .table-responsive {
+    @apply overflow-x-auto;
+  }
+  
+  /* Ajustes para modais em mobile */
+  .modal-responsive {
+    @apply max-w-[95vw] md:max-w-4xl w-full;
+  }
+  
+  .modal-responsive-lg {
+    @apply max-w-[95vw] md:max-w-6xl w-full;
+  }
+  
+  .modal-responsive-xl {
+    @apply max-w-[95vw] md:max-w-7xl w-full;
+  }
 }
