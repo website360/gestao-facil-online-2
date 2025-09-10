@@ -81,9 +81,10 @@ export const useClientManagement = () => {
           .order('name', { ascending: true })
           .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
 
-        // Se não for admin ou gerente, filtrar apenas clientes atribuídos ou não atribuídos
+        // Se for vendas, filtrar apenas clientes atribuídos especificamente ao usuário
+        // Clientes sem vendedor responsável (assigned_user_id null) ficam visíveis apenas para admin e gerente
         if (userProfile && userProfile.role === 'vendas') {
-          query = query.or(`assigned_user_id.is.null,assigned_user_id.eq.${userProfile.id}`);
+          query = query.eq('assigned_user_id', userProfile.id);
         }
 
         const { data, error } = await query;
