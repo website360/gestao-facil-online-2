@@ -51,6 +51,7 @@ const Catalog = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showOutOfStock, setShowOutOfStock] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
+  const [columnsCount, setColumnsCount] = useState<number>(4);
 
   useEffect(() => {
     fetchCategories();
@@ -130,6 +131,19 @@ const Catalog = () => {
       toast.error('Erro ao carregar produtos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getGridClasses = () => {
+    switch (columnsCount) {
+      case 3:
+        return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
+      case 4:
+        return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6";
+      case 5:
+        return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6";
+      default:
+        return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6";
     }
   };
 
@@ -214,6 +228,18 @@ const Catalog = () => {
                     </label>
                   </div>
                 </div>
+                <div className="w-full md:w-48">
+                  <Select value={columnsCount.toString()} onValueChange={(value) => setColumnsCount(parseInt(value))}>
+                    <SelectTrigger className="bg-white/50 border-gray-200 rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20 transition-all">
+                      <SelectValue placeholder="Colunas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 Colunas</SelectItem>
+                      <SelectItem value="4">4 Colunas</SelectItem>
+                      <SelectItem value="5">5 Colunas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-gray-600">
@@ -237,7 +263,7 @@ const Catalog = () => {
         </Card>
 
         {/* Grid de produtos com fotos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+        <div className={getGridClasses()}>
           {products.map((product) => {
             return (
               <Card key={product.id} className="glass hover:shadow-lg transition-all">
