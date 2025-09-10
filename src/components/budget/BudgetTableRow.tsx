@@ -238,8 +238,8 @@ const BudgetTableRow = ({
             <Eye className="h-4 w-4" />
           </Button>
           
-          {/* Botão de edição - oculto quando aguardando aprovação para não-admins */}
-          {!(budget.status === 'aguardando_aprovacao' && !isAdmin) && (
+          {/* Botão de edição - oculto quando aguardando aprovação ou aprovado para não-admins */}
+          {!((budget.status === 'aguardando_aprovacao' || budget.status === 'aprovado') && !isAdmin) && (
             <Button
               variant="ghost"
               size="sm"
@@ -336,9 +336,9 @@ const BudgetTableRow = ({
             onClick={() => onDelete(budget.id)}
             className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
             title="Excluir orçamento"
-            disabled={budget.status === 'aguardando_aprovacao' && !isAdmin}
+            disabled={(budget.status === 'aguardando_aprovacao' || budget.status === 'aprovado') && !isAdmin}
             style={{ 
-              display: budget.status === 'aguardando_aprovacao' && !isAdmin ? 'none' : 'flex'
+              display: (budget.status === 'aguardando_aprovacao' || budget.status === 'aprovado') && !isAdmin ? 'none' : 'flex'
             }}
           >
             <Trash2 className="h-4 w-4" />
