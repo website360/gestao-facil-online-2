@@ -48,11 +48,11 @@ const BudgetFilters = ({
         </div>
         <div className="w-full md:w-48">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <Filter className="w-4 h-4 mr-2 text-gray-500" />
               <SelectValue placeholder="Filtrar por status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="w-full">
               <SelectItem value="all">Todos os status</SelectItem>
               <SelectItem value="processando">Processando</SelectItem>
               <SelectItem value="aguardando_aprovacao">Aguardando Aprovação</SelectItem>

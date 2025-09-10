@@ -22,9 +22,9 @@ const ProductFilters = ({
   onCategoryFilterChange
 }: ProductFiltersProps) => {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-      <div className="flex gap-2 flex-1">
-        <div className="relative flex-1 max-w-md">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Buscar por produto ou código..."
@@ -33,20 +33,22 @@ const ProductFilters = ({
             className="pl-10"
           />
         </div>
-        <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
-          <SelectTrigger className="w-56 gap-2">
-            <Filter className="h-4 w-4" />
-            <SelectValue placeholder="Todas as categorias" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as categorias</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="w-full sm:w-56">
+          <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
+            <SelectTrigger className="w-full gap-2">
+              <Filter className="h-4 w-4" />
+              <SelectValue placeholder="Todas as categorias" />
+            </SelectTrigger>
+            <SelectContent className="w-full">
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div className="text-sm text-gray-600">
         {filteredProductsCount} registros encontrados
