@@ -411,8 +411,8 @@ const SalesTableRow = ({
             </TooltipContent>
           </Tooltip>
 
-          {/* Botão de editar - não disponível para vendas finalizadas */}
-          {sale.status !== 'entrega_realizada' && (
+          {/* Botão de editar - não disponível para vendas finalizadas e gerente não pode editar */}
+          {sale.status !== 'entrega_realizada' && userRole !== 'gerente' && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -484,8 +484,8 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
-          {/* Botão de alteração de status para admins e gerentes - não aparece se entrega realizada */}
-          {(userRole === 'admin' || userRole === 'gerente') && sale.status !== 'entrega_realizada' && (
+          {/* Botão de alteração de status para admins - não aparece se entrega realizada ou se é gerente */}
+          {userRole === 'admin' && sale.status !== 'entrega_realizada' && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -522,8 +522,8 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
-          {/* Botão de excluir - não aparece se entrega realizada */}
-          {sale.status !== 'entrega_realizada' && (
+          {/* Botão de excluir - não aparece se entrega realizada ou se é gerente */}
+          {sale.status !== 'entrega_realizada' && userRole !== 'gerente' && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
