@@ -1031,6 +1031,7 @@ export type Database = {
         | "aprovado"
         | "rejeitado"
         | "convertido"
+        | "processando"
       sale_status:
         | "separacao"
         | "conferencia"
@@ -1179,6 +1180,7 @@ export const Constants = {
         "aprovado",
         "rejeitado",
         "convertido",
+        "processando",
       ],
       sale_status: [
         "separacao",
