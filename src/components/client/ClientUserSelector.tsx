@@ -44,7 +44,7 @@ export const ClientUserSelector = ({ value, onChange }: ClientUserSelectorProps)
   };
 
   const getUserName = (userId: string) => {
-    if (userId === 'all') return 'Todos (Visível para todos os usuários)';
+    if (userId === 'all') return 'Visível apenas para Administradores e Gerentes';
     const user = users.find(u => u.id === userId);
     return user ? `${user.name} (${user.email})` : 'Usuário não encontrado';
   };
@@ -68,7 +68,7 @@ export const ClientUserSelector = ({ value, onChange }: ClientUserSelectorProps)
           <SelectValue placeholder="Selecione o vendedor responsável" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Todos (Visível para todos os usuários)</SelectItem>
+          <SelectItem value="all">Visível apenas para Administradores e Gerentes</SelectItem>
           {users.map((user) => (
             <SelectItem key={user.id} value={user.id}>
               {user.name} ({user.email})
