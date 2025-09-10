@@ -13,6 +13,7 @@ import BudgetManagementDialogs from './budget/BudgetManagementDialogs';
 import BudgetManagementLoading from './budget/BudgetManagementLoading';
 import BudgetSendForApprovalDialog from './budget/BudgetSendForApprovalDialog';
 import BulkDeleteDialog from './common/BulkDeleteDialog';
+import BudgetViewModal from './BudgetViewModal';
 import { toast as sonnerToast } from 'sonner';
 
 const BudgetManagement = () => {
@@ -23,6 +24,9 @@ const BudgetManagement = () => {
   const [showSendForApprovalDialog, setShowSendForApprovalDialog] = useState(false);
   const [budgetToSendForApproval, setBudgetToSendForApproval] = useState<string | null>(null);
   const [sendingForApproval, setSendingForApproval] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [budgetToView, setBudgetToView] = useState<LocalBudget | null>(null);
+  const [viewBudgetIndex, setViewBudgetIndex] = useState(0);
 
   const {
     budgets,
@@ -55,7 +59,6 @@ const BudgetManagement = () => {
     setBudgetToConvert,
     handleDeleteConfirm,
     handleConvertToSaleConfirm,
-    handleView,
     handleDuplicate,
     handleSend
   } = useBudgetActions(fetchBudgets);
@@ -77,6 +80,12 @@ const BudgetManagement = () => {
 
   const handleConvert = (budget: LocalBudget) => {
     setBudgetToConvert(budget);
+  };
+
+  const handleView = (budget: LocalBudget, index: number) => {
+    setBudgetToView(budget);
+    setViewBudgetIndex(index);
+    setShowViewModal(true);
   };
 
   const handleBulkDelete = async () => {
@@ -222,6 +231,13 @@ const BudgetManagement = () => {
         onOpenChange={setShowSendForApprovalDialog}
         onConfirm={handleSendForApprovalConfirm}
         loading={sendingForApproval}
+      />
+
+      <BudgetViewModal
+        budget={budgetToView}
+        open={showViewModal}
+        onOpenChange={setShowViewModal}
+        budgetIndex={viewBudgetIndex}
       />
     </>
   );

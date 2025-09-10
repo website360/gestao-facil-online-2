@@ -192,8 +192,8 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
   };
 
   const handleView = (budget: LocalBudget, index: number) => {
+    // Esta função será sobrescrita no componente pai
     console.log('Viewing budget:', budget, 'at index:', index);
-    // Implementar visualização do orçamento
   };
 
   const handleDuplicate = (budget: LocalBudget) => {

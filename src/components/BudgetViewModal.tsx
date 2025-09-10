@@ -20,6 +20,18 @@ interface Budget {
   client_name?: string;
   created_by_name?: string;
   stock_warnings?: any;
+  clients?: {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    street?: string;
+    number?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    cep?: string;
+  };
 }
 
 interface BudgetItem {
@@ -103,14 +115,31 @@ const BudgetViewModal: React.FC<BudgetViewModalProps> = ({
 
       if (itemsError) throw itemsError;
 
-      // Fetch client details
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('id', budget.client_id)
-        .single();
+      // Fetch client details only if not already present in budget data
+      let clientData = client;
+      if (!clientData && budget.clients) {
+        clientData = {
+          id: budget.clients.id,
+          name: budget.clients.name,
+          email: budget.clients.email,
+          phone: budget.clients.phone,
+          street: budget.clients.street,
+          number: budget.clients.number,
+          neighborhood: budget.clients.neighborhood,
+          city: budget.clients.city,
+          state: budget.clients.state,
+          cep: budget.clients.cep
+        };
+      } else if (!clientData) {
+        const { data: fetchedClientData, error: clientError } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('id', budget.client_id)
+          .single();
 
-      if (clientError) throw clientError;
+        if (clientError) throw clientError;
+        clientData = fetchedClientData;
+      }
 
       setBudgetItems(items || []);
       setClient(clientData);
@@ -273,18 +302,18 @@ const BudgetViewModal: React.FC<BudgetViewModalProps> = ({
             <div className="budget-info">
               <div className="info-row">
                 <span className="info-label">Cliente:</span>
-                <span>{client?.name || budget.client_name}</span>
+                <span>{client?.name || budget.clients?.name || budget.client_name}</span>
               </div>
-              {client?.email && (
+              {(client?.email || budget.clients?.email) && (
                 <div className="info-row">
                   <span className="info-label">Email:</span>
-                  <span>{client.email}</span>
+                  <span>{client?.email || budget.clients?.email}</span>
                 </div>
               )}
-              {client?.phone && (
+              {(client?.phone || budget.clients?.phone) && (
                 <div className="info-row">
                   <span className="info-label">Telefone:</span>
-                  <span>{client.phone}</span>
+                  <span>{client?.phone || budget.clients?.phone}</span>
                 </div>
               )}
               {client && formatAddress(client) && (
