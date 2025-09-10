@@ -24,7 +24,7 @@ const BudgetFormHeader = ({
   console.log('BudgetFormHeader - clientId:', clientId);
 
   return (
-    <div className={`grid grid-cols-1 ${isClient ? 'md:grid-cols-1' : 'md:grid-cols-2'} gap-4`}>
+    <div className="grid grid-cols-1 gap-4">
       <div className="space-y-2">
         <Label htmlFor="client">Cliente *</Label>
         {isClient ? (
@@ -46,21 +46,6 @@ const BudgetFormHeader = ({
           </Select>
         )}
       </div>
-
-      {!isClient && (
-        <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Select value={status} onValueChange={onStatusChange}>
-            <SelectTrigger className="bg-background">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50">
-              <SelectItem value="aguardando_aprovacao" className="bg-background hover:bg-muted">Aguardando Aprovação</SelectItem>
-              <SelectItem value="aprovado" className="bg-background hover:bg-muted">Aprovado</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
     </div>
   );
 };
