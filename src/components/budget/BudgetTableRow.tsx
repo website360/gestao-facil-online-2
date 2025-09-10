@@ -226,7 +226,7 @@ const BudgetTableRow = ({
         </TableCell>
       )}
       <TableCell>
-        <div className="flex gap-1 justify-center">
+        <div className="flex gap-1 justify-end">
           {/* Botão de visualização - sempre visível */}
           <Button
             variant="ghost"
