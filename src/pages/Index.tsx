@@ -197,6 +197,7 @@ const Index = () => {
         { id: 'products', label: 'Produtos', icon: Package },
         { id: 'budgets', label: 'Orçamentos', icon: FileText },
         { id: 'sales', label: 'Vendas', icon: ShoppingCart },
+        { id: 'catalog', label: 'Catálogo', icon: ShoppingBag },
       ];
     }
 
