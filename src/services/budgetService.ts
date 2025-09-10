@@ -25,7 +25,7 @@ interface BudgetFormData {
     discount_percentage: number;
     product_code?: string;
   }>;
-  status: 'aguardando_aprovacao' | 'aprovado';
+  status: 'processando' | 'aguardando_aprovacao' | 'aprovado';
 }
 
 export class BudgetService {
@@ -138,7 +138,7 @@ export class BudgetService {
       client_id: formData.client_id,
       created_by: userId,
       notes: formData.notes,
-      status: 'aguardando_aprovacao' as const,
+      status: 'processando' as const,
       total_amount: totalAmount,
       discount_percentage: formData.discount_percentage,
       invoice_percentage: formData.invoice_percentage,
@@ -214,7 +214,7 @@ export class BudgetService {
     const budgetPayload = {
       client_id: formData.client_id,
       notes: formData.notes,
-      status: 'aguardando_aprovacao' as const,
+      status: 'processando' as const,
       total_amount: totalAmount,
       discount_percentage: formData.discount_percentage,
       invoice_percentage: formData.invoice_percentage,

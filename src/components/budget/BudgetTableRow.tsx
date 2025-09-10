@@ -13,7 +13,8 @@ import {
   CheckCircle,
   User,
   UserCheck,
-  Eye
+  Eye,
+  Send
 } from 'lucide-react';
 import { useBudgetCalculations } from '@/hooks/useBudgetCalculations';
 import BudgetPDFGenerator from './BudgetPDFGenerator';
@@ -65,6 +66,8 @@ const BudgetTableRow = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'processando':
+        return 'bg-orange-100 text-orange-800';
       case 'aguardando_aprovacao':
         return 'bg-yellow-100 text-yellow-800';
       case 'aprovado':
@@ -80,6 +83,8 @@ const BudgetTableRow = ({
 
   const getStatusText = (status: string, isClient?: boolean) => {
     switch (status) {
+      case 'processando':
+        return 'Processando';
       case 'aguardando_aprovacao':
         return 'Aguardando Aprovação';
       case 'aprovado':
@@ -256,16 +261,16 @@ const BudgetTableRow = ({
           </Button>
           <BudgetPDFGenerator budget={budget} className="h-8 w-8 p-0" />
           
-          {/* Botão enviar para aprovação - para vendedores com orçamentos "aguardando_aprovacao" */}
-          {budget.status === 'aguardando_aprovacao' && onSendForApproval && !isAdmin && (
+          {/* Botão enviar para aprovação - para orçamentos com status "processando" */}
+          {budget.status === 'processando' && onSendForApproval && !isAdmin && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowApprovalDialog(true)}
-              className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+              onClick={() => onSendForApproval(budget.id)}
+              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
               title="Enviar para aprovação"
             >
-              <CheckCircle className="h-4 w-4" />
+              <Send className="h-4 w-4" />
             </Button>
           )}
           
@@ -283,7 +288,7 @@ const BudgetTableRow = ({
           )}
           
           {/* Ícone de aprovação desabilitado para orçamentos que ainda não foram enviados */}
-          {budget.status === 'aguardando_aprovacao' && isAdmin && (
+          {budget.status === 'processando' && isAdmin && (
             <Button
               variant="ghost"
               size="sm"

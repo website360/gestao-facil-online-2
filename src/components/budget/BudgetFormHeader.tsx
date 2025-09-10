@@ -5,10 +5,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 interface BudgetFormHeaderProps {
   clientId: string;
-  status: 'aguardando_aprovacao' | 'aprovado';
+  status: 'processando' | 'aguardando_aprovacao' | 'aprovado';
   clientOptions: Array<{ value: string; label: string }>;
   onClientChange: (value: string) => void;
-  onStatusChange: (value: 'aguardando_aprovacao' | 'aprovado') => void;
+  onStatusChange: (value: 'processando' | 'aguardando_aprovacao' | 'aprovado') => void;
   isClient?: boolean;
 }
 

@@ -38,7 +38,7 @@ interface BudgetFormProps {
       product_code?: string;
       has_individual_discount?: boolean;
     }>;
-    status: 'aguardando_aprovacao' | 'aprovado';
+    status: 'processando' | 'aguardando_aprovacao' | 'aprovado';
   };
   setFormData: React.Dispatch<React.SetStateAction<any>>;
   clients: any[];

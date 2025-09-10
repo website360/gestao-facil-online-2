@@ -19,7 +19,7 @@ export interface LocalBudget {
   check_due_dates: number[] | null;
   boleto_installments: number | null;
   boleto_due_dates: number[] | null;
-  status: 'aguardando_aprovacao' | 'aprovado' | 'rejeitado' | 'convertido';
+  status: 'processando' | 'aguardando_aprovacao' | 'aprovado' | 'rejeitado' | 'convertido';
   total_amount: number;
   created_at: string;
   updated_at: string;

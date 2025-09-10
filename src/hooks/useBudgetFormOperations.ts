@@ -15,7 +15,7 @@ interface FormData {
   discount_percentage: number;
   local_delivery_info: string;
   items: BudgetItem[];
-  status: 'aguardando_aprovacao' | 'aprovado';
+  status: 'processando' | 'aguardando_aprovacao' | 'aprovado';
 }
 
 interface Product {

@@ -26,7 +26,7 @@ interface FormData {
     discount_percentage: number;
     product_code?: string;
   }>;
-  status: 'aguardando_aprovacao' | 'aprovado';
+  status: 'processando' | 'aguardando_aprovacao' | 'aprovado';
 }
 
 export const useBudgetFormState = (editingBudget: LocalBudget | null) => {
@@ -53,7 +53,7 @@ export const useBudgetFormState = (editingBudget: LocalBudget | null) => {
       discount_percentage: 0, 
       product_code: ''
     }],
-    status: 'aguardando_aprovacao'
+    status: 'processando'
   });
 
   useEffect(() => {
@@ -79,9 +79,10 @@ export const useBudgetFormState = (editingBudget: LocalBudget | null) => {
       console.log('Processed items:', items);
 
       // Ensure status is compatible with FormData type
-      const formStatus: 'aguardando_aprovacao' | 'aprovado' = 
+      const formStatus: 'processando' | 'aguardando_aprovacao' | 'aprovado' = 
         editingBudget.status === 'convertido' ? 'aprovado' : 
-        (editingBudget.status as 'aguardando_aprovacao' | 'aprovado') || 'aguardando_aprovacao';
+        editingBudget.status === 'rejeitado' ? 'processando' :
+        (editingBudget.status as 'processando' | 'aguardando_aprovacao' | 'aprovado') || 'processando';
 
       const newFormData = {
         client_id: editingBudget.client_id || '',
@@ -172,7 +173,7 @@ export const useBudgetFormState = (editingBudget: LocalBudget | null) => {
               discount_percentage: 0, 
               product_code: ''
             }],
-            status: 'aguardando_aprovacao'
+            status: 'processando'
           });
         } catch (error) {
           console.error('Error initializing client data:', error);
@@ -200,7 +201,7 @@ export const useBudgetFormState = (editingBudget: LocalBudget | null) => {
               discount_percentage: 0, 
               product_code: ''
             }],
-            status: 'aguardando_aprovacao'
+            status: 'processando'
           });
         }
       };

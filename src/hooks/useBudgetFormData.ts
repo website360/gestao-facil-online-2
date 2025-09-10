@@ -28,7 +28,7 @@ interface BudgetFormData {
   boleto_installments: number;
   boleto_due_dates: number[];
   items: BudgetItem[];
-  status: 'aguardando_aprovacao' | 'aprovado';
+  status: 'processando' | 'aguardando_aprovacao' | 'aprovado';
 }
 
 export const useBudgetFormData = () => {
@@ -54,7 +54,7 @@ export const useBudgetFormData = () => {
     boleto_installments: 1,
     boleto_due_dates: [],
     items: [],
-      status: 'aguardando_aprovacao'
+    status: 'processando'
   });
 
   const resetForm = () => {
@@ -74,7 +74,7 @@ export const useBudgetFormData = () => {
       boleto_installments: 1,
       boleto_due_dates: [],
       items: [],
-      status: 'aguardando_aprovacao'
+      status: 'processando'
     });
   };
 

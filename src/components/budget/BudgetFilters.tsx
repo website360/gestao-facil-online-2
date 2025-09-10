@@ -54,11 +54,10 @@ const BudgetFilters = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os status</SelectItem>
-              <SelectItem value="aguardando">Aguardando</SelectItem>
+              <SelectItem value="processando">Processando</SelectItem>
               <SelectItem value="aguardando_aprovacao">Aguardando Aprovação</SelectItem>
               <SelectItem value="aprovado">Aprovado</SelectItem>
-              <SelectItem value="negado">Negado</SelectItem>
-              <SelectItem value="enviado">Enviado</SelectItem>
+              <SelectItem value="rejeitado">Rejeitado</SelectItem>
               <SelectItem value="convertido">Convertido</SelectItem>
             </SelectContent>
           </Select>

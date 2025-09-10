@@ -11,6 +11,7 @@ import type { LocalBudget } from '@/hooks/useBudgetManagement';
 import BudgetManagementContent from './budget/BudgetManagementContent';
 import BudgetManagementDialogs from './budget/BudgetManagementDialogs';
 import BudgetManagementLoading from './budget/BudgetManagementLoading';
+import BudgetSendForApprovalDialog from './budget/BudgetSendForApprovalDialog';
 import BulkDeleteDialog from './common/BulkDeleteDialog';
 import { toast as sonnerToast } from 'sonner';
 
@@ -19,6 +20,9 @@ const BudgetManagement = () => {
   const { userProfile, profileLoading, isAdmin } = useUserProfile();
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [deletingBulk, setDeletingBulk] = useState(false);
+  const [showSendForApprovalDialog, setShowSendForApprovalDialog] = useState(false);
+  const [budgetToSendForApproval, setBudgetToSendForApproval] = useState<string | null>(null);
+  const [sendingForApproval, setSendingForApproval] = useState(false);
 
   const {
     budgets,
@@ -97,28 +101,36 @@ const BudgetManagement = () => {
     setEditingBudget(null);
   };
 
-  const handleSendForApproval = async (budgetId: string) => {
+  const handleSendForApproval = (budgetId: string) => {
+    setBudgetToSendForApproval(budgetId);
+    setShowSendForApprovalDialog(true);
+  };
+
+  const handleSendForApprovalConfirm = async (notes?: string) => {
+    if (!budgetToSendForApproval) return;
+    
     try {
+      setSendingForApproval(true);
       const { error } = await supabase
         .from('budgets')
-        .update({ status: 'aguardando_aprovacao' as any })
-        .eq('id', budgetId);
+        .update({ 
+          status: 'aguardando_aprovacao' as any,
+          approval_notes: notes || null
+        })
+        .eq('id', budgetToSendForApproval);
 
       if (error) throw error;
       
-      toast({
-        title: "Sucesso",
-        description: "Orçamento enviado para aprovação.",
-      });
+      sonnerToast.success('Orçamento enviado para aprovação com sucesso!');
       
       fetchBudgets();
+      setShowSendForApprovalDialog(false);
+      setBudgetToSendForApproval(null);
     } catch (error) {
       console.error('Error:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao enviar orçamento para aprovação.",
-        variant: "destructive",
-      });
+      sonnerToast.error('Erro ao enviar orçamento para aprovação');
+    } finally {
+      setSendingForApproval(false);
     }
   };
 
@@ -203,6 +215,13 @@ const BudgetManagement = () => {
         onDeleteConfirm={handleDeleteConfirm}
         onConvertClose={() => setBudgetToConvert(null)}
         onConvertConfirm={handleConvertToSaleConfirm}
+      />
+
+      <BudgetSendForApprovalDialog
+        open={showSendForApprovalDialog}
+        onOpenChange={setShowSendForApprovalDialog}
+        onConfirm={handleSendForApprovalConfirm}
+        loading={sendingForApproval}
       />
     </>
   );
