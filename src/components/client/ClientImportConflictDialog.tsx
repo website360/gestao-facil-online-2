@@ -93,10 +93,10 @@ const ClientImportConflictDialog: React.FC<ClientImportConflictDialogProps> = ({
           <DialogDescription>
             Foram encontrados {conflicts.length} clientes com emails que já existem no sistema.
             Escolha como deseja proceder com cada conflito.
-            <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-800">
-              <strong>Nota:</strong> Se você escolher "Atualizar", os dados do vendedor responsável também serão atualizados caso esteja informado na planilha.
-            </div>
           </DialogDescription>
+          <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-800">
+            <strong>Nota:</strong> Se você escolher "Atualizar", os dados do vendedor responsável também serão atualizados caso esteja informado na planilha.
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">
