@@ -28,6 +28,8 @@ export const useProductManagement = () => {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sortField, setSortField] = useState<string>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     fetchProducts();
@@ -48,11 +50,56 @@ export const useProductManagement = () => {
       filtered = filtered.filter(product => product.category_id === categoryFilter);
     }
 
-    // Sort alphabetically by product name
-    filtered = filtered.sort((a, b) => a.name.localeCompare(b.name));
+    // Apply sorting
+    filtered = filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case 'name':
+          aValue = a.name;
+          bValue = b.name;
+          break;
+        case 'internal_code':
+          aValue = a.internal_code;
+          bValue = b.internal_code;
+          break;
+        case 'price':
+          aValue = a.price;
+          bValue = b.price;
+          break;
+        case 'stock':
+          aValue = a.stock;
+          bValue = b.stock;
+          break;
+        case 'category':
+          aValue = a.categories?.name || '';
+          bValue = b.categories?.name || '';
+          break;
+        case 'supplier':
+          aValue = a.suppliers?.name || '';
+          bValue = b.suppliers?.name || '';
+          break;
+        case 'created_at':
+          aValue = new Date(a.created_at);
+          bValue = new Date(b.created_at);
+          break;
+        default:
+          aValue = a.name;
+          bValue = b.name;
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        const result = aValue.localeCompare(bValue);
+        return sortDirection === 'asc' ? result : -result;
+      } else {
+        const result = aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        return sortDirection === 'asc' ? result : -result;
+      }
+    });
 
     setFilteredProducts(filtered);
-  }, [products, searchTerm, categoryFilter]);
+  }, [products, searchTerm, categoryFilter, sortField, sortDirection]);
 
   const fetchProducts = async () => {
     try {
@@ -142,6 +189,15 @@ export const useProductManagement = () => {
     }
   };
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
   return {
     products,
     filteredProducts,
@@ -152,6 +208,8 @@ export const useProductManagement = () => {
     productToDelete,
     searchTerm,
     categoryFilter,
+    sortField,
+    sortDirection,
     setSearchTerm,
     setCategoryFilter,
     setProductToDelete,
@@ -161,5 +219,6 @@ export const useProductManagement = () => {
     handleFormClose,
     handleFormSuccess,
     handleDeleteConfirm,
+    handleSort,
   };
 };

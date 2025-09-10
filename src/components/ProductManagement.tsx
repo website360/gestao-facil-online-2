@@ -57,6 +57,8 @@ const ProductManagement = () => {
     productToDelete,
     searchTerm,
     categoryFilter,
+    sortField,
+    sortDirection,
     setSearchTerm,
     setCategoryFilter,
     setProductToDelete,
@@ -66,6 +68,7 @@ const ProductManagement = () => {
     handleFormClose,
     handleFormSuccess,
     handleDeleteConfirm,
+    handleSort,
   } = useProductManagement();
 
   // Pagination state (default 100 per page)
@@ -241,6 +244,9 @@ const ProductManagement = () => {
                 isAllSelected={isAllSelected}
                 isPartiallySelected={isPartiallySelected}
                 userRole={userProfile?.role}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                onSort={handleSort}
               />
               <ProductPagination
                 currentPage={currentPage}

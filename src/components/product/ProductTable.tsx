@@ -4,7 +4,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Edit, Trash2, Package } from 'lucide-react';
+import { Edit, Trash2, Package, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -31,6 +31,9 @@ interface ProductTableProps {
   isAllSelected: boolean;
   isPartiallySelected: boolean;
   userRole?: string;
+  sortField: string;
+  sortDirection: 'asc' | 'desc';
+  onSort: (field: string) => void;
 }
 
 const ProductTable = ({ 
@@ -42,10 +45,32 @@ const ProductTable = ({
   onSelectAll, 
   isAllSelected, 
   isPartiallySelected,
-  userRole 
+  userRole,
+  sortField,
+  sortDirection,
+  onSort 
 }: ProductTableProps) => {
   // Verificar se usuário pode editar/excluir produtos (admin ou gerente)
   const canManageProducts = userRole === 'admin' || userRole === 'gerente';
+
+  const renderSortableHeader = (field: string, label: string, className?: string) => {
+    const isActive = sortField === field;
+    return (
+      <TableHead 
+        className={`cursor-pointer hover:bg-gray-100 select-none ${className || ''}`}
+        onClick={() => onSort(field)}
+      >
+        <div className="flex items-center gap-1">
+          <span>{label}</span>
+          {isActive && (
+            sortDirection === 'asc' 
+              ? <ChevronUp className="h-4 w-4" />
+              : <ChevronDown className="h-4 w-4" />
+          )}
+        </div>
+      </TableHead>
+    );
+  };
   return (
     <div className="border rounded-lg overflow-hidden">
       <Table>
@@ -62,13 +87,13 @@ const ProductTable = ({
               </TableHead>
             )}
             <TableHead>Foto</TableHead>
-            <TableHead>Produto</TableHead>
-            <TableHead>Categoria</TableHead>
-            <TableHead>Fornecedor</TableHead>
-            <TableHead>Código</TableHead>
-            <TableHead className="text-right">Preço</TableHead>
-            <TableHead className="text-right">Estoque</TableHead>
-            <TableHead>Data</TableHead>
+            {renderSortableHeader('name', 'Produto')}
+            {renderSortableHeader('category', 'Categoria')}
+            {renderSortableHeader('supplier', 'Fornecedor')}
+            {renderSortableHeader('internal_code', 'Código')}
+            {renderSortableHeader('price', 'Preço', 'text-right')}
+            {renderSortableHeader('stock', 'Estoque', 'text-right')}
+            {renderSortableHeader('created_at', 'Data')}
             {canManageProducts && <TableHead className="w-40">Ações</TableHead>}
             {!canManageProducts && <TableHead className="w-40">Visualizar</TableHead>}
           </TableRow>
