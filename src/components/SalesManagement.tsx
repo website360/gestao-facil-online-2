@@ -267,8 +267,8 @@ const SalesManagement = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-2 md:p-4 bg-transparent">
-        <div className="bg-white shadow-sm rounded-lg p-3 md:p-6 max-w-7xl mx-auto">
+      <div className="min-h-screen p-2 md:p-6 bg-transparent">
+        <div className="bg-white shadow-sm rounded-lg p-3 md:p-6">
           <div className="text-center">Carregando vendas...</div>
         </div>
       </div>

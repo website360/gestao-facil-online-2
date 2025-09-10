@@ -98,8 +98,8 @@ const SalesManagementContent = ({
   const currentSales = sales.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
-    <div className="min-h-screen p-2 md:p-4 bg-transparent">
-      <Card className="bg-white shadow-sm max-w-7xl mx-auto">
+    <div className="min-h-screen p-2 md:p-6 bg-transparent">
+      <Card className="bg-white shadow-sm">
         <CardContent className="p-3 md:p-6 space-y-4 md:space-y-6">
           <SalesManagementHeader onRefresh={onRefresh} />
 
