@@ -26,22 +26,22 @@ const Reports = () => {
         </div>
 
         <Tabs defaultValue="sales-by-date-client" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="sales-by-date-client" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6 h-auto">
+            <TabsTrigger value="sales-by-date-client" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-3 px-2 text-xs md:text-sm">
               <FileText className="w-4 h-4" />
-              Vendas por Data
+              <span className="text-center">Vendas por Data</span>
             </TabsTrigger>
-            <TabsTrigger value="sales-by-salesperson" className="flex items-center gap-2">
+            <TabsTrigger value="sales-by-salesperson" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-3 px-2 text-xs md:text-sm">
               <User className="w-4 h-4" />
-              Vendas por Vendedor
+              <span className="text-center">Vendas por Vendedor</span>
             </TabsTrigger>
-            <TabsTrigger value="stock-history" className="flex items-center gap-2">
+            <TabsTrigger value="stock-history" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-3 px-2 text-xs md:text-sm">
               <History className="w-4 h-4" />
-              Histórico de Estoque
+              <span className="text-center">Histórico de Estoque</span>
             </TabsTrigger>
-            <TabsTrigger value="shipping" className="flex items-center gap-2">
+            <TabsTrigger value="shipping" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-3 px-2 text-xs md:text-sm">
               <Truck className="w-4 h-4" />
-              Relatório de Frete
+              <span className="text-center">Relatório de Frete</span>
             </TabsTrigger>
           </TabsList>
 
