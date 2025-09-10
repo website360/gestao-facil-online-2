@@ -175,9 +175,9 @@ const ProductManagement = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6 bg-transparent">
-        <Card className="bg-white shadow-sm">
-          <CardContent className="p-6">
+      <div className="min-h-screen p-2 md:p-4 bg-transparent">
+        <Card className="bg-white shadow-sm max-w-7xl mx-auto">
+          <CardContent className="p-3 md:p-6">
             <div className="text-center">Carregando produtos...</div>
           </CardContent>
         </Card>
@@ -186,9 +186,9 @@ const ProductManagement = () => {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-transparent">
-      <Card className="bg-white shadow-sm">
-        <CardContent className="p-6 space-y-6">
+    <div className="min-h-screen p-2 md:p-4 bg-transparent">
+      <Card className="bg-white shadow-sm max-w-7xl mx-auto">
+        <CardContent className="p-3 md:p-6 space-y-4 md:space-y-6">
           <ProductManagementHeader 
             onNewProduct={handleNewProduct}
             onExportExcel={handleExportExcel}

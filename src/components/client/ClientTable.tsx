@@ -52,7 +52,7 @@ export const ClientTable = ({
 
   if (isMobile) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
           <Checkbox
             checked={isAllSelected}
@@ -63,65 +63,84 @@ export const ClientTable = ({
           <span className="text-sm text-gray-600">Selecionar todos</span>
         </div>
         {clients.map((client) => (
-          <Card key={client.id} className="border border-gray-200">
+          <Card key={client.id} className="border border-gray-200 shadow-sm">
             <CardContent className="p-4">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {/* Header com checkbox e nome */}
                 <div className="flex items-start gap-3">
                   <Checkbox
                     checked={selectedItems.has(client.id)}
                     onCheckedChange={() => onItemSelect(client.id)}
                     aria-label={`Selecionar ${client.name}`}
-                    className="mt-1"
+                    className="mt-1 flex-shrink-0"
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <h3 className="font-medium text-gray-900 truncate">{client.name}</h3>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-xs text-gray-500">Nome:</span>
+                        </div>
+                        <h3 className="font-medium text-gray-900 break-words leading-tight">{client.name}</h3>
+                      </div>
+                      <Badge className={`flex-shrink-0 ${client.client_type === 'fisica' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                        {client.client_type === 'fisica' ? 'PF' : 'PJ'}
+                      </Badge>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">{client.email}</p>
+                    
+                    {/* Email */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-gray-500">Email:</span>
+                      </div>
+                      <p className="text-sm text-gray-700 break-all">{client.email}</p>
+                    </div>
                   </div>
-                  <Badge className={client.client_type === 'fisica' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}>
-                    {client.client_type === 'fisica' ? 'PF' : 'PJ'}
-                  </Badge>
                 </div>
 
                 {/* Documento */}
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">
-                    {client.client_type === 'fisica' ? 'CPF:' : 'CNPJ:'}
-                  </span>
-                  <span className="text-sm font-mono">
+                <div className="border-t border-gray-100 pt-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="h-4 w-4 text-gray-400" />
+                    <span className="text-xs text-gray-500">
+                      {client.client_type === 'fisica' ? 'CPF:' : 'CNPJ:'}
+                    </span>
+                  </div>
+                  <span className="text-sm font-mono text-gray-900 break-all">
                     {client.client_type === 'fisica' ? client.cpf : client.cnpj}
                   </span>
                 </div>
 
                 {/* Telefone com WhatsApp */}
                 {client.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">{client.phone}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openWhatsApp(client.phone)}
-                      className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 ml-auto"
-                      title="Abrir WhatsApp Web"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                    </Button>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                      <span className="text-xs text-gray-500">Telefone:</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-900">{client.phone}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openWhatsApp(client.phone)}
+                        className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 flex-shrink-0"
+                        title="Abrir WhatsApp Web"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 )}
 
                 {/* Data de criação */}
                 <div>
-                  <span className="text-sm text-gray-500">Criado em:</span>
-                  <span className="text-sm ml-2">{new Date(client.created_at).toLocaleDateString('pt-BR')}</span>
+                  <span className="text-xs text-gray-500">Criado em:</span>
+                  <span className="text-sm ml-2 text-gray-700">{new Date(client.created_at).toLocaleDateString('pt-BR')}</span>
                 </div>
 
                 {/* Ações */}
-                <div className="flex gap-2 pt-2 border-t border-gray-100">
+                <div className="flex gap-2 pt-3 border-t border-gray-100">
                   <Button
                     variant="outline"
                     size="sm"
@@ -135,7 +154,7 @@ export const ClientTable = ({
                     variant="outline"
                     size="sm"
                     onClick={() => onDelete(client)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 px-3"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
