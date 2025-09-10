@@ -326,7 +326,7 @@ const SalesTableRow = ({
         </TableCell>
         <TableCell className="text-gray-600 py-4 px-6">{getCurrentResponsible(sale)}</TableCell>
         <TableCell className="py-4 px-6">
-          <div className="flex gap-1">
+           <div className="flex gap-1 justify-end">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
