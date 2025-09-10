@@ -65,6 +65,7 @@ export const ClientTable = ({
             <TableHead>Tipo</TableHead>
             <TableHead>Documento</TableHead>
             <TableHead>Telefone</TableHead>
+            <TableHead>Vendedor Responsável</TableHead>
             <TableHead>Data</TableHead>
             <TableHead className="w-40">Ações</TableHead>
           </TableRow>
@@ -108,6 +109,15 @@ export const ClientTable = ({
                     </Button>
                   )}
                 </div>
+              </TableCell>
+              <TableCell>
+                {client.assigned_user ? (
+                  <Badge className="bg-purple-100 text-purple-800">
+                    {client.assigned_user.name}
+                  </Badge>
+                ) : (
+                  <span className="text-sm text-gray-500">Nenhum</span>
+                )}
               </TableCell>
               <TableCell>
                 {new Date(client.created_at).toLocaleDateString('pt-BR')}

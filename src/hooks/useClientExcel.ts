@@ -23,6 +23,12 @@ interface Client {
   allow_system_access?: boolean;
   system_password?: string;
   assigned_user_id?: string;
+  assigned_user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  created_at: string;
 }
 
 interface ImportData {
@@ -44,6 +50,7 @@ interface ImportData {
   allow_system_access?: boolean;
   system_password?: string;
   assigned_user_id?: string;
+  assigned_user_name?: string; // Campo para mapear o vendedor por nome/email na importação
 }
 
 interface ConflictClient {
@@ -66,25 +73,39 @@ export const useClientExcel = () => {
     try {
       setIsProcessing(true);
 
+      // Buscar informações dos vendedores para exibir nomes na exportação
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('role', ['admin', 'gerente', 'vendas']);
+
       // Preparar dados para exportação
-      const exportData = clients.map(client => ({
-        'Nome': client.name,
-        'Email': client.email,
-        'Telefone': client.phone,
-        'Tipo': client.client_type === 'juridica' ? 'Jurídica' : 'Física',
-        'CPF': client.cpf || '',
-        'CNPJ': client.cnpj || '',
-        'Razão Social': client.razao_social || '',
-        'Data de Nascimento': client.birth_date || '',
-        'CEP': client.cep || '',
-        'Rua': client.street || '',
-        'Número': client.number || '',
-        'Complemento': client.complement || '',
-        'Bairro': client.neighborhood || '',
-        'Cidade': client.city || '',
-        'Estado': client.state || '',
-        'Acesso Sistema': client.allow_system_access ? 'Sim' : 'Não'
-      }));
+      const exportData = clients.map(client => {
+        // Encontrar o vendedor responsável
+        const assignedUser = client.assigned_user_id 
+          ? profiles?.find(p => p.id === client.assigned_user_id)
+          : null;
+
+        return {
+          'Nome': client.name,
+          'Email': client.email,
+          'Telefone': client.phone,
+          'Tipo': client.client_type === 'juridica' ? 'Jurídica' : 'Física',
+          'CPF': client.cpf || '',
+          'CNPJ': client.cnpj || '',
+          'Razão Social': client.razao_social || '',
+          'Data de Nascimento': client.birth_date || '',
+          'CEP': client.cep || '',
+          'Rua': client.street || '',
+          'Número': client.number || '',
+          'Complemento': client.complement || '',
+          'Bairro': client.neighborhood || '',
+          'Cidade': client.city || '',
+          'Estado': client.state || '',
+          'Acesso Sistema': client.allow_system_access ? 'Sim' : 'Não',
+          'Vendedor Responsável': assignedUser ? `${assignedUser.name} (${assignedUser.email})` : ''
+        };
+      });
 
       // Criar planilha
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -108,7 +129,8 @@ export const useClientExcel = () => {
         { wch: 20 }, // Bairro
         { wch: 20 }, // Cidade
         { wch: 5 },  // Estado
-        { wch: 15 }  // Acesso Sistema
+        { wch: 15 }, // Acesso Sistema
+        { wch: 35 }  // Vendedor Responsável
       ];
       worksheet['!cols'] = colWidths;
 
@@ -150,6 +172,17 @@ export const useClientExcel = () => {
 
       console.log('Arquivo lido. Total de linhas encontradas:', jsonData.length);
       
+      setImportStatus('Carregando vendedores...');
+      setImportProgress(20);
+
+      // Buscar todos os vendedores para mapeamento
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('role', ['admin', 'gerente', 'vendas']);
+
+      console.log('Vendedores carregados:', profiles?.length);
+      
       setImportStatus(`Processando ${jsonData.length} linhas...`);
       setImportProgress(30);
 
@@ -169,6 +202,22 @@ export const useClientExcel = () => {
         if (!phone || phone.trim() === '') {
           phone = `(00) 0000-0000`;
         }
+
+        // Mapear vendedor responsável
+        let assigned_user_id = '';
+        const vendedorResponsavel = row['Vendedor Responsável'] || row['vendedor_responsavel'] || '';
+        if (vendedorResponsavel && vendedorResponsavel.trim() && profiles) {
+          // Tentar encontrar por nome ou email
+          const vendedor = profiles.find(p => 
+            p.name.toLowerCase() === vendedorResponsavel.toLowerCase() ||
+            p.email.toLowerCase() === vendedorResponsavel.toLowerCase() ||
+            vendedorResponsavel.toLowerCase().includes(p.name.toLowerCase()) ||
+            vendedorResponsavel.toLowerCase().includes(p.email.toLowerCase())
+          );
+          if (vendedor) {
+            assigned_user_id = vendedor.id;
+          }
+        }
         
         return {
           name: name,
@@ -186,7 +235,9 @@ export const useClientExcel = () => {
           neighborhood: row['Bairro'] || row['bairro'] || '',
           city: row['Cidade'] || row['cidade'] || '',
           state: row['Estado'] || row['estado'] || row['uf'] || '',
-          allow_system_access: (row['Acesso Sistema'] || row['acesso_sistema'] || '').toLowerCase() === 'sim'
+          allow_system_access: (row['Acesso Sistema'] || row['acesso_sistema'] || '').toLowerCase() === 'sim',
+          assigned_user_id: assigned_user_id,
+          assigned_user_name: vendedorResponsavel
         };
       });
 
@@ -307,7 +358,7 @@ export const useClientExcel = () => {
           state: client.state ? String(client.state).trim() : null,
           allow_system_access: client.allow_system_access || false,
           system_password: client.system_password ? String(client.system_password).trim() : null,
-          assigned_user_id: client.assigned_user_id ? String(client.assigned_user_id).trim() : null
+          assigned_user_id: client.assigned_user_id || null
         }));
 
         try {
@@ -428,7 +479,7 @@ export const useClientExcel = () => {
               state: client.state ? String(client.state).trim() : null,
               allow_system_access: client.allow_system_access || false,
               system_password: client.system_password ? String(client.system_password).trim() : null,
-              assigned_user_id: client.assigned_user_id ? String(client.assigned_user_id).trim() : null
+              assigned_user_id: client.assigned_user_id || null
             })
             .eq('id', existing.id);
         }

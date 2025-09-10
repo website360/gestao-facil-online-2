@@ -77,7 +77,14 @@ export const useClientManagement = () => {
       while (hasMore) {
         let query = supabase
           .from('clients')
-          .select('*')
+          .select(`
+            *,
+            assigned_user:profiles!clients_assigned_user_id_fkey(
+              id,
+              name,
+              email
+            )
+          `)
           .order('name', { ascending: true })
           .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
 

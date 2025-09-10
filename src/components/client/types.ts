@@ -19,5 +19,10 @@ export interface Client {
   allow_system_access?: boolean;
   system_password?: string;
   assigned_user_id?: string;
+  assigned_user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
   created_at: string;
 }

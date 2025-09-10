@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Download, Upload } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ClientManagementHeaderProps {
   onNewClient: () => void;
@@ -33,10 +34,22 @@ export const ClientManagementHeader = ({ onNewClient, onExportExcel, onImportExc
           <Download className="h-4 w-4" />
           Exportar Excel
         </Button>
-        <Button onClick={handleImportClick} variant="outline" className="flex items-center gap-2">
-          <Upload className="h-4 w-4" />
-          Importar Excel
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={handleImportClick} variant="outline" className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Importar Excel
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-sm">
+              <p className="text-sm">
+                <strong>Novo:</strong> A planilha agora inclui a coluna "Vendedor Responsável".<br />
+                Você pode informar o nome ou email do vendedor para atribuir clientes automaticamente.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <Button onClick={onNewClient} className="btn-gradient">
           <Plus className="h-4 w-4 mr-2" />
           Novo Cliente
