@@ -3,8 +3,13 @@ import React from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import EmptyState from '@/components/ui/empty-state';
-import { FileText } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { FileText, Eye, Edit, Copy, ShoppingCart, Send, Check, Trash2 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import BudgetTableRow from './BudgetTableRow';
+import { formatCurrency } from '@/lib/formatters';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 
 interface BudgetTableProps {
@@ -46,6 +51,60 @@ const BudgetTable = ({
   isPartiallySelected = false,
   showBulkActions = false
 }: BudgetTableProps) => {
+  const isMobile = useIsMobile();
+
+  const formatBudgetId = (id: string, index: number) => {
+    const sequentialNumber = (index + 1).toString().padStart(8, '0');
+    return `#O${sequentialNumber}`;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'processando': return 'bg-yellow-100 text-yellow-800';
+      case 'aprovado': return 'bg-green-100 text-green-800';
+      case 'rejeitado': return 'bg-red-100 text-red-800';
+      case 'aguardando_aprovacao': return 'bg-blue-100 text-blue-800';
+      case 'convertido': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'processando': return 'Processando';
+      case 'aprovado': return 'Aprovado';
+      case 'rejeitado': return 'Rejeitado';
+      case 'aguardando_aprovacao': return 'Aguardando Aprovação';
+      case 'convertido': return 'Convertido';
+      default: return status;
+    }
+  };
+
+  const canEdit = (budget: LocalBudget) => {
+    if (isClient) return false;
+    return budget.status === 'processando' && (isAdmin || budget.creator_profile?.name);
+  };
+
+  const canDelete = (budget: LocalBudget) => {
+    if (isClient) return false;
+    return budget.status === 'processando' && (isAdmin || budget.creator_profile?.name);
+  };
+
+  const canConvert = (budget: LocalBudget) => {
+    if (isClient) return false;
+    return budget.status === 'aprovado' && isAdmin;
+  };
+
+  const canSendForApproval = (budget: LocalBudget) => {
+    if (isClient) return false;
+    return budget.status === 'processando' && onSendForApproval;
+  };
+
+  const canApprove = (budget: LocalBudget) => {
+    if (isClient) return false;
+    return budget.status === 'aguardando_aprovacao' && isAdmin && onApprove;
+  };
+
   if (budgets.length === 0) {
     return (
       <EmptyState
@@ -53,6 +112,158 @@ const BudgetTable = ({
         description="Os orçamentos aparecerão aqui quando forem criados."
         icon={FileText}
       />
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {showBulkActions && selectedItems && onItemSelect && onSelectAll && (
+          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+            <Checkbox
+              checked={isAllSelected}
+              onCheckedChange={onSelectAll}
+              aria-label="Selecionar todos"
+              {...(isPartiallySelected ? { 'data-state': 'indeterminate' } : {})}
+            />
+            <span className="text-sm text-gray-600">Selecionar todos</span>
+          </div>
+        )}
+        {budgets.map((budget, index) => (
+          <Card key={budget.id} className="border border-gray-200">
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                {/* Header com checkbox, ID e status */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {showBulkActions && selectedItems && onItemSelect && (
+                      <Checkbox
+                        checked={selectedItems.has(budget.id)}
+                        onCheckedChange={() => onItemSelect(budget.id)}
+                        aria-label={`Selecionar orçamento ${formatBudgetId(budget.id, index)}`}
+                      />
+                    )}
+                    <span className="font-mono text-sm font-medium">
+                      {formatBudgetId(budget.id, index)}
+                    </span>
+                  </div>
+                  <Badge className={getStatusColor(budget.status)}>
+                    {getStatusLabel(budget.status)}
+                  </Badge>
+                </div>
+
+                {/* Cliente */}
+                <div>
+                  <span className="text-sm text-gray-500">Cliente:</span>
+                  <p className="font-medium">{budget.clients?.name || 'Cliente não encontrado'}</p>
+                </div>
+
+                {/* Data e Total */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm text-gray-500">Data:</span>
+                    <p className="text-sm">{new Date(budget.created_at).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Total:</span>
+                    <p className="font-medium">{formatCurrency(budget.total_amount)}</p>
+                  </div>
+                </div>
+
+                {/* Vendedor (se admin) */}
+                {isAdmin && (
+                  <div>
+                    <span className="text-sm text-gray-500">Vendedor:</span>
+                    <p className="text-sm">{budget.creator_profile?.name || 'N/A'}</p>
+                  </div>
+                )}
+
+                {/* Ações */}
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onView(budget, index)}
+                    className="flex-1 min-w-0"
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    Ver
+                  </Button>
+                  
+                  {canEdit(budget) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(budget)}
+                      className="flex-1 min-w-0"
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Editar
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDuplicate(budget)}
+                    className="flex-1 min-w-0"
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Duplicar
+                  </Button>
+
+                  {canConvert(budget) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onConvert(budget)}
+                      className="flex-1 min-w-0"
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-1" />
+                      Converter
+                    </Button>
+                  )}
+
+                  {canSendForApproval(budget) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSendForApproval!(budget.id)}
+                      className="flex-1 min-w-0"
+                    >
+                      <Send className="h-4 w-4 mr-1" />
+                      Enviar
+                    </Button>
+                  )}
+
+                  {canApprove(budget) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onApprove!(budget.id)}
+                      className="flex-1 min-w-0"
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Aprovar
+                    </Button>
+                  )}
+
+                  {canDelete(budget) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onDelete(budget.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     );
   }
 
