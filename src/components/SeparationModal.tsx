@@ -12,6 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { Package, CheckCircle, Scan } from 'lucide-react';
+import SeparationConfirmModal from './SeparationConfirmModal';
 interface SaleItem {
   id: string;
   product_id: string;
@@ -54,6 +55,7 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
   const [separatedItems, setSeparatedItems] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [codeInput, setCodeInput] = useState('');
   const [codeVerification, setCodeVerification] = useState<{
     status: 'idle' | 'found' | 'not-found';
@@ -266,7 +268,7 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
       toast.error('Erro ao salvar progresso');
     }
   };
-  const handleFinalizeSeparation = async () => {
+  const handleFinalizeSeparation = () => {
     if (separatedItems.size === 0) {
       toast.error('Selecione pelo menos um item para separar');
       return;
@@ -275,7 +277,12 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
       toast.error('Todos os itens devem ser separados para finalizar');
       return;
     }
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSeparation = async () => {
     setSaving(true);
+    setShowConfirmModal(false);
     try {
       // Obter o usuário atual
       const {
@@ -445,6 +452,15 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
             </Button>
           </div>
         </div>
+
+        {/* Modal de Confirmação */}
+        <SeparationConfirmModal
+          open={showConfirmModal}
+          onOpenChange={setShowConfirmModal}
+          onConfirm={handleConfirmSeparation}
+          itemCount={saleItems.length}
+          loading={saving}
+        />
       </DialogContent>
     </Dialog>;
 };
