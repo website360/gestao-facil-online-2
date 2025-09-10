@@ -222,16 +222,15 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a função" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Administrador</SelectItem>
-                <SelectItem value="gerente">Gerente</SelectItem>
-                <SelectItem value="vendas">Vendas</SelectItem>
-                <SelectItem value="separacao">Separação</SelectItem>
-                <SelectItem value="conferencia">Conferência</SelectItem>
-                <SelectItem value="nota_fiscal">Nota Fiscal</SelectItem>
-                <SelectItem value="cliente">Cliente</SelectItem>
-                <SelectItem value="entregador">Entregador</SelectItem>
-              </SelectContent>
+               <SelectContent>
+                 <SelectItem value="admin">Administrador</SelectItem>
+                 <SelectItem value="gerente">Gerente</SelectItem>
+                 <SelectItem value="vendas">Vendas</SelectItem>
+                 <SelectItem value="separacao">Separação</SelectItem>
+                 <SelectItem value="conferencia">Conferência</SelectItem>
+                 <SelectItem value="nota_fiscal">Nota Fiscal</SelectItem>
+                 <SelectItem value="entregador">Entregador</SelectItem>
+               </SelectContent>
             </Select>
           </div>
           <div className="flex gap-2 justify-end">
