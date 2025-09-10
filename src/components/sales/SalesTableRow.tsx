@@ -393,24 +393,26 @@ const SalesTableRow = ({
       </TableCell>
       <TableCell className="text-gray-600 py-4 px-6">{getCurrentResponsible(sale)}</TableCell>
       <TableCell className="py-4 px-6">
-        <div className="flex gap-1">
-          {sale.status === 'entrega_realizada' ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onView(sale.id)}
-                  className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Visualizar</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
+        <div className="flex gap-1 justify-end">
+          {/* Botão de visualizar - sempre disponível */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onView(sale.id)}
+                className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Visualizar</p>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Botão de editar - não disponível para vendas finalizadas */}
+          {sale.status !== 'entrega_realizada' && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
