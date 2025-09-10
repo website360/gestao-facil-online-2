@@ -48,6 +48,7 @@ interface BudgetPaymentInfoProps {
   onCheckDueDatesChange?: (value: number[]) => void;
   onBoletoInstallmentsChange?: (value: number) => void;
   onBoletoDueDatesChange?: (value: number[]) => void;
+  readonly?: boolean;
 }
 
 const BudgetPaymentInfo = ({
@@ -71,7 +72,8 @@ const BudgetPaymentInfo = ({
   onCheckInstallmentsChange,
   onCheckDueDatesChange,
   onBoletoInstallmentsChange,
-  onBoletoDueDatesChange
+  onBoletoDueDatesChange,
+  readonly = false
 }: BudgetPaymentInfoProps) => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [paymentTypes, setPaymentTypes] = useState<PaymentType[]>([]);
@@ -185,7 +187,7 @@ const BudgetPaymentInfo = ({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           <div className={`space-y-2 ${(isCreditCard || isCheck || isBoleto) ? 'md:col-span-4' : 'md:col-span-6'}`}>
             <Label htmlFor="payment-method">Meio de Pagamento</Label>
-            <Select value={paymentMethodId} onValueChange={onPaymentMethodChange}>
+            <Select value={paymentMethodId} onValueChange={onPaymentMethodChange} disabled={readonly}>
               <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Selecione o meio de pagamento" />
               </SelectTrigger>
@@ -205,6 +207,7 @@ const BudgetPaymentInfo = ({
               <Select 
                 value={installments.toString()} 
                 onValueChange={(value) => onInstallmentsChange?.(parseInt(value))}
+                disabled={readonly}
               >
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Parcelas" />
@@ -226,6 +229,7 @@ const BudgetPaymentInfo = ({
               <Select 
                 value={checkInstallments.toString()} 
                 onValueChange={(value) => handleCheckInstallmentsChange(parseInt(value))}
+                disabled={readonly}
               >
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Parcelas" />
@@ -247,6 +251,7 @@ const BudgetPaymentInfo = ({
               <Select 
                 value={boletoInstallments.toString()} 
                 onValueChange={(value) => handleBoletoInstallmentsChange(parseInt(value))}
+                disabled={readonly}
               >
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Parcelas" />
@@ -264,7 +269,7 @@ const BudgetPaymentInfo = ({
 
           <div className="space-y-2 md:col-span-6">
             <Label htmlFor="payment-type">Tipo de Pagamento</Label>
-            <Select value={paymentTypeId} onValueChange={onPaymentTypeChange}>
+            <Select value={paymentTypeId} onValueChange={onPaymentTypeChange} disabled={readonly}>
               <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Selecione o tipo de pagamento" />
               </SelectTrigger>
@@ -295,6 +300,7 @@ const BudgetPaymentInfo = ({
                     value={checkDueDates[index] || ''}
                     onChange={(e) => handleCheckDueDateChange(index, parseInt(e.target.value) || 0)}
                     placeholder="Ex: 30"
+                    disabled={readonly}
                   />
                   {budgetCreatedAt && checkDueDates[index] > 0 && (
                     <div className="text-xs text-muted-foreground">
@@ -323,6 +329,7 @@ const BudgetPaymentInfo = ({
                     value={boletoDueDates[index] || ''}
                     onChange={(e) => handleBoletoDueDateChange(index, parseInt(e.target.value) || 0)}
                     placeholder="Ex: 30"
+                    disabled={readonly}
                   />
                   {budgetCreatedAt && boletoDueDates[index] > 0 && (
                     <div className="text-xs text-muted-foreground">
@@ -339,7 +346,7 @@ const BudgetPaymentInfo = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="shipping-option">Opção de Frete</Label>
-            <Select value={shippingOptionId} onValueChange={onShippingOptionChange}>
+            <Select value={shippingOptionId} onValueChange={onShippingOptionChange} disabled={readonly}>
               <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Selecione a opção de frete" />
               </SelectTrigger>
@@ -362,6 +369,7 @@ const BudgetPaymentInfo = ({
               min="0"
               value={shippingCost}
               onChange={(e) => onShippingCostChange(parseFloat(e.target.value) || 0)}
+              disabled={readonly}
             />
           </div>
         </div>
@@ -376,6 +384,7 @@ const BudgetPaymentInfo = ({
               value={localDeliveryInfo}
               onChange={(e) => onLocalDeliveryInfoChange?.(e.target.value)}
               rows={3}
+              disabled={readonly}
             />
           </div>
         )}

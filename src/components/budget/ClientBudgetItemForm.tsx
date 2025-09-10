@@ -24,6 +24,7 @@ interface ClientBudgetItemFormProps {
   onItemUpdate: (index: number, field: string, value: any) => void;
   onRemove: (index: number) => void;
   calculateItemTotal: (item: BudgetItem) => number;
+  readonly?: boolean;
 }
 
 const ClientBudgetItemForm = ({
@@ -36,7 +37,8 @@ const ClientBudgetItemForm = ({
   onProductChange,
   onItemUpdate,
   onRemove,
-  calculateItemTotal
+  calculateItemTotal,
+  readonly = false
 }: ClientBudgetItemFormProps) => {
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -64,6 +66,7 @@ const ClientBudgetItemForm = ({
           onValueChange={(value) => onProductChange(index, value)}
           options={productOptions}
           placeholder="Digite para buscar produto..."
+          disabled={readonly}
         />
       </td>
 
@@ -73,6 +76,7 @@ const ClientBudgetItemForm = ({
           value={item.product_code || ''}
           onChange={(e) => onItemUpdate(index, 'product_code', e.target.value)}
           className="h-8 text-xs"
+          disabled={readonly}
         />
       </td>
 
@@ -83,6 +87,7 @@ const ClientBudgetItemForm = ({
           value={item.quantity}
           onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
           className="h-8 text-xs text-center w-20"
+          disabled={readonly}
         />
       </td>
 
@@ -94,6 +99,7 @@ const ClientBudgetItemForm = ({
           value={item.unit_price}
           onChange={(e) => onItemUpdate(index, 'unit_price', parseFloat(e.target.value) || 0)}
           className="h-8 text-xs text-right"
+          disabled={readonly}
         />
       </td>
 
@@ -115,7 +121,7 @@ const ClientBudgetItemForm = ({
       </td>
 
       <td className="p-2 text-center">
-        {canRemove && (
+        {canRemove && !readonly && (
           <Button
             type="button"
             onClick={() => onRemove(index)}

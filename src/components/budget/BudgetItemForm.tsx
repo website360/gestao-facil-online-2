@@ -26,6 +26,7 @@ interface BudgetItemFormProps {
   onItemUpdate: (index: number, field: string, value: any) => void;
   onRemove: (index: number) => void;
   calculateItemTotal: (item: BudgetItem) => number;
+  readonly?: boolean;
 }
 
 const BudgetItemForm = ({
@@ -38,7 +39,8 @@ const BudgetItemForm = ({
   onProductChange,
   onItemUpdate,
   onRemove,
-  calculateItemTotal
+  calculateItemTotal,
+  readonly = false
 }: BudgetItemFormProps) => {
   console.log('BudgetItemForm - productOptions:', productOptions);
   console.log('BudgetItemForm - item.product_id:', item.product_id);
@@ -104,6 +106,7 @@ const BudgetItemForm = ({
           }}
           options={productOptions}
           placeholder="Digite para buscar produto..."
+          disabled={readonly}
         />
       </td>
 
@@ -122,6 +125,7 @@ const BudgetItemForm = ({
           value={item.product_code || ''}
           onChange={(e) => onItemUpdate(index, 'product_code', e.target.value)}
           className="h-8 text-xs"
+          disabled={readonly}
         />
       </td>
 
@@ -133,6 +137,7 @@ const BudgetItemForm = ({
           value={item.quantity}
           onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
           className={`h-8 text-xs text-center w-20 ${item.quantity > currentStock ? 'border-red-500 bg-red-50' : ''}`}
+          disabled={readonly}
         />
       </td>
 
@@ -144,6 +149,7 @@ const BudgetItemForm = ({
           value={item.unit_price}
           onChange={(e) => onItemUpdate(index, 'unit_price', parseFloat(e.target.value) || 0)}
           className="h-8 text-xs text-right"
+          disabled={readonly}
         />
       </td>
 
@@ -155,9 +161,9 @@ const BudgetItemForm = ({
           max={getMaxIndividualDiscount()}
           value={item.discount_percentage}
           onChange={(e) => handleDiscountChange(parseFloat(e.target.value) || 0)}
-          className={`h-8 text-xs text-center ${!canEditDiscount ? 'bg-gray-100' : ''}`}
+          className={`h-8 text-xs text-center ${!canEditDiscount || readonly ? 'bg-gray-100' : ''}`}
           placeholder={`${generalDiscount}%`}
-          disabled={!canEditDiscount}
+          disabled={!canEditDiscount || readonly}
           title={!canEditDiscount ? 'Você não tem permissão para alterar desconto' : `Máximo: ${getMaxIndividualDiscount()}%`}
         />
       </td>
@@ -169,7 +175,7 @@ const BudgetItemForm = ({
       </td>
 
       <td className="p-2 text-center">
-        {canRemove && (
+        {canRemove && !readonly && (
           <Button
             type="button"
             onClick={() => onRemove(index)}

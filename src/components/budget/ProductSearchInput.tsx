@@ -15,6 +15,7 @@ interface ProductSearchInputProps {
   options: ProductOption[];
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 const ProductSearchInput = ({
@@ -22,7 +23,8 @@ const ProductSearchInput = ({
   onValueChange,
   options,
   placeholder = "Digite para buscar produto...",
-  className = ""
+  className = "",
+  disabled = false
 }: ProductSearchInputProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -135,10 +137,11 @@ const ProductSearchInput = ({
           onFocus={handleInputFocus}
           placeholder={placeholder}
           className={`h-8 text-xs bg-background pr-16 ${className}`}
+          disabled={disabled}
         />
         
         <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {value && (
+          {value && !disabled && (
             <button
               type="button"
               onClick={handleClear}
@@ -147,13 +150,15 @@ const ProductSearchInput = ({
               <X className="h-3 w-3" />
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => setIsOpen(!isOpen)}
-            className="p-1 hover:bg-muted rounded-sm"
-          >
-            <ChevronDown className={`h-3 w-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-          </button>
+          {!disabled && (
+            <button
+              type="button"
+              onClick={() => setIsOpen(!isOpen)}
+              className="p-1 hover:bg-muted rounded-sm"
+            >
+              <ChevronDown className={`h-3 w-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+          )}
         </div>
       </div>
 

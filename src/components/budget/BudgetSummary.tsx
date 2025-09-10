@@ -27,6 +27,7 @@ interface BudgetSummaryProps {
   onDiscountChange: (value: number) => void;
   onInvoicePercentageChange: (value: number) => void;
   onNotesChange: (value: string) => void;
+  readonly?: boolean;
 }
 
 const BudgetSummary = ({
@@ -45,7 +46,8 @@ const BudgetSummary = ({
   boletoDueDates = [],
   onDiscountChange,
   onInvoicePercentageChange,
-  onNotesChange
+  onNotesChange,
+  readonly = false
 }: BudgetSummaryProps) => {
   const [paymentMethodName, setPaymentMethodName] = useState<string>('');
   const { 

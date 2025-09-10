@@ -23,6 +23,7 @@ interface ClientBudgetItemsTableProps {
   onItemUpdate: (index: number, field: string, value: any) => void;
   onRemoveItem: (index: number) => void;
   calculateItemTotal: (item: BudgetItem) => number;
+  readonly?: boolean;
 }
 
 const ClientBudgetItemsTable = ({
@@ -34,16 +35,19 @@ const ClientBudgetItemsTable = ({
   onProductChange,
   onItemUpdate,
   onRemoveItem,
-  calculateItemTotal
+  calculateItemTotal,
+  readonly = false
 }: ClientBudgetItemsTableProps) => {
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Itens do Orçamento</h3>
-        <Button type="button" onClick={onAddItem} variant="outline" size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Adicionar Item
-        </Button>
+        {!readonly && (
+          <Button type="button" onClick={onAddItem} variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Item
+          </Button>
+        )}
       </div>
 
       <div className="border rounded-lg overflow-hidden">
@@ -74,6 +78,7 @@ const ClientBudgetItemsTable = ({
                 onRemove={onRemoveItem}
                 calculateItemTotal={calculateItemTotal}
                 generalDiscount={generalDiscount}
+                readonly={readonly}
               />
             ))}
           </TableBody>

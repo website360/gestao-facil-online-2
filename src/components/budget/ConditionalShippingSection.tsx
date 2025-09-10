@@ -42,6 +42,7 @@ interface ConditionalShippingSectionProps {
     product_id: string;
     quantity: number;
   }>;
+  readonly?: boolean;
 }
 
 const ConditionalShippingSection = ({

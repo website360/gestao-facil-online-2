@@ -10,6 +10,7 @@ interface BudgetFormHeaderProps {
   onClientChange: (value: string) => void;
   onStatusChange: (value: 'processando' | 'aguardando_aprovacao' | 'aprovado') => void;
   isClient?: boolean;
+  readonly?: boolean;
 }
 
 const BudgetFormHeader = ({
@@ -18,7 +19,8 @@ const BudgetFormHeader = ({
   clientOptions,
   onClientChange,
   onStatusChange,
-  isClient = false
+  isClient = false,
+  readonly = false
 }: BudgetFormHeaderProps) => {
   console.log('BudgetFormHeader - clientOptions:', clientOptions);
   console.log('BudgetFormHeader - clientId:', clientId);
@@ -27,12 +29,12 @@ const BudgetFormHeader = ({
     <div className="grid grid-cols-1 gap-4">
       <div className="space-y-2">
         <Label htmlFor="client">Cliente *</Label>
-        {isClient ? (
+        {isClient || readonly ? (
           <div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
             {clientOptions.find(c => c.value === clientId)?.label || 'Cliente'}
           </div>
         ) : (
-          <Select value={clientId} onValueChange={onClientChange}>
+          <Select value={clientId} onValueChange={onClientChange} disabled={readonly}>
             <SelectTrigger className="bg-background">
               <SelectValue placeholder="Selecione um cliente..." />
             </SelectTrigger>

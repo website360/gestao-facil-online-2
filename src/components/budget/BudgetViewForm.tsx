@@ -129,6 +129,7 @@ const BudgetViewForm = ({
         onClientChange={noopValueHandler}
         onStatusChange={noopValueHandler}
         isClient={isClient}
+        readonly={true}
       />
 
       <BudgetPaymentInfo
@@ -153,6 +154,7 @@ const BudgetViewForm = ({
         onCheckDueDatesChange={noopValueHandler}
         onBoletoInstallmentsChange={noopValueHandler}
         onBoletoDueDatesChange={noopValueHandler}
+        readonly={true}
       />
 
       {isClient ? (
@@ -166,6 +168,7 @@ const BudgetViewForm = ({
           onItemUpdate={noopValueHandler}
           onRemoveItem={noopValueHandler}
           calculateItemTotal={calculateItemTotal}
+          readonly={true}
         />
       ) : (
         <BudgetItemsTable
@@ -178,6 +181,7 @@ const BudgetViewForm = ({
           onItemUpdate={noopValueHandler}
           onRemoveItem={noopValueHandler}
           calculateItemTotal={calculateItemTotal}
+          readonly={true}
         />
       )}
 
@@ -191,6 +195,7 @@ const BudgetViewForm = ({
         shippingOptions={shippingOptions}
         products={products}
         items={formData.items}
+        readonly={true}
       />
 
       <BudgetSummary
@@ -210,6 +215,7 @@ const BudgetViewForm = ({
         onDiscountChange={noopValueHandler}
         onInvoicePercentageChange={noopValueHandler}
         onNotesChange={noopValueHandler}
+        readonly={true}
       />
 
       <div className="flex justify-end space-x-4 pt-2">
