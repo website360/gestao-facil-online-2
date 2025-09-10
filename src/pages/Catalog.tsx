@@ -278,7 +278,7 @@ const Catalog = () => {
                   </div>
                   
                   {/* Foto do produto */}
-                  <div className="w-full h-32 mb-3 bg-gray-100 rounded-lg overflow-hidden">
+                  <div className="w-full aspect-square mb-3 bg-gray-100 rounded-lg overflow-hidden">
                     <Avatar className="w-full h-full rounded-lg">
                       <AvatarImage 
                         src={product.photo_url || ''} 
