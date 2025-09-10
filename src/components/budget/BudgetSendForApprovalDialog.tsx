@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,14 +8,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Send } from 'lucide-react';
 
 interface BudgetSendForApprovalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (notes?: string) => void;
+  onConfirm: () => void;
   loading?: boolean;
 }
 
@@ -25,16 +23,12 @@ const BudgetSendForApprovalDialog = ({
   onConfirm,
   loading = false
 }: BudgetSendForApprovalDialogProps) => {
-  const [notes, setNotes] = useState('');
-
   const handleConfirm = () => {
-    onConfirm(notes.trim() || undefined);
-    setNotes('');
+    onConfirm();
   };
 
   const handleCancel = () => {
     onOpenChange(false);
-    setNotes('');
   };
 
   return (
@@ -50,19 +44,6 @@ const BudgetSendForApprovalDialog = ({
             Após o envio, apenas administradores e gerentes poderão aprová-lo.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="notes">Observações (opcional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Adicione observações sobre este orçamento..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-            />
-          </div>
-        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={handleCancel} disabled={loading}>
