@@ -598,6 +598,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                                 <TableHead className="text-center">Preço Un</TableHead>
                                 <TableHead className="text-center">Desc. %</TableHead>
                                 <TableHead className="text-center">Preço Un Desc</TableHead>
+                                <TableHead className="text-center">Nota Fiscal</TableHead>
                                 <TableHead className="text-center">Total</TableHead>
                                 <TableHead className="text-center">Ações</TableHead>
                               </>
@@ -617,6 +618,9 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                                   <TableCell className="text-center">{formatNumber(item.unit_price)}</TableCell>
                                   <TableCell className="text-center">{saleData.discount_percentage || 0}%</TableCell>
                                   <TableCell className="text-center">{formatNumber(item.unit_price * (1 - (saleData.discount_percentage || 0) / 100))}</TableCell>
+                                  <TableCell className="text-center font-semibold text-green-600">
+                                    {formatCurrency((item.unit_price * (1 - (saleData.discount_percentage || 0) / 100)) * ((saleData.invoice_percentage || 0) / 100))}
+                                  </TableCell>
                                   <TableCell className="text-center font-semibold">{formatCurrency(item.total_price)}</TableCell>
                                   <TableCell className="text-center">
                                     <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
