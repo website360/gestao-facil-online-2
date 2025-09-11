@@ -27,34 +27,35 @@ export const ClientManagementHeader = ({ onNewClient, onExportExcel, onImportExc
   };
 
   return (
-    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+    <div className="flex flex-col gap-4">
       <h1 className="text-xl md:text-2xl font-bold text-gray-900">Gerenciamento de Clientes</h1>
-      <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button onClick={onExportExcel} variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
-            <Download className="h-4 w-4" />
-            Exportar Excel
-          </Button>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button onClick={handleImportClick} variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
-                  <Upload className="h-4 w-4" />
-                  Importar Excel
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-sm">
-                <p className="text-sm">
-                  <strong>Novo:</strong> A planilha agora inclui a coluna "Vendedor Responsável".<br />
-                  Você pode informar o nome ou email do vendedor para atribuir clientes automaticamente.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <Button onClick={onNewClient} className="btn-gradient w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row lg:justify-end gap-2 overflow-hidden">
+        <Button onClick={onExportExcel} variant="outline" className="flex items-center gap-2 flex-shrink-0">
+          <Download className="h-4 w-4" />
+          <span className="hidden sm:inline">Exportar Excel</span>
+          <span className="sm:hidden">Exportar</span>
+        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={handleImportClick} variant="outline" className="flex items-center gap-2 flex-shrink-0">
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">Importar Excel</span>
+                <span className="sm:hidden">Importar</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-sm">
+              <p className="text-sm">
+                <strong>Novo:</strong> A planilha agora inclui a coluna "Vendedor Responsável".<br />
+                Você pode informar o nome ou email do vendedor para atribuir clientes automaticamente.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <Button onClick={onNewClient} className="btn-gradient flex-shrink-0">
           <Plus className="h-4 w-4 mr-2" />
-          Novo Cliente
+          <span className="hidden sm:inline">Novo Cliente</span>
+          <span className="sm:hidden">Novo</span>
         </Button>
       </div>
       
