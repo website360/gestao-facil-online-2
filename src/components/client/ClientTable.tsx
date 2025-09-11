@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Edit, Trash2, MessageCircle, User, FileText, Phone } from 'lucide-react';
 import { Client } from './types';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsTabletOrMobile } from '@/hooks/use-tablet-mobile';
 import { toast } from 'sonner';
 
 interface ClientTableProps {
@@ -31,7 +31,7 @@ export const ClientTable = ({
   isAllSelected, 
   isPartiallySelected 
 }: ClientTableProps) => {
-  const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
   
   const formatPhoneForWhatsApp = (phone: string) => {
     // Remove todos os caracteres não numéricos
@@ -50,7 +50,7 @@ export const ClientTable = ({
     window.open(`https://wa.me/${formattedPhone}`, '_blank');
   };
 
-  if (isMobile) {
+  if (isTabletOrMobile) {
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
