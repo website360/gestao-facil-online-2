@@ -476,18 +476,18 @@ const ShippingReport = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {getShippingStats().map((stat, index) => (
-                <div key={index} className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">{stat.name}</h4>
+                <div key={index} className="p-4 border rounded-lg overflow-hidden">
+                  <h4 className="font-semibold mb-2 break-words">{stat.name}</h4>
                   <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Quantidade:</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground text-xs sm:text-sm">Quantidade:</span>
                       <span className="font-medium">{stat.count}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Valor Total:</span>
-                      <span className="font-medium">{formatCurrency(stat.totalValue)}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground text-xs sm:text-sm">Valor Total:</span>
+                      <span className="font-medium text-xs sm:text-sm">{formatCurrency(stat.totalValue)}</span>
                     </div>
                   </div>
                 </div>
@@ -518,17 +518,17 @@ const ShippingReport = () => {
           ) : (
             <div className="space-y-3">
               {records.map((record) => (
-                <div key={record.id} className="border rounded-lg p-3 md:p-4 hover:bg-muted/50">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
-                    <div className="flex items-start gap-2 md:gap-4 flex-1 min-w-0">
-                      <div className="text-xl md:text-2xl flex-shrink-0">
+                <div key={record.id} className="border rounded-lg p-3 hover:bg-muted/50 overflow-hidden">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="text-xl flex-shrink-0">
                         {getTypeIcon(record.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                          <span className="font-medium text-sm md:text-base truncate">{record.client_name}</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                          <span className="font-medium text-sm truncate">{record.client_name}</span>
                           <span className={cn(
-                            "text-xs px-2 py-1 rounded font-medium w-fit",
+                            "text-xs px-2 py-1 rounded font-medium w-fit flex-shrink-0",
                             record.type === 'budget' 
                               ? "bg-blue-100 text-blue-800" 
                               : "bg-green-100 text-green-800"
@@ -536,7 +536,7 @@ const ShippingReport = () => {
                             {getTypeLabel(record.type)}
                           </span>
                         </div>
-                        <div className="text-xs md:text-sm text-muted-foreground truncate">
+                        <div className="text-xs text-muted-foreground break-words">
                           {record.shipping_option.name}
                           {record.shipping_option.description && (
                             <span> - {record.shipping_option.description}</span>
@@ -547,16 +547,16 @@ const ShippingReport = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex justify-between md:justify-end md:text-right gap-4 md:gap-0 md:flex-col">
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t">
                       <div>
-                        <div className="text-xs md:text-sm text-muted-foreground">Frete:</div>
-                        <div className="font-semibold text-sm md:text-lg text-green-600">
+                        <div className="text-xs text-muted-foreground">Frete:</div>
+                        <div className="font-semibold text-green-600 break-all">
                           {formatCurrency(record.shipping_cost)}
                         </div>
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground">Total:</div>
-                        <div className="text-xs md:text-sm text-muted-foreground font-medium">
+                        <div className="text-sm font-medium break-all">
                           {formatCurrency(record.total_amount)}
                         </div>
                       </div>
