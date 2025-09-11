@@ -120,39 +120,45 @@ const ProductTable = ({
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
                     <p className="text-sm text-gray-500 font-mono">{product.internal_code}</p>
+                    <div className="mt-1">
+                      <span className="text-sm text-gray-500">Preço:</span>
+                      <p className="font-medium text-lg">{formatCurrency(product.price)}</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Informações principais */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-sm text-gray-500">Preço:</span>
-                    <p className="font-medium">{formatCurrency(product.price)}</p>
+                {/* Informações organizadas */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm text-gray-500">Estoque:</span>
+                      <div className="mt-1">
+                        <Badge className={product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                          {product.stock} {product.stock_unit || 'un'}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-sm text-gray-500">Estoque:</span>
-                    <Badge className={product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                      {product.stock} {product.stock_unit || 'un'}
-                    </Badge>
-                  </div>
-                </div>
 
-                {/* Categoria e Fornecedor */}
-                <div className="space-y-2">
                   {product.categories?.name && (
                     <div>
                       <span className="text-sm text-gray-500">Categoria:</span>
-                      <Badge className="ml-2 bg-blue-100 text-blue-800">
-                        {product.categories.name}
-                      </Badge>
+                      <div className="mt-1">
+                        <Badge className="bg-blue-100 text-blue-800">
+                          {product.categories.name}
+                        </Badge>
+                      </div>
                     </div>
                   )}
+
                   {product.suppliers?.name && (
                     <div>
                       <span className="text-sm text-gray-500">Fornecedor:</span>
-                      <Badge className="ml-2 bg-green-100 text-green-800">
-                        {product.suppliers.name}
-                      </Badge>
+                      <div className="mt-1">
+                        <Badge className="bg-purple-100 text-purple-800">
+                          {product.suppliers.name}
+                        </Badge>
+                      </div>
                     </div>
                   )}
                 </div>
