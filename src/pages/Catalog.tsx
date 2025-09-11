@@ -68,6 +68,11 @@ const Catalog = () => {
   const [showOutOfStock, setShowOutOfStock] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [columnsCount, setColumnsCount] = useState<number>(4);
+  
+  // Estados específicos para Admin/Gerente
+  const [showPrice, setShowPrice] = useState<boolean>(true);
+  const [discountPercentage, setDiscountPercentage] = useState<number>(0);
+  const [maxStockDisplay, setMaxStockDisplay] = useState<number>(999);
 
   useEffect(() => {
     fetchCategories();
@@ -155,6 +160,12 @@ const Catalog = () => {
     }
   };
 
+  // Função para calcular preço com desconto
+  const calculateDiscountedPrice = (originalPrice: number) => {
+    if (discountPercentage <= 0) return originalPrice;
+    return originalPrice * (1 - discountPercentage / 100);
+  };
+
   // Função para determinar se produto está em estoque baseado no tipo de usuário
   const isProductInStock = (stock: number) => {
     if (shouldUseStockLimit) {
@@ -165,12 +176,14 @@ const Catalog = () => {
 
   // Função para obter texto do status de estoque
   const getStockStatusText = (stock: number) => {
+    const displayStock = Math.min(stock, maxStockDisplay);
+    
     if (shouldUseStockLimit) {
-      if (stock > 10) return `${stock} em estoque`;
+      if (stock > 10) return `${displayStock}${stock > maxStockDisplay ? '+' : ''} em estoque`;
       if (stock > 0) return 'Estoque baixo';
       return 'Fora de estoque';
     } else {
-      if (stock > 0) return `${stock} em estoque`;
+      if (stock > 0) return `${displayStock}${stock > maxStockDisplay ? '+' : ''} em estoque`;
       return 'Fora de estoque';
     }
   };
@@ -319,6 +332,49 @@ const Catalog = () => {
                   </Select>
                 </div>
               </div>
+              
+              {/* Controles específicos para Admin/Gerente */}
+              {userType === 'admin' && (
+                <div className="flex flex-col md:flex-row gap-4 pt-4 border-t border-gray-200/50">
+                  <div className="flex items-center space-x-2 h-12 px-3 bg-blue-50/50 border border-blue-200 rounded-xl">
+                    <Checkbox
+                      id="show-price"
+                      checked={showPrice}
+                      onCheckedChange={(checked) => setShowPrice(checked as boolean)}
+                    />
+                    <label htmlFor="show-price" className="text-sm text-blue-700 font-medium">
+                      Mostrar preços
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 bg-blue-50/50 border border-blue-200 rounded-xl px-3">
+                    <label className="text-sm text-blue-700 font-medium whitespace-nowrap">
+                      Desconto (%):
+                    </label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={discountPercentage}
+                      onChange={(e) => setDiscountPercentage(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+                      className="w-20 h-8 text-center border-blue-300 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 bg-blue-50/50 border border-blue-200 rounded-xl px-3">
+                    <label className="text-sm text-blue-700 font-medium whitespace-nowrap">
+                      Estoque até:
+                    </label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={maxStockDisplay}
+                      onChange={(e) => setMaxStockDisplay(Math.max(1, parseInt(e.target.value) || 999))}
+                      className="w-20 h-8 text-center border-blue-300 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-gray-600">
               <div className="flex items-center gap-4">
@@ -330,6 +386,16 @@ const Catalog = () => {
                 {!showOutOfStock && (
                   <Badge variant="secondary" className="text-blue-600">
                     Apenas produtos com estoque
+                  </Badge>
+                )}
+                {userType === 'admin' && discountPercentage > 0 && (
+                  <Badge variant="outline" className="text-green-600">
+                    Desconto: {discountPercentage}%
+                  </Badge>
+                )}
+                {userType === 'admin' && !showPrice && (
+                  <Badge variant="outline" className="text-red-600">
+                    Preços ocultos
                   </Badge>
                 )}
               </div>
@@ -372,13 +438,27 @@ const Catalog = () => {
                 
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <div className="flex flex-col">
-                        <span className="text-2xl font-bold text-green-600">
-                          {formatCurrency(product.price)}
-                        </span>
+                    {/* Preço */}
+                    {showPrice && (
+                      <div className="flex justify-between items-center">
+                        <div className="flex flex-col">
+                          {discountPercentage > 0 ? (
+                            <div className="flex flex-col">
+                              <span className="text-lg text-gray-500 line-through">
+                                {formatCurrency(product.price)}
+                              </span>
+                              <span className="text-2xl font-bold text-green-600">
+                                {formatCurrency(calculateDiscountedPrice(product.price))}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-2xl font-bold text-green-600">
+                              {formatCurrency(product.price)}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                     
                     {/* Badge de estoque */}
                     <div className="flex flex-wrap gap-2">
