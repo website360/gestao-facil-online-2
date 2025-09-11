@@ -78,24 +78,24 @@ const ProductTable = ({
 
   if (isMobile) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-2">
         {canManageProducts && (
-          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
             <Checkbox
               checked={isAllSelected}
               onCheckedChange={onSelectAll}
               aria-label="Selecionar todos"
               {...(isPartiallySelected ? { 'data-state': 'indeterminate' } : {})}
             />
-            <span className="text-sm text-gray-600">Selecionar todos</span>
+            <span className="text-xs text-gray-600">Selecionar todos</span>
           </div>
         )}
         {products.map((product) => (
           <Card key={product.id} className="border border-gray-200">
-            <CardContent className="p-4">
-              <div className="space-y-3">
+            <CardContent className="p-3">
+              <div className="space-y-2">
                 {/* Header com checkbox e foto */}
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2">
                   {canManageProducts && (
                     <Checkbox
                       checked={selectedItems.has(product.id)}
@@ -104,7 +104,7 @@ const ProductTable = ({
                       className="mt-1"
                     />
                   )}
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-12 h-12 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
                     {product.photo_url ? (
                       <img 
                         src={product.photo_url} 
@@ -113,38 +113,36 @@ const ProductTable = ({
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Package className="h-8 w-8 text-gray-400" />
+                        <Package className="h-6 w-6 text-gray-400" />
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
-                    <p className="text-sm text-gray-500 font-mono">{product.internal_code}</p>
-                    <div className="mt-1">
-                      <span className="text-sm text-gray-500">Preço:</span>
-                      <p className="font-medium text-lg">{formatCurrency(product.price)}</p>
+                    <h3 className="font-medium text-gray-900 truncate text-sm">{product.name}</h3>
+                    <p className="text-xs text-gray-500 font-mono">{product.internal_code}</p>
+                    <div className="mt-0.5">
+                      <span className="text-xs text-gray-500">Preço:</span>
+                      <p className="font-medium text-sm">{formatCurrency(product.price)}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Informações organizadas */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-sm text-gray-500">Estoque:</span>
-                      <div className="mt-1">
-                        <Badge className={product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                          {product.stock} {product.stock_unit || 'un'}
-                        </Badge>
-                      </div>
+                <div className="space-y-1.5">
+                  <div>
+                    <span className="text-xs text-gray-500">Estoque:</span>
+                    <div className="mt-0.5">
+                      <Badge className={`text-xs ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {product.stock} {product.stock_unit || 'un'}
+                      </Badge>
                     </div>
                   </div>
 
                   {product.categories?.name && (
                     <div>
-                      <span className="text-sm text-gray-500">Categoria:</span>
-                      <div className="mt-1">
-                        <Badge className="bg-blue-100 text-blue-800">
+                      <span className="text-xs text-gray-500">Categoria:</span>
+                      <div className="mt-0.5">
+                        <Badge className="bg-blue-100 text-blue-800 text-xs">
                           {product.categories.name}
                         </Badge>
                       </div>
@@ -153,9 +151,9 @@ const ProductTable = ({
 
                   {product.suppliers?.name && (
                     <div>
-                      <span className="text-sm text-gray-500">Fornecedor:</span>
-                      <div className="mt-1">
-                        <Badge className="bg-purple-100 text-purple-800">
+                      <span className="text-xs text-gray-500">Fornecedor:</span>
+                      <div className="mt-0.5">
+                        <Badge className="bg-purple-100 text-purple-800 text-xs">
                           {product.suppliers.name}
                         </Badge>
                       </div>
@@ -165,30 +163,30 @@ const ProductTable = ({
 
                 {/* Data de criação */}
                 <div>
-                  <span className="text-sm text-gray-500">Criado em:</span>
-                  <p className="text-sm">{new Date(product.created_at).toLocaleDateString('pt-BR')}</p>
+                  <span className="text-xs text-gray-500">Criado em:</span>
+                  <p className="text-xs">{new Date(product.created_at).toLocaleDateString('pt-BR')}</p>
                 </div>
 
                 {/* Ações */}
-                <div className="flex gap-2 pt-2 border-t border-gray-100">
+                <div className="flex gap-2 pt-1.5 border-t border-gray-100">
                   {canManageProducts ? (
                     <>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => onEdit(product)}
-                        className="flex-1"
+                        className="flex-1 h-8 text-xs"
                       >
-                        <Edit className="h-4 w-4 mr-2" />
+                        <Edit className="h-3 w-3 mr-1" />
                         Editar
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => onDelete(product)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </>
                   ) : (
@@ -196,9 +194,9 @@ const ProductTable = ({
                       variant="outline"
                       size="sm"
                       onClick={() => onEdit(product)}
-                      className="flex-1"
+                      className="flex-1 h-8 text-xs"
                     >
-                      <Eye className="h-4 w-4 mr-2" />
+                      <Eye className="h-3 w-3 mr-1" />
                       Visualizar
                     </Button>
                   )}
