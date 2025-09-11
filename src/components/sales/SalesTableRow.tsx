@@ -349,24 +349,27 @@ const SalesTableRow = ({
               </TooltipContent>
             </Tooltip>
 
-            {sale.status === 'nota_fiscal' && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onConfirmInvoice(sale.id)}
-                    className="h-8 w-8 p-0 text-yellow-600 hover:text-yellow-700"
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Confirmar Geração de Nota Fiscal</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
+          {sale.status === 'nota_fiscal' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onConfirmInvoice(sale.id)}
+                  className="h-8 w-8 p-0 text-yellow-600 hover:text-yellow-700"
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Confirmar Geração de Nota Fiscal</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Ícone de anexos - disponível para nota fiscal */}
+          <SaleAttachmentsDropdown saleId={sale.id} className="h-8 w-8 p-0" />
+        </div>
         </TableCell>
       </TableRow>
     );
