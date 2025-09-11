@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { Edit, Trash2, MessageCircle, User, FileText, Phone, ChevronUp, ChevronDown } from 'lucide-react';
+import { Edit, Trash2, MessageCircle, User, FileText, Phone, ArrowUpDown } from 'lucide-react';
 import { Client } from './types';
 import { useIsTabletOrMobile } from '@/hooks/use-tablet-mobile';
 import { toast } from 'sonner';
@@ -65,20 +65,17 @@ export const ClientTable = ({
     label: string; 
     className?: string; 
   }) => {
-    const isActive = sortField === field;
     return (
-      <TableHead 
-        className={`cursor-pointer hover:bg-gray-100 select-none ${className || ''}`}
-        onClick={() => onSort(field)}
-      >
-        <div className="flex items-center gap-1">
-          <span>{label}</span>
-          {isActive && (
-            sortDirection === 'asc' 
-              ? <ChevronUp className="h-4 w-4" />
-              : <ChevronDown className="h-4 w-4" />
-          )}
-        </div>
+      <TableHead className={className || ''}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto p-0 font-semibold text-gray-700 hover:text-gray-900 hover:bg-transparent"
+          onClick={() => onSort(field)}
+        >
+          {label}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
       </TableHead>
     );
   };
