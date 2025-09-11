@@ -133,7 +133,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
             </div>
 
             {/* KPI Cards - Terceira linha - Vendas por Status */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
               <KPICard
                 title="Em Separação"
                 value={kpis.salesSeparacao}
@@ -210,7 +210,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
             </div>
 
             {/* KPI Cards - Quarta linha - Vendas por Status */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
               <KPICard
                 title="Em Separação"
                 value={kpis.salesSeparacao}
