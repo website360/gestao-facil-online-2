@@ -72,7 +72,8 @@ const Catalog = () => {
   // Estados específicos para Admin/Gerente
   const [showPrice, setShowPrice] = useState<boolean>(true);
   const [discountPercentage, setDiscountPercentage] = useState<number>(0);
-  const [maxStockDisplay, setMaxStockDisplay] = useState<number>(999);
+  const [minStock, setMinStock] = useState<number>(0);
+  const [maxStock, setMaxStock] = useState<number>(999999);
 
   useEffect(() => {
     fetchCategories();
@@ -81,7 +82,7 @@ const Catalog = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [searchTerm, selectedCategory, showOutOfStock]);
+  }, [searchTerm, selectedCategory, showOutOfStock, minStock, maxStock]);
 
   const fetchCategories = async () => {
     try {
@@ -146,6 +147,16 @@ const Catalog = () => {
         }
       }
 
+      // Aplicar filtro de range de estoque (apenas para admin)
+      if (userType === 'admin') {
+        if (minStock > 0) {
+          query = query.gte('stock', minStock);
+        }
+        if (maxStock < 999999) {
+          query = query.lte('stock', maxStock);
+        }
+      }
+
       query = query.order('name');
 
       const { data, error } = await query;
@@ -175,15 +186,13 @@ const Catalog = () => {
   };
 
   // Função para obter texto do status de estoque
-  const getStockStatusText = (stock: number) => {
-    const displayStock = Math.min(stock, maxStockDisplay);
-    
+  const getStockStatusText = (stock: number) => {    
     if (shouldUseStockLimit) {
-      if (stock > 10) return `${displayStock}${stock > maxStockDisplay ? '+' : ''} em estoque`;
+      if (stock > 10) return `${stock} em estoque`;
       if (stock > 0) return 'Estoque baixo';
       return 'Fora de estoque';
     } else {
-      if (stock > 0) return `${displayStock}${stock > maxStockDisplay ? '+' : ''} em estoque`;
+      if (stock > 0) return `${stock} em estoque`;
       return 'Fora de estoque';
     }
   };
@@ -363,13 +372,25 @@ const Catalog = () => {
                   
                   <div className="flex items-center space-x-2 bg-blue-50/50 border border-blue-200 rounded-xl px-3">
                     <label className="text-sm text-blue-700 font-medium whitespace-nowrap">
-                      Estoque até:
+                      Estoque de:
                     </label>
                     <Input
                       type="number"
+                      min="0"
+                      value={minStock}
+                      onChange={(e) => setMinStock(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-20 h-8 text-center border-blue-300 focus:border-blue-500"
+                    />
+                    <span className="text-sm text-blue-700">até:</span>
+                    <Input
+                      type="number"
                       min="1"
-                      value={maxStockDisplay}
-                      onChange={(e) => setMaxStockDisplay(Math.max(1, parseInt(e.target.value) || 999))}
+                      value={maxStock === 999999 ? '' : maxStock}
+                      placeholder="∞"
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        setMaxStock(isNaN(value) ? 999999 : Math.max(1, value));
+                      }}
                       className="w-20 h-8 text-center border-blue-300 focus:border-blue-500"
                     />
                   </div>
@@ -396,6 +417,11 @@ const Catalog = () => {
                 {userType === 'admin' && !showPrice && (
                   <Badge variant="outline" className="text-red-600">
                     Preços ocultos
+                  </Badge>
+                )}
+                {userType === 'admin' && (minStock > 0 || maxStock < 999999) && (
+                  <Badge variant="outline" className="text-purple-600">
+                    Estoque: {minStock} - {maxStock === 999999 ? '∞' : maxStock}
                   </Badge>
                 )}
               </div>
