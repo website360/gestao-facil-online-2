@@ -154,6 +154,7 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
         product_id: item.product_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
+        discount_percentage: item.discount_percentage || 0,
         total_price: item.total_price
       }));
 

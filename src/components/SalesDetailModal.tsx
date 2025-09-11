@@ -15,6 +15,7 @@ interface SaleItem {
   product_id: string;
   quantity: number;
   unit_price: number;
+  discount_percentage?: number;
   total_price: number;
   products: { name: string; internal_code: string } | null;
 }
@@ -615,8 +616,8 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                                   <TableCell className="text-center">{item.products?.internal_code || 'N/A'}</TableCell>
                                   <TableCell className="text-center">{item.quantity}</TableCell>
                                   <TableCell className="text-center">{formatNumber(item.unit_price)}</TableCell>
-                                  <TableCell className="text-center">0%</TableCell>
-                                  <TableCell className="text-center">{formatNumber(item.unit_price)}</TableCell>
+                                  <TableCell className="text-center">{item.discount_percentage || 0}%</TableCell>
+                                  <TableCell className="text-center">{formatNumber(item.unit_price * (1 - (item.discount_percentage || 0) / 100))}</TableCell>
                                   <TableCell className="text-center font-semibold">{formatCurrency(item.total_price)}</TableCell>
                                   <TableCell className="text-center">
                                     <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
