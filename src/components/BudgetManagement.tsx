@@ -59,7 +59,6 @@ const BudgetManagement = () => {
     setBudgetToConvert,
     handleDeleteConfirm,
     handleConvertToSaleConfirm,
-    handleDuplicate,
     handleSend
   } = useBudgetActions(fetchBudgets);
 
@@ -189,7 +188,6 @@ const BudgetManagement = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onView={handleView}
-        onDuplicate={handleDuplicate}
         onConvert={handleConvert}
         onSend={handleSend}
         onSendForApproval={handleSendForApproval}

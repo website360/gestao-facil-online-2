@@ -27,7 +27,6 @@ interface BudgetTableRowProps {
   onEdit: (budget: LocalBudget) => void;
   onDelete: (id: string) => void;
   onView: (budget: LocalBudget, index: number) => void;
-  onDuplicate: (budget: LocalBudget) => void;
   onConvert: (budget: LocalBudget) => void;
   onSend: (budget: LocalBudget) => void;
   onSendForApproval?: (id: string) => void;
@@ -45,7 +44,6 @@ const BudgetTableRow = ({
   onEdit,
   onDelete,
   onView,
-  onDuplicate,
   onConvert,
   onSend,
   onSendForApproval,

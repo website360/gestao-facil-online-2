@@ -17,7 +17,6 @@ interface BudgetTableProps {
   onEdit: (budget: LocalBudget) => void;
   onDelete: (id: string) => void;
   onView: (budget: LocalBudget, index: number) => void;
-  onDuplicate: (budget: LocalBudget) => void;
   onConvert: (budget: LocalBudget) => void;
   onSend: (budget: LocalBudget) => void;
   onSendForApproval?: (id: string) => void;
@@ -37,7 +36,6 @@ const BudgetTable = ({
   onEdit, 
   onDelete, 
   onView, 
-  onDuplicate, 
   onConvert, 
   onSend,
   onSendForApproval,
@@ -202,16 +200,6 @@ const BudgetTable = ({
                     </Button>
                   )}
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDuplicate(budget)}
-                    className="h-8 text-xs"
-                  >
-                    <Copy className="h-3 w-3 mr-1" />
-                    Duplicar
-                  </Button>
-
                   {canConvert(budget) && (
                     <Button
                       variant="outline"
@@ -249,15 +237,15 @@ const BudgetTable = ({
                   )}
 
                   {canDelete(budget) && (
-                     <Button
-                       variant="outline"
-                       size="sm"
-                       onClick={() => onDelete(budget.id)}
-                       className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                     >
-                       <Trash2 className="h-3 w-3 mr-1" />
-                       Excluir
-                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onDelete(budget.id)}
+                      className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Excluir
+                    </Button>
                   )}
                 </div>
               </div>
@@ -301,7 +289,6 @@ const BudgetTable = ({
               onEdit={onEdit}
               onDelete={onDelete}
               onView={onView}
-              onDuplicate={onDuplicate}
               onConvert={onConvert}
               onSend={onSend}
               onSendForApproval={onSendForApproval}

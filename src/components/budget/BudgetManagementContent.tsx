@@ -16,7 +16,6 @@ interface BudgetManagementContentProps {
   onEdit: (budget: LocalBudget) => void;
   onDelete: (id: string) => void;
   onView: (budget: LocalBudget, index: number) => void;
-  onDuplicate: (budget: LocalBudget) => void;
   onConvert: (budget: LocalBudget) => void;
   onSend: (budget: LocalBudget) => void;
   onSendForApproval?: (id: string) => void;
@@ -42,7 +41,6 @@ const BudgetManagementContent = ({
   onEdit,
   onDelete,
   onView,
-  onDuplicate,
   onConvert,
   onSend,
   onSendForApproval,
@@ -74,7 +72,6 @@ const BudgetManagementContent = ({
             onEdit={onEdit} 
             onDelete={onDelete} 
             onView={onView} 
-            onDuplicate={onDuplicate} 
             onConvert={onConvert} 
             onSend={onSend} 
             onSendForApproval={onSendForApproval} 
