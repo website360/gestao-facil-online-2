@@ -150,13 +150,7 @@ const BudgetSummary = ({
                 placeholder="0.00"
                 disabled={readonly}
                 required
-                className={invoicePercentage === 0 ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}
               />
-              {invoicePercentage === 0 && (
-                <p className="text-xs text-red-500 mt-1">
-                  Este campo é obrigatório
-                </p>
-              )}
             </div>
           </div>
         )}
