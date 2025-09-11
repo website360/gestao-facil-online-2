@@ -210,13 +210,68 @@ const CategoryManagement = () => {
             </div>
           )}
 
-          <DataTable
-            data={categories}
-            columns={columns}
-            itemsPerPage={100}
-            emptyMessage="Nenhuma categoria encontrada"
-            hideSearch={true}
-          />
+          {/* Mobile Cards */}
+          <div className="sm:hidden space-y-3">
+            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <span className="text-sm text-gray-600">Categorias cadastradas</span>
+            </div>
+            {categories.map((category) => (
+              <Card key={category.id} className="border border-gray-200">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                        <Tag className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-gray-900">{category.name}</h3>
+                        {category.description && (
+                          <p className="text-sm text-gray-600 mt-1">{category.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <span className="text-xs text-gray-500">Criado em:</span>
+                      <p className="text-sm mt-1">{new Date(category.created_at).toLocaleDateString('pt-BR')}</p>
+                    </div>
+
+                    <div className="flex gap-2 pt-3 border-t border-gray-100">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(category)}
+                        className="flex-1 h-8 text-xs"
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(category)}
+                        className="flex-1 h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Excluir
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden sm:block">
+            <DataTable
+              data={categories}
+              columns={columns}
+              itemsPerPage={100}
+              emptyMessage="Nenhuma categoria encontrada"
+              hideSearch={true}
+            />
+          </div>
         </CardContent>
       </Card>
 

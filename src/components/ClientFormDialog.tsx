@@ -128,11 +128,11 @@ const ClientFormDialog = ({ showForm, editingClient, onClose, onSuccess }: Clien
             </>
           )}
           
-          <div className="flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 sm:justify-end">
+            <Button type="button" variant="outline" onClick={onClose} className="order-2 sm:order-1">
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="order-1 sm:order-2">
               {loading ? 'Salvando...' : 'Salvar'}
             </Button>
           </div>

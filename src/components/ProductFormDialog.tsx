@@ -269,12 +269,12 @@ const ProductFormDialog = ({ showForm, editingProduct, onClose, onSuccess, readO
             </CardContent>
           </Card>
 
-          <div className="flex gap-3 justify-end pt-4 border-t">
-            <Button type="button" variant="outline" onClick={handleClose}>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-end pt-4 border-t">
+            <Button type="button" variant="outline" onClick={handleClose} className="order-2 sm:order-1">
               {readOnly ? 'Fechar' : 'Cancelar'}
             </Button>
             {!readOnly && (
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} className="order-1 sm:order-2">
                 {loading ? 'Salvando...' : 'Salvar Produto'}
               </Button>
             )}
