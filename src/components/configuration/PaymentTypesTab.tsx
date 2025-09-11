@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Receipt } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ interface PaymentType {
   name: string;
   description: string | null;
   active: boolean;
+  requires_receipt: boolean;
 }
 
 const PaymentTypesTab = () => {
@@ -26,7 +27,8 @@ const PaymentTypesTab = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    active: true
+    active: true,
+    requires_receipt: false
   });
 
   useEffect(() => {
@@ -85,7 +87,8 @@ const PaymentTypesTab = () => {
     setFormData({
       name: item.name,
       description: item.description || '',
-      active: item.active
+      active: item.active,
+      requires_receipt: item.requires_receipt
     });
     setDialogOpen(true);
   };
@@ -124,7 +127,12 @@ const PaymentTypesTab = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', active: true });
+    setFormData({ 
+      name: '', 
+      description: '', 
+      active: true, 
+      requires_receipt: false 
+    });
     setEditingItem(null);
   };
 
@@ -181,6 +189,16 @@ const PaymentTypesTab = () => {
                   />
                   <Label>Ativo</Label>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={formData.requires_receipt}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, requires_receipt: checked }))}
+                  />
+                  <Label className="flex items-center gap-2">
+                    <Receipt className="h-4 w-4" />
+                    Requer Comprovante de Pagamento
+                  </Label>
+                </div>
                 <div className="flex justify-end space-x-2">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Cancelar
@@ -203,6 +221,7 @@ const PaymentTypesTab = () => {
                 <TableHead>Nome</TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Comprovante</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -216,6 +235,12 @@ const PaymentTypesTab = () => {
                       checked={type.active}
                       onCheckedChange={(checked) => toggleActive(type.id, checked)}
                     />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Receipt className={`h-4 w-4 ${type.requires_receipt ? 'text-orange-600' : 'text-gray-400'}`} />
+                      {type.requires_receipt ? 'Sim' : 'Não'}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
