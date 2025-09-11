@@ -1,4 +1,5 @@
 
+// ProductTable component for displaying products
 import React from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
