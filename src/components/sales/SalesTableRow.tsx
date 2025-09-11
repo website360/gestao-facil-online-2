@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, FileText, Truck, Settings, Scale } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import SaleAttachmentsDropdown from './SaleAttachmentsDropdown';
 
 interface Sale {
   id: string;
@@ -525,6 +526,11 @@ const SalesTableRow = ({
                 <p>Ver Volumes ({sale.total_volumes})</p>
               </TooltipContent>
             </Tooltip>
+          )}
+
+          {/* Comprovantes de pagamento - apenas para admin e gerente */}
+          {(userRole === 'admin' || userRole === 'gerente') && sale.budget_id && (
+            <SaleAttachmentsDropdown saleId={sale.id} />
           )}
 
           {/* Botão de excluir - não aparece se entrega realizada ou se é gerente */}

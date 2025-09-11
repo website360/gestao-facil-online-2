@@ -585,6 +585,42 @@ export type Database = {
         }
         Relationships: []
       }
+      sale_attachments: {
+        Row: {
+          created_at: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          original_filename: string
+          sale_id: string
+          stored_filename: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          original_filename: string
+          sale_id: string
+          stored_filename: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          original_filename?: string
+          sale_id?: string
+          stored_filename?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       sale_items: {
         Row: {
           created_at: string

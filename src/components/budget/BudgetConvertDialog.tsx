@@ -1,20 +1,30 @@
 
 import React, { useEffect, useState } from 'react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/utils';
 import { useBudgetCalculations } from '@/hooks/useBudgetCalculations';
+import PaymentReceiptsUpload from './PaymentReceiptsUpload';
+import { toast } from 'sonner';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
+
+interface FileWithPreview {
+  file: File;
+  preview: string;
+  generatedName: string;
+}
 
 interface BudgetConvertDialogProps {
   budgetToConvert: LocalBudget | null;
   onClose: () => void;
-  onConfirm: (updatedBudget?: LocalBudget) => void;
+  onConfirm: (updatedBudget?: LocalBudget, attachments?: FileWithPreview[]) => void;
 }
 
 const BudgetConvertDialog = ({ budgetToConvert, onClose, onConfirm }: BudgetConvertDialogProps) => {
   const [currentBudget, setCurrentBudget] = useState<LocalBudget | null>(null);
   const [loading, setLoading] = useState(false);
+  const [attachments, setAttachments] = useState<FileWithPreview[]>([]);
   
   // Calcula o total atualizado do orçamento
   const { calculateBudgetTotal } = useBudgetCalculations();
@@ -83,34 +93,62 @@ const BudgetConvertDialog = ({ budgetToConvert, onClose, onConfirm }: BudgetConv
   const uniqueProducts = displayBudget?.budget_items?.length || 0;
 
   const handleConfirm = () => {
-    onConfirm(currentBudget || budgetToConvert || undefined);
+    if (attachments.length === 0) {
+      toast.error('É obrigatório adicionar pelo menos um comprovante de pagamento');
+      return;
+    }
+    onConfirm(currentBudget || budgetToConvert || undefined, attachments);
+  };
+
+  const handleFilesChange = (files: FileWithPreview[]) => {
+    setAttachments(files);
   };
 
   return (
-    <AlertDialog open={!!budgetToConvert} onOpenChange={(open) => !open && onClose()}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Confirmar Conversão</AlertDialogTitle>
-          <AlertDialogDescription>
-            Tem certeza que deseja converter este orçamento em venda? O orçamento será marcado como convertido e uma nova venda será criada.
+    <Dialog open={!!budgetToConvert} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Converter Orçamento em Venda</DialogTitle>
+          <DialogDescription>
+            Confirme a conversão e anexe os comprovantes de pagamento obrigatórios.
             {displayBudget && (
-              <div className="mt-2 p-2 bg-gray-50 rounded">
-                <strong>Cliente:</strong> {displayBudget.clients?.name}<br />
-                <strong>Valor:</strong> {formatCurrency(totalAmount)}<br />
-                <strong>Items:</strong> {uniqueProducts} produto(s) - {totalQuantity} {totalQuantity === 1 ? 'item' : 'itens'}
-                {loading && <div className="text-sm text-gray-500 mt-1">Atualizando dados...</div>}
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><strong>Cliente:</strong> {displayBudget.clients?.name}</div>
+                  <div><strong>Valor:</strong> {formatCurrency(totalAmount)}</div>
+                  <div><strong>Produtos:</strong> {uniqueProducts}</div>
+                  <div><strong>Itens:</strong> {totalQuantity}</div>
+                </div>
+                {loading && <div className="text-sm text-gray-500 mt-2">Atualizando dados...</div>}
               </div>
             )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm} className="bg-green-600 hover:bg-green-700" disabled={loading}>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          {displayBudget && (
+            <PaymentReceiptsUpload
+              clientName={displayBudget.clients?.name || 'cliente'}
+              onFilesChange={handleFilesChange}
+              disabled={loading}
+            />
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleConfirm}
+            disabled={loading || attachments.length === 0}
+            className="bg-green-600 hover:bg-green-700"
+          >
             Converter em Venda
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

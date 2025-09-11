@@ -15,7 +15,7 @@ interface BudgetManagementDialogsProps {
   onDeleteClose: () => void;
   onDeleteConfirm: () => void;
   onConvertClose: () => void;
-  onConvertConfirm: () => void;
+  onConvertConfirm: (updatedBudget?: LocalBudget, attachments?: any[]) => void;
 }
 
 const BudgetManagementDialogs = ({

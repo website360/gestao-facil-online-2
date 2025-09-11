@@ -266,8 +266,9 @@ const ClientWelcomeDashboard = () => {
     setBudgetToConvert(null);
   };
 
-  const handleConvertConfirm = () => {
-    // Implementar conversão se necessário
+  const handleConvertConfirm = (updatedBudget?: any, attachments?: any[]) => {
+    // Implementar conversão se necessário para clientes
+    console.log('Cliente tentando converter orçamento:', updatedBudget, attachments);
     setBudgetToConvert(null);
   };
 

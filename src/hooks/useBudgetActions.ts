@@ -89,7 +89,7 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
     console.log(`Stock updated successfully: ${currentStock} -> ${newStock}`);
   };
 
-  const handleConvertToSaleConfirm = async (updatedBudget?: LocalBudget) => {
+  const handleConvertToSaleConfirm = async (updatedBudget?: LocalBudget, attachments?: any[]) => {
     const budgetToUse = updatedBudget || budgetToConvert;
     if (!budgetToUse) return;
 
@@ -102,6 +102,7 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
 
       console.log('Starting budget conversion to sale...');
       console.log('Budget items:', budgetToUse.budget_items);
+      console.log('Attachments:', attachments);
 
       // Validate stock availability before proceeding
       for (const item of budgetToUse.budget_items) {
@@ -151,6 +152,52 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
 
       console.log('Sale created successfully:', saleData);
 
+      // Upload attachments if provided
+      if (attachments && attachments.length > 0) {
+        console.log('Uploading payment receipts...');
+        
+        for (const attachment of attachments) {
+          try {
+            // Upload file to storage
+            const fileExt = attachment.file.name.split('.').pop();
+            const filePath = `${saleData.id}/${attachment.generatedName}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('payment-receipts')
+              .upload(filePath, attachment.file);
+
+            if (uploadError) {
+              console.error('Error uploading file:', uploadError);
+              throw uploadError;
+            }
+
+            // Save attachment metadata
+            const { error: attachmentError } = await supabase
+              .from('sale_attachments')
+              .insert({
+                sale_id: saleData.id,
+                original_filename: attachment.file.name,
+                stored_filename: attachment.generatedName,
+                file_path: filePath,
+                file_size: attachment.file.size,
+                mime_type: attachment.file.type,
+                uploaded_by: user.id
+              });
+
+            if (attachmentError) {
+              console.error('Error saving attachment metadata:', attachmentError);
+              throw attachmentError;
+            }
+          } catch (attachmentError) {
+            console.error('Error processing attachment:', attachmentError);
+            toast.error(`Erro ao processar comprovante: ${attachment.file.name}`);
+            // Continue with other attachments
+          }
+        }
+        
+        console.log('All payment receipts uploaded successfully');
+      }
+
       // Create sale items from budget items
       const saleItems = budgetToUse.budget_items.map(item => ({
         sale_id: saleData.id,
@@ -183,7 +230,7 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
 
       if (updateError) throw updateError;
 
-      toast.success('Orçamento convertido em venda e estoque atualizado com sucesso!');
+      toast.success('Orçamento convertido em venda com sucesso! Comprovantes anexados.');
       fetchBudgets();
       navigate('/'); // Navigate to sales page
     } catch (error) {
