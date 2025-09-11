@@ -16,6 +16,7 @@ interface SaleReportData {
   client_name: string;
   salesperson_name: string;
   sale_date: string;
+  status: string;
   payment_method: string;
   payment_type: string;
   installments: number;
@@ -33,6 +34,16 @@ const SalesByDateClientReport = () => {
   const [totalSales, setTotalSales] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const getStatusLabel = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      'separacao': 'Separação',
+      'conferencia': 'Conferência',
+      'nota_fiscal': 'Nota Fiscal',
+      'entrega_realizada': 'Entrega Realizada'
+    };
+    return statusMap[status] || status;
+  };
+
   const generateReport = async () => {
     if (!startDate || !endDate) {
       toast.error('Por favor, selecione as datas de início e fim');
@@ -49,6 +60,7 @@ const SalesByDateClientReport = () => {
           id,
           total_amount,
           created_at,
+          status,
           budget_id,
           created_by,
           clients!inner(
@@ -162,6 +174,7 @@ const SalesByDateClientReport = () => {
             client_name: sale.clients.name,
             salesperson_name: salespersonName,
             sale_date: saleDate.toLocaleDateString('pt-BR'),
+            status: getStatusLabel(sale.status),
             payment_method: budget?.payment_methods?.name || 'N/A',
             payment_type: budget?.payment_types?.name || 'N/A',
             installments: installments,
@@ -207,6 +220,7 @@ const SalesByDateClientReport = () => {
       'Cliente',
       'Vendedor',
       'Data da Venda',
+      'Status',
       'Meio de Pagamento',
       'Tipo de Pagamento',
       'Parcelas',
@@ -223,6 +237,7 @@ const SalesByDateClientReport = () => {
         clientData.client_name,
         clientData.salesperson_name,
         clientData.sale_date,
+        clientData.status,
         clientData.payment_method,
         clientData.payment_type,
         clientData.installments,
@@ -347,6 +362,7 @@ const SalesByDateClientReport = () => {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Vendedor</TableHead>
                     <TableHead>Data da Venda</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Meio de Pagamento</TableHead>
                     <TableHead>Tipo de Pagamento</TableHead>
                     <TableHead className="text-center">Parcelas</TableHead>
@@ -363,6 +379,7 @@ const SalesByDateClientReport = () => {
                       <TableCell className="font-medium">{clientData.client_name}</TableCell>
                       <TableCell>{clientData.salesperson_name}</TableCell>
                       <TableCell>{clientData.sale_date}</TableCell>
+                      <TableCell>{clientData.status}</TableCell>
                       <TableCell>{clientData.payment_method}</TableCell>
                       <TableCell>{clientData.payment_type}</TableCell>
                       <TableCell className="text-center">{clientData.installments}</TableCell>
