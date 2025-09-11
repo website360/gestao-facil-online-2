@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Edit, Trash2, Package, ChevronUp, ChevronDown, Eye } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsTabletOrMobile } from '@/hooks/use-tablet-mobile';
 import { formatCurrency } from '@/lib/formatters';
 
 interface Product {
@@ -53,7 +53,7 @@ const ProductTable = ({
   sortDirection,
   onSort 
 }: ProductTableProps) => {
-  const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
   // Verificar se usuário pode editar/excluir produtos (admin ou gerente)
   const canManageProducts = userRole === 'admin' || userRole === 'gerente';
 
@@ -76,7 +76,7 @@ const ProductTable = ({
     );
   };
 
-  if (isMobile) {
+  if (isTabletOrMobile) {
     return (
       <div className="space-y-2">
         {canManageProducts && (
