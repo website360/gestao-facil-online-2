@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
-import { Search, ShoppingBag, Package, Filter } from 'lucide-react';
+import { Search, ShoppingBag, Package, Filter, AlertCircle, Link } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -43,10 +44,24 @@ interface Category {
 const Catalog = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, isClient, userProfile } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   
   // Verificar se é a versão pública do catálogo
   const isPublicCatalog = location.pathname === '/catalog-public';
+  
+  // Determinar o tipo de usuário para lógica de estoque
+  const getUserType = () => {
+    if (!user && !isClient) return 'public'; // Usuário não logado
+    if (isClient) return 'client'; // Cliente logado
+    if (userProfile?.role === 'vendas') return 'seller'; // Vendedor
+    if (userProfile?.role === 'admin' || userProfile?.role === 'gerente') return 'admin'; // Admin/Gerente
+    return 'seller'; // Default para outros roles
+  };
+  
+  const userType = getUserType();
+  const shouldUseStockLimit = ['public', 'client', 'seller'].includes(userType);
+  
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -117,8 +132,13 @@ const Catalog = () => {
 
       // Apply stock filter
       if (!showOutOfStock) {
-        // Por padrão, mostrar apenas produtos com estoque (>= 1)
-        query = query.gte('stock', 1);
+        if (shouldUseStockLimit) {
+          // Para público, cliente e vendedor: produtos com mais de 10 unidades são considerados "em estoque"
+          query = query.gt('stock', 10);
+        } else {
+          // Para admin e gerente: produtos com 1 ou mais unidades são considerados "em estoque"
+          query = query.gte('stock', 1);
+        }
       }
 
       query = query.order('name');
@@ -132,6 +152,38 @@ const Catalog = () => {
       toast.error('Erro ao carregar produtos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Função para determinar se produto está em estoque baseado no tipo de usuário
+  const isProductInStock = (stock: number) => {
+    if (shouldUseStockLimit) {
+      return stock > 10; // Público, cliente e vendedor: mais de 10 unidades
+    }
+    return stock > 0; // Admin e gerente: qualquer quantidade acima de 0
+  };
+
+  // Função para obter texto do status de estoque
+  const getStockStatusText = (stock: number) => {
+    if (shouldUseStockLimit) {
+      if (stock > 10) return `${stock} em estoque`;
+      if (stock > 0) return 'Estoque baixo';
+      return 'Fora de estoque';
+    } else {
+      if (stock > 0) return `${stock} em estoque`;
+      return 'Fora de estoque';
+    }
+  };
+
+  // Função para obter cor do badge de estoque
+  const getStockBadgeVariant = (stock: number) => {
+    if (shouldUseStockLimit) {
+      if (stock > 10) return 'default'; // Verde
+      if (stock > 0) return 'secondary'; // Amarelo/Warning
+      return 'destructive'; // Vermelho
+    } else {
+      if (stock > 0) return 'default';
+      return 'destructive';
     }
   };
 
@@ -183,6 +235,31 @@ const Catalog = () => {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Catálogo de Produtos</h1>
           <p className="text-gray-600 mb-4">Visualize nossos produtos disponíveis</p>
+          
+          {/* Indicador do tipo de visualização */}
+          {userType !== 'public' && (
+            <div className="flex justify-center mb-4">
+              <Badge variant="outline" className="text-sm">
+                {userType === 'admin' ? 'Visualização Administrativa (estoque real)' : 
+                 userType === 'client' ? 'Visualização Cliente' : 
+                 userType === 'seller' ? 'Visualização Vendedor' : 'Visualização Pública'}
+              </Badge>
+            </div>
+          )}
+          
+          {/* Link para cadastro se for público */}
+          {userType === 'public' && (
+            <div className="flex justify-center mb-4">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/cadastro')}
+                className="flex items-center gap-2"
+              >
+                <Link className="w-4 h-4" />
+                Solicitar Cadastro
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Search and filters section */}
@@ -225,7 +302,7 @@ const Catalog = () => {
                       onCheckedChange={(checked) => setShowOutOfStock(checked as boolean)}
                     />
                     <label htmlFor="show-out-of-stock" className="text-sm text-gray-700">
-                      Incluir produtos sem estoque
+                      {shouldUseStockLimit ? 'Incluir produtos com estoque baixo/zerado' : 'Incluir produtos sem estoque'}
                     </label>
                   </div>
                 </div>
@@ -247,12 +324,18 @@ const Catalog = () => {
               <div className="flex items-center gap-4">
                 {showOutOfStock && (
                   <Badge variant="outline" className="text-orange-600">
-                    Incluindo produtos sem estoque
+                    {shouldUseStockLimit ? 'Incluindo produtos com estoque baixo/zerado' : 'Incluindo produtos sem estoque'}
                   </Badge>
                 )}
                 {!showOutOfStock && (
                   <Badge variant="secondary" className="text-blue-600">
-                    Apenas produtos com estoque
+                    {shouldUseStockLimit ? 'Apenas produtos com estoque disponível (10+)' : 'Apenas produtos com estoque'}
+                  </Badge>
+                )}
+                {shouldUseStockLimit && (
+                  <Badge variant="outline" className="text-gray-600 text-xs">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    Estoque baixo: ≤10 unidades
                   </Badge>
                 )}
               </div>
@@ -302,12 +385,20 @@ const Catalog = () => {
                         </span>
                       </div>
                     </div>
-                    {product.categories && (
-                      <Badge variant="outline">
-                        {product.categories.name}
+                    
+                    {/* Badge de estoque */}
+                    <div className="flex flex-wrap gap-2">
+                      {product.categories && (
+                        <Badge variant="outline">
+                          {product.categories.name}
+                        </Badge>
+                      )}
+                      <Badge variant={getStockBadgeVariant(product.stock)}>
+                        {getStockStatusText(product.stock)}
                       </Badge>
-                    )}
-                     {product.observation && (
+                    </div>
+                    
+                    {product.observation && (
                        <div className="text-sm text-gray-600 mt-2 p-2 bg-gray-50 rounded-md">
                          <strong>Observação:</strong> {product.observation}
                        </div>

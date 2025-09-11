@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   isClient: boolean;
   clientData: any;
+  userProfile: any;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInAsClient: (email: string, password: string) => Promise<{ error: any; client?: any }>;
   signOut: () => Promise<void>;
@@ -22,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const [clientData, setClientData] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     // Verificar se há dados de cliente salvos no localStorage
@@ -51,6 +53,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsClient(false);
           setClientData(null);
         }
+
+        // Fetch user profile if authenticated
+        if (session?.user) {
+          fetchUserProfile(session.user.id);
+        } else {
+          setUserProfile(null);
+        }
       }
     );
 
@@ -59,10 +68,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Fetch user profile if authenticated
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role, name, email')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+      
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -124,6 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loading,
       isClient,
       clientData,
+      userProfile,
       signIn,
       signInAsClient,
       signOut,
