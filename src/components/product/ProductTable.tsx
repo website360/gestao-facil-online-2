@@ -127,36 +127,30 @@ const ProductTable = ({
                   </div>
                 </div>
 
-                {/* Informações organizadas */}
-                <div className="space-y-1.5">
+                {/* Informações organizadas lado a lado */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div>
-                    <span className="text-xs text-gray-500">Estoque:</span>
-                    <div className="mt-0.5">
-                      <Badge className={`text-xs ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {product.stock} {product.stock_unit || 'un'}
-                      </Badge>
-                    </div>
+                    <span className="text-xs text-gray-500 block">Estoque:</span>
+                    <Badge className={`text-xs mt-1 ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {product.stock} {product.stock_unit || 'un'}
+                    </Badge>
                   </div>
 
                   {product.categories?.name && (
                     <div>
-                      <span className="text-xs text-gray-500">Categoria:</span>
-                      <div className="mt-0.5">
-                        <Badge className="bg-blue-100 text-blue-800 text-xs">
-                          {product.categories.name}
-                        </Badge>
-                      </div>
+                      <span className="text-xs text-gray-500 block">Categoria:</span>
+                      <Badge className="bg-blue-100 text-blue-800 text-xs mt-1">
+                        {product.categories.name}
+                      </Badge>
                     </div>
                   )}
 
                   {product.suppliers?.name && (
                     <div>
-                      <span className="text-xs text-gray-500">Fornecedor:</span>
-                      <div className="mt-0.5">
-                        <Badge className="bg-purple-100 text-purple-800 text-xs">
-                          {product.suppliers.name}
-                        </Badge>
-                      </div>
+                      <span className="text-xs text-gray-500 block">Fornecedor:</span>
+                      <Badge className="bg-purple-100 text-purple-800 text-xs mt-1">
+                        {product.suppliers.name}
+                      </Badge>
                     </div>
                   )}
                 </div>

@@ -34,7 +34,7 @@ const ProductManagementHeader = ({ onNewProduct, onExportExcel, onImportExcel, o
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-xl md:text-2xl font-bold text-gray-900">Gerenciamento de Produtos</h1>
-      <div className="flex flex-col sm:flex-row lg:justify-end gap-2 overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:justify-end gap-2 overflow-hidden">
         {(userRole === 'admin' || userRole === 'gerente') && (
           <>
             <Button onClick={onExportExcel} variant="outline" className="flex items-center gap-2 flex-shrink-0">
@@ -72,7 +72,7 @@ const ProductManagementHeader = ({ onNewProduct, onExportExcel, onImportExcel, o
           </>
         )}
         {(userRole === 'admin' || userRole === 'gerente') && (
-          <Button onClick={onNewProduct} className="btn-gradient flex-shrink-0">
+          <Button onClick={onNewProduct} className="btn-gradient flex-shrink-0 col-span-2 sm:col-span-1">
             <Plus className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Novo Produto</span>
             <span className="sm:hidden">Novo</span>
