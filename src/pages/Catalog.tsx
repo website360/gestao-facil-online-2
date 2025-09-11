@@ -302,7 +302,7 @@ const Catalog = () => {
                       onCheckedChange={(checked) => setShowOutOfStock(checked as boolean)}
                     />
                     <label htmlFor="show-out-of-stock" className="text-sm text-gray-700">
-                      {shouldUseStockLimit ? 'Incluir produtos com estoque baixo/zerado' : 'Incluir produtos sem estoque'}
+                      Incluir produtos sem estoque
                     </label>
                   </div>
                 </div>
@@ -324,18 +324,12 @@ const Catalog = () => {
               <div className="flex items-center gap-4">
                 {showOutOfStock && (
                   <Badge variant="outline" className="text-orange-600">
-                    {shouldUseStockLimit ? 'Incluindo produtos com estoque baixo/zerado' : 'Incluindo produtos sem estoque'}
+                    Incluindo produtos sem estoque
                   </Badge>
                 )}
                 {!showOutOfStock && (
                   <Badge variant="secondary" className="text-blue-600">
-                    {shouldUseStockLimit ? 'Apenas produtos com estoque disponível (10+)' : 'Apenas produtos com estoque'}
-                  </Badge>
-                )}
-                {shouldUseStockLimit && (
-                  <Badge variant="outline" className="text-gray-600 text-xs">
-                    <AlertCircle className="w-3 h-3 mr-1" />
-                    Estoque baixo: ≤10 unidades
+                    Apenas produtos com estoque
                   </Badge>
                 )}
               </div>
