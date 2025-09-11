@@ -516,40 +516,48 @@ const ShippingReport = () => {
           ) : (
             <div className="space-y-3">
               {records.map((record) => (
-                <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
-                  <div className="flex items-center gap-4">
-                    <div className="text-2xl">
-                      {getTypeIcon(record.type)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">{record.client_name}</span>
-                        <span className={cn(
-                          "text-xs px-2 py-1 rounded font-medium",
-                          record.type === 'budget' 
-                            ? "bg-blue-100 text-blue-800" 
-                            : "bg-green-100 text-green-800"
-                        )}>
-                          {getTypeLabel(record.type)}
-                        </span>
+                <div key={record.id} className="border rounded-lg p-3 md:p-4 hover:bg-muted/50">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+                    <div className="flex items-start gap-2 md:gap-4 flex-1 min-w-0">
+                      <div className="text-xl md:text-2xl flex-shrink-0">
+                        {getTypeIcon(record.type)}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {record.shipping_option.name}
-                        {record.shipping_option.description && (
-                          <span> - {record.shipping_option.description}</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        📅 {formatDateTime(record.created_at)}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                          <span className="font-medium text-sm md:text-base truncate">{record.client_name}</span>
+                          <span className={cn(
+                            "text-xs px-2 py-1 rounded font-medium w-fit",
+                            record.type === 'budget' 
+                              ? "bg-blue-100 text-blue-800" 
+                              : "bg-green-100 text-green-800"
+                          )}>
+                            {getTypeLabel(record.type)}
+                          </span>
+                        </div>
+                        <div className="text-xs md:text-sm text-muted-foreground truncate">
+                          {record.shipping_option.name}
+                          {record.shipping_option.description && (
+                            <span> - {record.shipping_option.description}</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          📅 {formatDateTime(record.created_at)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-lg text-green-600">
-                      {formatCurrency(record.shipping_cost)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Total: {formatCurrency(record.total_amount)}
+                    <div className="flex justify-between md:justify-end md:text-right gap-4 md:gap-0 md:flex-col">
+                      <div>
+                        <div className="text-xs md:text-sm text-muted-foreground">Frete:</div>
+                        <div className="font-semibold text-sm md:text-lg text-green-600">
+                          {formatCurrency(record.shipping_cost)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Total:</div>
+                        <div className="text-xs md:text-sm text-muted-foreground font-medium">
+                          {formatCurrency(record.total_amount)}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
