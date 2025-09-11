@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatCurrency } from '@/lib/formatters';
+import { formatCurrency, formatNumber } from '@/lib/formatters';
 import ProductSearchInput from './ProductSearchInput';
 
 interface BudgetItem {
@@ -103,11 +103,16 @@ const ClientBudgetItemForm = ({
 
       <td className="p-2">
         <Input
-          type="number"
-          step="0.01"
-          min="0"
-          value={item.unit_price}
-          onChange={(e) => onItemUpdate(index, 'unit_price', parseFloat(e.target.value) || 0)}
+          type="text"
+          inputMode="decimal"
+          value={formatNumber(item.unit_price)}
+          onChange={(e) => {
+            const raw = e.target.value;
+            const sanitized = raw.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '');
+            const parsed = parseFloat(sanitized);
+            onItemUpdate(index, 'unit_price', isNaN(parsed) ? 0 : parsed);
+          }}
+          placeholder="0,00"
           className="h-8 text-xs text-right"
           disabled={readonly}
         />
