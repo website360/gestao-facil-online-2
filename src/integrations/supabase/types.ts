@@ -534,6 +534,57 @@ export type Database = {
         }
         Relationships: []
       }
+      registration_requests: {
+        Row: {
+          address: string
+          city: string
+          company: string | null
+          created_at: string
+          document: string
+          email: string
+          id: string
+          message: string | null
+          name: string
+          phone: string
+          state: string
+          status: string
+          updated_at: string
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          city: string
+          company?: string | null
+          created_at?: string
+          document: string
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          phone: string
+          state: string
+          status?: string
+          updated_at?: string
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          company?: string | null
+          created_at?: string
+          document?: string
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string
+          state?: string
+          status?: string
+          updated_at?: string
+          zip_code?: string
+        }
+        Relationships: []
+      }
       sale_items: {
         Row: {
           created_at: string
