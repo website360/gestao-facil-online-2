@@ -118,14 +118,14 @@ const CategoryManagement = () => {
       key: 'name',
       header: 'Categoria',
       render: (category) => (
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Tag className="h-4 w-4 text-blue-600" />
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="p-1 md:p-2 bg-blue-100 rounded-md md:rounded-lg">
+            <Tag className="h-3 w-3 md:h-4 md:w-4 text-blue-600" />
           </div>
           <div>
-            <div className="font-medium">{category.name}</div>
+            <div className="font-medium text-sm md:text-base">{category.name}</div>
             {category.description && (
-              <div className="text-sm text-gray-500">{category.description}</div>
+              <div className="text-xs md:text-sm text-gray-500">{category.description}</div>
             )}
           </div>
         </div>
@@ -148,19 +148,19 @@ const CategoryManagement = () => {
             variant="ghost"
             size="sm"
             onClick={() => handleEdit(category)}
-            className="h-8 w-8 p-0"
+            className="h-6 w-6 md:h-8 md:w-8 p-0"
             title="Editar categoria"
           >
-            <Edit className="h-4 w-4" />
+            <Edit className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => handleDelete(category)}
-            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+            className="h-6 w-6 md:h-8 md:w-8 p-0 text-red-600 hover:text-red-700"
             title="Excluir categoria"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
         </div>
       ),
@@ -169,9 +169,9 @@ const CategoryManagement = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6 bg-transparent">
+      <div className="min-h-screen p-2 md:p-6 bg-transparent">
         <Card className="bg-white shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-3 md:p-6">
             <div className="text-center">Carregando categorias...</div>
           </CardContent>
         </Card>
@@ -180,21 +180,21 @@ const CategoryManagement = () => {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-transparent">
+    <div className="min-h-screen p-2 md:p-6 bg-transparent">
       <Card className="bg-white shadow-sm">
-        <CardContent className="p-6 space-y-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Categorias</h1>
-            <Button onClick={handleNewCategory} className="btn-gradient">
+        <CardContent className="p-3 md:p-6 space-y-3 md:space-y-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Categorias</h1>
+            <Button onClick={handleNewCategory} className="btn-gradient w-full md:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Nova Categoria
             </Button>
           </div>
 
           {selectedCount > 0 && (
-            <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-blue-900">
+                <span className="text-xs md:text-sm font-medium text-blue-900">
                   {selectedCount} categoria(s) selecionada(s)
                 </span>
               </div>
@@ -202,9 +202,9 @@ const CategoryManagement = () => {
                 variant="destructive"
                 size="sm"
                 onClick={() => setShowBulkDeleteDialog(true)}
-                className="h-8"
+                className="h-7 md:h-8 text-xs md:text-sm"
               >
-                <TrashIcon className="h-4 w-4 mr-2" />
+                <TrashIcon className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
                 Excluir Selecionadas
               </Button>
             </div>

@@ -30,9 +30,9 @@ const UserManagement = () => {
   // Verificar se o usuário tem acesso à página
   if (userProfile && !['admin', 'gerente'].includes(userProfile.role)) {
     return (
-      <div className="min-h-screen p-6 bg-transparent">
+      <div className="min-h-screen p-2 md:p-6 bg-transparent">
         <Card className="bg-white shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-3 md:p-6">
             <div className="text-center text-red-600">
               Acesso negado. Você não tem permissão para acessar esta página.
             </div>
@@ -185,13 +185,13 @@ const UserManagement = () => {
       key: 'name',
       header: 'Usuário',
       render: (user) => (
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-            <UserCircle className="h-5 w-5 text-gray-500" />
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="w-8 h-8 md:w-10 md:h-10 bg-gray-100 rounded-md md:rounded-lg flex items-center justify-center">
+            <UserCircle className="h-4 w-4 md:h-5 md:w-5 text-gray-500" />
           </div>
           <div>
-            <div className="font-medium">{user.name}</div>
-            <div className="text-sm text-gray-500">{user.email}</div>
+            <div className="font-medium text-sm md:text-base">{user.name}</div>
+            <div className="text-xs md:text-sm text-gray-500">{user.email}</div>
           </div>
         </div>
       ),
@@ -222,20 +222,20 @@ const UserManagement = () => {
             variant="ghost"
             size="sm"
             onClick={() => handleEdit(user)}
-            className="h-8 w-8 p-0"
+            className="h-6 w-6 md:h-8 md:w-8 p-0"
             title="Editar usuário"
           >
-            <Edit className="h-4 w-4" />
+            <Edit className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
           {canDeleteUser(user) && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleDelete(user)}
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+              className="h-6 w-6 md:h-8 md:w-8 p-0 text-red-600 hover:text-red-700"
               title="Excluir usuário"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           )}
         </div>
@@ -245,9 +245,9 @@ const UserManagement = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6 bg-transparent">
+      <div className="min-h-screen p-2 md:p-6 bg-transparent">
         <Card className="bg-white shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-3 md:p-6">
             <div className="text-center">Carregando usuários...</div>
           </CardContent>
         </Card>
@@ -256,13 +256,13 @@ const UserManagement = () => {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-transparent">
+    <div className="min-h-screen p-2 md:p-6 bg-transparent">
       <Card className="bg-white shadow-sm">
-        <CardContent className="p-6 space-y-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
+        <CardContent className="p-3 md:p-6 space-y-3 md:space-y-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 md:gap-0">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
             {userProfile?.role === 'admin' && (
-              <Button onClick={handleNewUser} className="btn-gradient">
+              <Button onClick={handleNewUser} className="btn-gradient w-full md:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Usuário
               </Button>

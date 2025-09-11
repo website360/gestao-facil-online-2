@@ -137,29 +137,29 @@ export function DataTable<T extends Record<string, any>>({
   };
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`space-y-2 md:space-y-4 ${className}`}>
       {/* Search and Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-2 md:gap-4 items-start sm:items-center justify-between">
         {!hideSearch && (
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-2 md:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 md:h-4 md:w-4" />
             <Input
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-8 md:pl-10 h-8 md:h-10 text-sm"
             />
           </div>
         )}
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Itens por página:</span>
+            <span className="text-xs md:text-sm text-gray-600">Itens por página:</span>
             <Select value={pageSize.toString()} onValueChange={(value) => {
               setPageSize(Number(value));
               setCurrentPage(1);
             }}>
-              <SelectTrigger className="w-20">
+              <SelectTrigger className="w-16 md:w-20 h-8 md:h-10 text-xs md:text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -171,7 +171,7 @@ export function DataTable<T extends Record<string, any>>({
             </Select>
           </div>
           
-          <div className="text-sm text-gray-600">
+          <div className="text-xs md:text-sm text-gray-600">
             {totalItems > 0 ? (
               <>
                 {startIndex + 1}-{endIndex} de {totalItems} registros
@@ -184,7 +184,7 @@ export function DataTable<T extends Record<string, any>>({
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-md md:rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50">
@@ -194,7 +194,7 @@ export function DataTable<T extends Record<string, any>>({
                   className={`${column.sortable !== false ? 'cursor-pointer hover:bg-gray-100' : ''} ${column.width || ''} ${
                     column.align === 'center' ? 'text-center' : 
                     column.align === 'right' ? 'text-right' : 'text-left'
-                  }`}
+                  } text-xs md:text-sm py-2 md:py-3 px-2 md:px-4`}
                   onClick={() => column.sortable !== false && handleSort(column.key as string)}
                 >
                   <div className={`flex items-center gap-1 ${
@@ -213,7 +213,7 @@ export function DataTable<T extends Record<string, any>>({
               currentData.map((item, index) => (
                 <TableRow key={index} className="hover:bg-gray-50">
                   {columns.map((column) => (
-                    <TableCell key={column.key as string} className={column.width || ''}>
+                    <TableCell key={column.key as string} className={`${column.width || ''} text-xs md:text-sm py-2 md:py-3 px-2 md:px-4`}>
                       {column.render
                         ? column.render(item, startIndex + index)
                         : item[column.key as keyof T]?.toString() || '-'}
@@ -238,19 +238,20 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div className="text-xs md:text-sm text-gray-600 order-2 sm:order-1">
             Página {currentPage} de {totalPages}
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2 order-1 sm:order-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => handlePageChange(1)}
               disabled={currentPage === 1}
+              className="h-7 w-7 md:h-8 md:w-8 p-0"
             >
-              <ChevronsLeft className="h-4 w-4" />
+              <ChevronsLeft className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
             
             <Button
@@ -258,8 +259,9 @@ export function DataTable<T extends Record<string, any>>({
               size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
+              className="h-7 w-7 md:h-8 md:w-8 p-0"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
             
             {/* Page numbers */}
@@ -281,7 +283,7 @@ export function DataTable<T extends Record<string, any>>({
                   variant={currentPage === pageNum ? "default" : "outline"}
                   size="sm"
                   onClick={() => handlePageChange(pageNum)}
-                  className="w-8 h-8 p-0"
+                  className="w-6 h-6 md:w-8 md:h-8 p-0 text-xs md:text-sm"
                 >
                   {pageNum}
                 </Button>
@@ -293,8 +295,9 @@ export function DataTable<T extends Record<string, any>>({
               size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
+              className="h-7 w-7 md:h-8 md:w-8 p-0"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
             
             <Button
@@ -302,8 +305,9 @@ export function DataTable<T extends Record<string, any>>({
               size="sm"
               onClick={() => handlePageChange(totalPages)}
               disabled={currentPage === totalPages}
+              className="h-7 w-7 md:h-8 md:w-8 p-0"
             >
-              <ChevronsRight className="h-4 w-4" />
+              <ChevronsRight className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </div>
         </div>
