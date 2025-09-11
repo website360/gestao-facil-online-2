@@ -6,9 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Printer, Eye, ShoppingCart, Package, FileText, Trash2 } from 'lucide-react';
+import { Eye, ShoppingCart, Package, FileText, Trash2 } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/lib/formatters';
-import { createPrintContent } from '@/components/common/PrintUtils';
 
 interface SaleItem {
   id: string;
@@ -278,10 +277,6 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
     return `#V${sequentialNumber}`;
   };
 
-  const handlePrint = async () => {
-    const title = `Venda ${formatSaleId(saleData?.id || '')}`;
-    await createPrintContent('sale-print-content', title, 'Venda');
-  };
 
   const getPaymentMethodName = (id?: string) => {
     if (!id) return 'Não informado';
@@ -326,19 +321,6 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                 {userRole === 'nota_fiscal' ? 'Nota Fiscal' : 'Visualizar Venda'}
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={handlePrint} 
-                      variant="ghost" 
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                    >
-                      <Printer className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Imprimir venda</TooltipContent>
-                </Tooltip>
                 <Button 
                   onClick={onClose} 
                   variant="ghost" 
@@ -352,7 +334,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
             <p className="text-sm text-muted-foreground">
               {userRole === 'nota_fiscal' 
                 ? 'Gere a nota fiscal para esta venda.' 
-                : 'Visualize os detalhes da venda e clique em Imprimir se necessário.'
+                : 'Visualize os detalhes da venda.'
               }
             </p>
           </DialogHeader>

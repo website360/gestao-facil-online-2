@@ -6,9 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Printer, Eye, ShoppingCart, Package, FileText, Trash2 } from 'lucide-react';
+import { Eye, ShoppingCart, Package, FileText, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { createPrintContent } from '@/components/common/PrintUtils';
 
 interface BudgetItem {
   id: string;
@@ -211,10 +210,6 @@ const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({ isOpen, onClose, 
     return `#O${sequentialNumber}`;
   };
 
-  const handlePrint = async () => {
-    const title = `Orçamento ${formatBudgetId(budgetData?.id || '')}`;
-    await createPrintContent('budget-print-content', title, 'Orçamento');
-  };
 
   const getPaymentMethodName = (id?: string) => {
     if (!id) return 'Não informado';
@@ -246,19 +241,6 @@ const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({ isOpen, onClose, 
                 Visualizar Orçamento
               </DialogTitle>
               <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={handlePrint} 
-                      variant="ghost" 
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                    >
-                      <Printer className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Imprimir orçamento</TooltipContent>
-                </Tooltip>
                 <Button 
                   onClick={onClose} 
                   variant="ghost" 
@@ -270,7 +252,7 @@ const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({ isOpen, onClose, 
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              Visualize os detalhes do orçamento e clique em Imprimir se necessário.
+              Visualize os detalhes do orçamento.
             </p>
           </DialogHeader>
 
