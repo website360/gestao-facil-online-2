@@ -127,6 +127,12 @@ export class BudgetService {
     console.log('Form data for creation:', formData);
     console.log('User ID:', userId);
     
+    // Validar se o campo de nota fiscal está preenchido
+    if (formData.invoice_percentage === 0 || formData.invoice_percentage === null || formData.invoice_percentage === undefined) {
+      toast.error('O campo "Nota Fiscal (%) - Apenas Informativo" é obrigatório');
+      throw new Error('Campo Nota Fiscal é obrigatório');
+    }
+    
     // Validate stock before creating budget
     if (!(await this.validateStock(formData, isClient))) {
       return;
@@ -203,6 +209,12 @@ export class BudgetService {
     console.log('=== UPDATING BUDGET ===');
     console.log('Form data for update:', formData);
     console.log('Editing budget:', editingBudget);
+    
+    // Validar se o campo de nota fiscal está preenchido
+    if (formData.invoice_percentage === 0 || formData.invoice_percentage === null || formData.invoice_percentage === undefined) {
+      toast.error('O campo "Nota Fiscal (%) - Apenas Informativo" é obrigatório');
+      throw new Error('Campo Nota Fiscal é obrigatório');
+    }
     
     // Validate stock before updating budget
     if (!(await this.validateStock(formData, isClient))) {

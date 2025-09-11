@@ -135,7 +135,10 @@ const BudgetSummary = ({
             </div>
             
             <div>
-              <Label htmlFor="invoice">Nota Fiscal (%) - Apenas Informativo</Label>
+              <Label htmlFor="invoice">
+                Nota Fiscal (%) - Apenas Informativo
+                <span className="text-red-500 ml-1">*</span>
+              </Label>
               <Input
                 id="invoice"
                 type="number"
@@ -145,7 +148,15 @@ const BudgetSummary = ({
                 value={invoicePercentage}
                 onChange={(e) => onInvoicePercentageChange(Number(e.target.value))}
                 placeholder="0.00"
+                disabled={readonly}
+                required
+                className={invoicePercentage === 0 ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}
               />
+              {invoicePercentage === 0 && (
+                <p className="text-xs text-red-500 mt-1">
+                  Este campo é obrigatório
+                </p>
+              )}
             </div>
           </div>
         )}
