@@ -200,7 +200,7 @@ const UserManagement = () => {
       key: 'role',
       header: 'Função',
       render: (user) => (
-        <Badge className={getRoleColor(user.role)}>
+        <Badge className={`${getRoleColor(user.role)} text-xs md:text-sm`}>
           {getRoleLabel(user.role)}
         </Badge>
       ),
@@ -208,14 +208,14 @@ const UserManagement = () => {
     {
       key: 'created_at',
       header: 'Data',
-      render: (user) => new Date(user.created_at).toLocaleDateString('pt-BR'),
+      render: (user) => <span className="text-xs md:text-sm">{new Date(user.created_at).toLocaleDateString('pt-BR')}</span>,
     },
     {
       key: 'actions',
       header: 'Ações',
       sortable: false,
       searchable: false,
-      width: 'w-40',
+      width: 'w-32 md:w-40',
       render: (user) => (
         <div className="flex gap-1">
           <Button
