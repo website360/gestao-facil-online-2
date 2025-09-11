@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Printer, Eye, ShoppingCart, Package, FileText, Trash2 } from 'lucide-react';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/formatters';
 import { createPrintContent } from '@/components/common/PrintUtils';
 
 interface SaleItem {
@@ -586,43 +586,45 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                    {/* Desktop Table */}
                    <div className="hidden sm:block overflow-x-auto">
                      <Table>
-                       <TableHeader>
-                         <TableRow className="bg-gray-50">
-                           <TableHead className="text-center w-12">#</TableHead>
-                           <TableHead>Produto</TableHead>
-                           {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') ? (
-                             <>
-                               <TableHead className="text-center">Estoque</TableHead>
-                               <TableHead className="text-center">Código</TableHead>
-                               <TableHead className="text-center">Qtd</TableHead>
-                               <TableHead className="text-center">Preço Unit.</TableHead>
-                               <TableHead className="text-center">Desc. %</TableHead>
-                               <TableHead className="text-center">Total</TableHead>
-                               <TableHead className="text-center">Ações</TableHead>
-                             </>
-                           ) : null}
-                         </TableRow>
-                       </TableHeader>
+                        <TableHeader>
+                          <TableRow className="bg-gray-50">
+                            <TableHead className="text-center w-12">#</TableHead>
+                            <TableHead>Produto</TableHead>
+                            {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') ? (
+                              <>
+                                <TableHead className="text-center">Estoque</TableHead>
+                                <TableHead className="text-center">Código</TableHead>
+                                <TableHead className="text-center">Qtd</TableHead>
+                                <TableHead className="text-center">Preço Un</TableHead>
+                                <TableHead className="text-center">Desc. %</TableHead>
+                                <TableHead className="text-center">Preço Un Desc</TableHead>
+                                <TableHead className="text-center">Total</TableHead>
+                                <TableHead className="text-center">Ações</TableHead>
+                              </>
+                            ) : null}
+                          </TableRow>
+                        </TableHeader>
                        <TableBody>
                          {saleItems.map((item, index) => (
                            <TableRow key={index}>
                              <TableCell className="text-center font-medium">{index + 1}</TableCell>
                              <TableCell className="font-medium">{item.products?.name || 'Produto não encontrado'}</TableCell>
-                             {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') ? (
-                               <>
-                                 <TableCell className="text-center">-</TableCell>
-                                 <TableCell className="text-center">{item.products?.internal_code || 'N/A'}</TableCell>
-                                 <TableCell className="text-center">{item.quantity}</TableCell>
-                                 <TableCell className="text-center">{formatCurrency(item.unit_price)}</TableCell>
-                                 <TableCell className="text-center">0</TableCell>
-                                 <TableCell className="text-center font-semibold">{formatCurrency(item.total_price)}</TableCell>
-                                 <TableCell className="text-center">
-                                   <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                                     <Trash2 className="h-3 w-3" />
-                                   </Button>
-                                 </TableCell>
-                               </>
-                             ) : null}
+                              {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') ? (
+                                <>
+                                  <TableCell className="text-center">-</TableCell>
+                                  <TableCell className="text-center">{item.products?.internal_code || 'N/A'}</TableCell>
+                                  <TableCell className="text-center">{item.quantity}</TableCell>
+                                  <TableCell className="text-center">{formatNumber(item.unit_price)}</TableCell>
+                                  <TableCell className="text-center">0%</TableCell>
+                                  <TableCell className="text-center">{formatNumber(item.unit_price)}</TableCell>
+                                  <TableCell className="text-center font-semibold">{formatCurrency(item.total_price)}</TableCell>
+                                  <TableCell className="text-center">
+                                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </TableCell>
+                                </>
+                              ) : null}
                            </TableRow>
                          ))}
                        </TableBody>
