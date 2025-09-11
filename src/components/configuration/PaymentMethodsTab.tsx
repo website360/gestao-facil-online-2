@@ -135,7 +135,7 @@ const PaymentMethodsTab = () => {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
           <div>
             <CardTitle>Meios de Pagamento</CardTitle>
             <CardDescription>
@@ -144,9 +144,10 @@ const PaymentMethodsTab = () => {
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => resetForm()}>
+              <Button onClick={() => resetForm()} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
-                Novo Meio de Pagamento
+                <span className="hidden sm:inline">Novo Meio de Pagamento</span>
+                <span className="sm:hidden">Novo</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -194,48 +195,95 @@ const PaymentMethodsTab = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paymentMethods.map((method) => (
-              <TableRow key={method.id}>
-                <TableCell className="font-medium">{method.name}</TableCell>
-                <TableCell>{method.description || '-'}</TableCell>
-                <TableCell>
-                  <Switch
-                    checked={method.active}
-                    onCheckedChange={(checked) => toggleActive(method.id, checked)}
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(method)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(method.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+        {/* Desktop Table */}
+        <div className="hidden sm:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Ações</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {paymentMethods.map((method) => (
+                <TableRow key={method.id}>
+                  <TableCell className="font-medium">{method.name}</TableCell>
+                  <TableCell>{method.description || '-'}</TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={method.active}
+                      onCheckedChange={(checked) => toggleActive(method.id, checked)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(method)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(method.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="sm:hidden space-y-4">
+          {paymentMethods.map((method) => (
+            <Card key={method.id} className="p-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium">{method.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {method.description || 'Sem descrição'}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={method.active}
+                      onCheckedChange={(checked) => toggleActive(method.id, checked)}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(method)}
+                    className="flex-1 h-8 text-xs"
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(method.id)}
+                    className="flex-1 h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Excluir
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

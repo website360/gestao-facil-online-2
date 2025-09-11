@@ -85,11 +85,12 @@ const ConfigurationManagement = () => {
       </div>
 
       <Tabs defaultValue={availableTabs[0]?.value} className="w-full">
-        <TabsList className={`grid w-full ${availableTabs.length === 4 ? 'grid-cols-4' : 'grid-cols-6'}`}>
+        <TabsList className={`grid w-full ${availableTabs.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-6'} gap-1`}>
           {availableTabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
+            <TabsTrigger key={tab.value} value={tab.value} className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 sm:p-3 text-xs sm:text-sm">
+              <tab.icon className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden text-xs">{tab.label.split(' ')[0]}</span>
             </TabsTrigger>
           ))}
         </TabsList>

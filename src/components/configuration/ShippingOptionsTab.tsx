@@ -161,7 +161,7 @@ const ShippingOptionsTab = () => {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
           <div>
             <CardTitle>Opções de Frete</CardTitle>
             <CardDescription>
@@ -170,9 +170,10 @@ const ShippingOptionsTab = () => {
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => resetForm()}>
+              <Button onClick={() => resetForm()} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
-                Nova Opção de Frete
+                <span className="hidden sm:inline">Nova Opção de Frete</span>
+                <span className="sm:hidden">Nova</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -220,55 +221,112 @@ const ShippingOptionsTab = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Visível p/ Entregador</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {shippingOptions.map((option) => (
-              <TableRow key={option.id}>
-                <TableCell className="font-medium">{option.name}</TableCell>
-                <TableCell>{option.description || '-'}</TableCell>
-                <TableCell>
-                  <Switch
-                    checked={option.active}
-                    onCheckedChange={(checked) => toggleActive(option.id, checked)}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Switch
-                    checked={option.delivery_visible || false}
-                    onCheckedChange={(checked) => toggleDeliveryVisible(option.id, checked)}
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(option)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(option.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+        {/* Desktop Table */}
+        <div className="hidden sm:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Visível p/ Entregador</TableHead>
+                <TableHead>Ações</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {shippingOptions.map((option) => (
+                <TableRow key={option.id}>
+                  <TableCell className="font-medium">{option.name}</TableCell>
+                  <TableCell>{option.description || '-'}</TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={option.active}
+                      onCheckedChange={(checked) => toggleActive(option.id, checked)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={option.delivery_visible || false}
+                      onCheckedChange={(checked) => toggleDeliveryVisible(option.id, checked)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(option)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(option.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="sm:hidden space-y-4">
+          {shippingOptions.map((option) => (
+            <Card key={option.id} className="p-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="font-medium">{option.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {option.description || 'Sem descrição'}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Status:</span>
+                    <Switch
+                      checked={option.active}
+                      onCheckedChange={(checked) => toggleActive(option.id, checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Entregador:</span>
+                    <Switch
+                      checked={option.delivery_visible || false}
+                      onCheckedChange={(checked) => toggleDeliveryVisible(option.id, checked)}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(option)}
+                    className="flex-1 h-8 text-xs"
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(option.id)}
+                    className="flex-1 h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Excluir
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
