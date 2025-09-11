@@ -73,6 +73,15 @@ const ClientBudgetItemForm = ({
 
       <td className="p-2">
         <Input
+          value={products.find(p => p.id === item.product_id)?.stock?.toString() || '0'}
+          readOnly
+          className="h-8 text-xs text-center bg-gray-100 border-gray-300"
+          placeholder="0"
+        />
+      </td>
+
+      <td className="p-2">
+        <Input
           placeholder="Código"
           value={item.product_code || ''}
           onChange={(e) => onItemUpdate(index, 'product_code', e.target.value)}
@@ -113,6 +122,12 @@ const ClientBudgetItemForm = ({
           disabled
           title="Clientes não podem alterar desconto"
         />
+      </td>
+
+      <td className="p-2">
+        <div className="h-8 text-xs text-right flex items-center justify-end bg-gray-50 px-2 rounded border">
+          {formatCurrency(item.unit_price * (1 - item.discount_percentage / 100))}
+        </div>
       </td>
 
       <td className="p-2 text-right">

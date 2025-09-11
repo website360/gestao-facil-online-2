@@ -56,10 +56,12 @@ const ClientBudgetItemsTable = ({
             <TableRow className="bg-gray-50">
               <TableHead className="w-12 text-center text-xs">#</TableHead>
               <TableHead className="min-w-[120px] text-xs">Produto</TableHead>
+              <TableHead className="w-16 text-center text-xs">Estoque</TableHead>
               <TableHead className="w-24 text-xs">Código</TableHead>
               <TableHead className="w-20 text-center text-xs">Qtd</TableHead>
-              <TableHead className="w-24 text-center text-xs">Preço Unit.</TableHead>
+              <TableHead className="w-24 text-center text-xs">Preço Unit. s/ Desc.</TableHead>
               <TableHead className="w-20 text-center text-xs">Desc. %</TableHead>
+              <TableHead className="w-24 text-center text-xs">Preço Unit. c/ Desc.</TableHead>
               <TableHead className="w-24 text-center text-xs">Total</TableHead>
               <TableHead className="w-12 text-center text-xs">Ações</TableHead>
             </TableRow>

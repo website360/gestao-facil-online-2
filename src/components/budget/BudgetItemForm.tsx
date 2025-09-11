@@ -169,6 +169,12 @@ const BudgetItemForm = ({
         />
       </td>
 
+      <td className="p-2">
+        <div className="h-8 text-xs text-right flex items-center justify-end bg-gray-50 px-2 rounded border">
+          {formatCurrency(item.unit_price * (1 - item.discount_percentage / 100))}
+        </div>
+      </td>
+
       <td className="p-2 text-right">
         <div className="text-xs font-medium">
           {formatCurrency(calculateItemTotal(item))}
