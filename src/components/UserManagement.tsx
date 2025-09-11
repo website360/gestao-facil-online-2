@@ -4,8 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, UserCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Plus, Edit, Trash2, UserCircle, Search } from 'lucide-react';
 import { DataTable, DataTableColumn } from '@/components/ui/data-table';
+import { useIsMobile } from '@/hooks/use-mobile';
 import UserFormDialog from './UserFormDialog';
 import UserDeleteDialog from './UserDeleteDialog';
 import { toast } from 'sonner';
@@ -21,7 +23,10 @@ interface User {
 
 const UserManagement = () => {
   const { userProfile } = useUserProfile();
+  const isMobile = useIsMobile();
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -46,6 +51,17 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    if (searchTerm) {
+      setFilteredUsers(users.filter(user => 
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      ));
+    } else {
+      setFilteredUsers(users);
+    }
+  }, [users, searchTerm]);
+
   const fetchUsers = async () => {
     try {
       const { data, error } = await supabase
@@ -62,6 +78,81 @@ const UserManagement = () => {
       setLoading(false);
     }
   };
+
+  const renderMobileCards = () => (
+    <div className="space-y-2">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          placeholder="Buscar por usuário ou e-mail..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10 h-9 text-sm"
+        />
+      </div>
+
+      {/* User Cards */}
+      {filteredUsers.map((user) => (
+        <Card key={user.id} className="border border-gray-200">
+          <CardContent className="p-3">
+            <div className="space-y-2">
+              {/* Header com avatar */}
+              <div className="flex items-start gap-2">
+                <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
+                  <UserCircle className="h-5 w-5 text-gray-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-sm text-gray-900 truncate">{user.name}</h3>
+                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                </div>
+              </div>
+
+              {/* Informações */}
+              <div className="space-y-1.5">
+                <div>
+                  <span className="text-xs text-gray-500">Função:</span>
+                  <div className="mt-0.5">
+                    <Badge className={`${getRoleColor(user.role)} text-xs`}>
+                      {getRoleLabel(user.role)}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-xs text-gray-500">Criado em:</span>
+                  <p className="text-xs">{new Date(user.created_at).toLocaleDateString('pt-BR')}</p>
+                </div>
+              </div>
+
+              {/* Ações */}
+              <div className="flex gap-2 pt-1.5 border-t border-gray-100">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(user)}
+                  className="flex-1 h-8 text-xs"
+                >
+                  <Edit className="h-3 w-3 mr-1" />
+                  Editar
+                </Button>
+                {canDeleteUser(user) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(user)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
 
   const handleNewUser = () => {
     setEditingUser(null);
@@ -269,13 +360,15 @@ const UserManagement = () => {
             )}
           </div>
 
-          <DataTable
-            data={users}
-            columns={columns}
-            searchPlaceholder="Buscar por usuário ou e-mail..."
-            itemsPerPage={100}
-            emptyMessage="Nenhum usuário encontrado"
-          />
+          {isMobile ? renderMobileCards() : (
+            <DataTable
+              data={users}
+              columns={columns}
+              searchPlaceholder="Buscar por usuário ou e-mail..."
+              itemsPerPage={100}
+              emptyMessage="Nenhum usuário encontrado"
+            />
+          )}
         </CardContent>
       </Card>
 
