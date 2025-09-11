@@ -370,18 +370,18 @@ const ShippingReport = () => {
       {/* Filtros */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0">
             <div>
               <CardTitle>Filtros de Busca</CardTitle>
               <CardDescription>
                 Filtre os dados por tipo de frete e período
               </CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={clearFilters} size="sm">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={clearFilters} size="sm" className="w-full sm:w-auto">
                 Limpar Filtros
               </Button>
-              <Button onClick={exportToExcel} variant="default" size="sm" disabled={records.length === 0}>
+              <Button onClick={exportToExcel} variant="default" size="sm" disabled={records.length === 0} className="w-full sm:w-auto">
                 <Download className="h-4 w-4 mr-2" />
                 Exportar Relatório
               </Button>

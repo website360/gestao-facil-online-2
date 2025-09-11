@@ -359,7 +359,7 @@ const SalesBySalespersonReport = () => {
             <Button 
               onClick={generateReport} 
               disabled={isGenerating}
-              className="btn-gradient"
+              className="btn-gradient w-full md:w-auto"
             >
               {isGenerating ? 'Gerando...' : 'Gerar Relatório'}
             </Button>
@@ -377,7 +377,7 @@ const SalesBySalespersonReport = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Button onClick={exportToXLS} variant="outline" className="flex items-center gap-2">
+            <Button onClick={exportToXLS} variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
               <FileSpreadsheet className="w-4 h-4" />
               Exportar Excel
             </Button>

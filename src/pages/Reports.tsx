@@ -26,22 +26,22 @@ const Reports = () => {
         </div>
 
         <Tabs defaultValue="sales-by-date-client" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-3 md:mb-6 h-auto">
-            <TabsTrigger value="sales-by-date-client" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-2 md:py-3 px-1 md:px-2 text-xs md:text-sm">
-              <FileText className="w-4 h-4" />
-              <span className="text-center">Vendas por Data</span>
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-3 md:mb-6 h-auto p-1">
+            <TabsTrigger value="sales-by-date-client" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-2 md:py-3 px-1 md:px-2 text-xs md:text-sm min-h-[3rem] md:min-h-[auto]">
+              <FileText className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="text-center leading-tight">Vendas por Data</span>
             </TabsTrigger>
-            <TabsTrigger value="sales-by-salesperson" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-2 md:py-3 px-1 md:px-2 text-xs md:text-sm">
-              <User className="w-4 h-4" />
-              <span className="text-center">Vendas por Vendedor</span>
+            <TabsTrigger value="sales-by-salesperson" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-2 md:py-3 px-1 md:px-2 text-xs md:text-sm min-h-[3rem] md:min-h-[auto]">
+              <User className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="text-center leading-tight">Vendas por Vendedor</span>
             </TabsTrigger>
-            <TabsTrigger value="stock-history" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-2 md:py-3 px-1 md:px-2 text-xs md:text-sm">
-              <History className="w-4 h-4" />
-              <span className="text-center">Histórico de Estoque</span>
+            <TabsTrigger value="stock-history" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-2 md:py-3 px-1 md:px-2 text-xs md:text-sm min-h-[3rem] md:min-h-[auto]">
+              <History className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="text-center leading-tight">Histórico de Estoque</span>
             </TabsTrigger>
-            <TabsTrigger value="shipping" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-2 md:py-3 px-1 md:px-2 text-xs md:text-sm">
-              <Truck className="w-4 h-4" />
-              <span className="text-center">Relatório de Frete</span>
+            <TabsTrigger value="shipping" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 py-2 md:py-3 px-1 md:px-2 text-xs md:text-sm min-h-[3rem] md:min-h-[auto]">
+              <Truck className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="text-center leading-tight">Relatório de Frete</span>
             </TabsTrigger>
           </TabsList>
 
