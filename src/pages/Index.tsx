@@ -18,6 +18,7 @@ import Reports from './Reports';
 import Catalog from './Catalog';
 import { Profile } from './Profile';
 import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -34,7 +35,9 @@ import {
   X,
   ShoppingBag,
   BarChart3,
-  User
+  User,
+  Copy,
+  Check
 } from "lucide-react";
 
 interface Profile {
@@ -50,6 +53,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile); // Fechar sidebar por padrão no mobile
+  const [copiedLink, setCopiedLink] = useState(false);
   const { user, signOut, isClient, clientData } = useAuth();
   const navigate = useNavigate();
 
@@ -287,6 +291,19 @@ const Index = () => {
     setActiveModule('configurations');
   };
 
+  const handleCopyLink = async () => {
+    const catalogUrl = `${window.location.origin}/catalog`;
+    try {
+      await navigator.clipboard.writeText(catalogUrl);
+      setCopiedLink(true);
+      toast.success('Link do catálogo copiado!');
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (error) {
+      console.error('Erro ao copiar link:', error);
+      toast.error('Erro ao copiar link');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center bg-decorative">
@@ -343,21 +360,45 @@ const Index = () => {
           <ul className="space-y-1">
              {menuItems.map((item) => (
                <li key={item.id}>
-                 <button
-                   onClick={() => setActiveModule(item.id)}
-                   className={`w-full group flex items-center rounded-xl text-sm font-medium transition-all ${
-                     activeModule === item.id
-                       ? 'gradient-bg text-white shadow-lg shadow-blue-500/25'
-                       : 'text-gray-700 hover:bg-white/50 hover:text-gray-900'
-                   }`}
-                 >
-                   <div className={`flex items-center ${sidebarOpen ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center'}`}>
-                     <item.icon className={`h-5 w-5 ${sidebarOpen ? 'mr-3' : ''}`} />
-                     {sidebarOpen && (
-                       <span className="truncate">{item.label}</span>
-                     )}
-                   </div>
-                 </button>
+                 <div className={`w-full group flex items-center rounded-xl text-sm font-medium transition-all ${
+                   activeModule === item.id
+                     ? 'gradient-bg text-white shadow-lg shadow-blue-500/25'
+                     : 'text-gray-700 hover:bg-white/50 hover:text-gray-900'
+                 }`}>
+                   <button
+                     onClick={() => setActiveModule(item.id)}
+                     className="flex-1 flex items-center"
+                   >
+                     <div className={`flex items-center ${sidebarOpen ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center'}`}>
+                       <item.icon className={`h-5 w-5 ${sidebarOpen ? 'mr-3' : ''}`} />
+                       {sidebarOpen && (
+                         <span className="truncate">{item.label}</span>
+                       )}
+                     </div>
+                   </button>
+                   
+                   {/* Botão de copiar link só para o catálogo */}
+                   {item.id === 'catalog' && sidebarOpen && (
+                     <button
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         handleCopyLink();
+                       }}
+                       className={`mr-3 p-1.5 rounded-lg transition-all ${
+                         activeModule === item.id
+                           ? 'hover:bg-white/20 text-white'
+                           : 'hover:bg-gray-200 text-gray-600'
+                       }`}
+                       title="Copiar link do catálogo"
+                     >
+                       {copiedLink ? (
+                         <Check className="h-4 w-4" />
+                       ) : (
+                         <Copy className="h-4 w-4" />
+                       )}
+                     </button>
+                   )}
+                 </div>
                </li>
              ))}
           </ul>
