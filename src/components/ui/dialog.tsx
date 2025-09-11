@@ -40,6 +40,7 @@ const DialogContent = React.forwardRef<
         "max-h-[95vh] overflow-y-auto mx-2 sm:mx-0",
         className
       )}
+      onInteractOutside={(e) => e.preventDefault()}
       {...props}
     >
       {children}
