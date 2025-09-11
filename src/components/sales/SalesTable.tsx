@@ -208,14 +208,14 @@ const SalesTable = ({
                 </div>
 
                 {/* Ações */}
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onView(sale.id)}
-                    className="flex-1 min-w-0"
+                    className="h-8 text-xs"
                   >
-                    <Eye className="h-4 w-4 mr-1" />
+                    <Eye className="h-3 w-3 mr-1" />
                     Ver
                   </Button>
 
@@ -224,9 +224,9 @@ const SalesTable = ({
                       variant="outline"
                       size="sm"
                       onClick={() => onEdit(sale.id)}
-                      className="flex-1 min-w-0"
+                      className="h-8 text-xs"
                     >
-                      <Edit className="h-4 w-4 mr-1" />
+                      <Edit className="h-3 w-3 mr-1" />
                       Editar
                     </Button>
                   )}
@@ -235,9 +235,9 @@ const SalesTable = ({
                     variant="outline"
                     size="sm"
                     onClick={() => onHistory(sale.id)}
-                    className="flex-1 min-w-0"
+                    className="h-8 text-xs"
                   >
-                    <History className="h-4 w-4 mr-1" />
+                    <History className="h-3 w-3 mr-1" />
                     Histórico
                   </Button>
 
@@ -246,9 +246,9 @@ const SalesTable = ({
                       variant="outline"
                       size="sm"
                       onClick={() => onSeparationStart(sale.id)}
-                      className="flex-1 min-w-0"
+                      className="h-8 text-xs"
                     >
-                      <Play className="h-4 w-4 mr-1" />
+                      <Play className="h-3 w-3 mr-1" />
                       Iniciar Separação
                     </Button>
                   )}
@@ -258,9 +258,9 @@ const SalesTable = ({
                       variant="outline"
                       size="sm"
                       onClick={() => onConferenceStart(sale.id)}
-                      className="flex-1 min-w-0"
+                      className="h-8 text-xs"
                     >
-                      <Check className="h-4 w-4 mr-1" />
+                      <Check className="h-3 w-3 mr-1" />
                       Iniciar Conferência
                     </Button>
                   )}
@@ -270,9 +270,9 @@ const SalesTable = ({
                       variant="outline"
                       size="sm"
                       onClick={() => onConfirmInvoice(sale.id)}
-                      className="flex-1 min-w-0"
+                      className="h-8 text-xs"
                     >
-                      <Check className="h-4 w-4 mr-1" />
+                      <Check className="h-3 w-3 mr-1" />
                       Confirmar NF
                     </Button>
                   )}
@@ -282,22 +282,23 @@ const SalesTable = ({
                       variant="outline"
                       size="sm"
                       onClick={() => onDeliveryStart(sale.id)}
-                      className="flex-1 min-w-0"
+                      className="h-8 text-xs"
                     >
-                      <Play className="h-4 w-4 mr-1" />
+                      <Play className="h-3 w-3 mr-1" />
                       Iniciar Entrega
                     </Button>
                   )}
 
                   {canDelete(sale) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onDelete(sale.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => onDelete(sale.id)}
+                       className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                     >
+                       <Trash2 className="h-3 w-3 mr-1" />
+                       Excluir
+                     </Button>
                   )}
                 </div>
               </div>

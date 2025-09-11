@@ -179,14 +179,14 @@ const BudgetTable = ({
                 )}
 
                 {/* Ações */}
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onView(budget, index)}
-                    className="flex-1 min-w-0"
+                    className="h-8 text-xs"
                   >
-                    <Eye className="h-4 w-4 mr-1" />
+                    <Eye className="h-3 w-3 mr-1" />
                     Ver
                   </Button>
                   
@@ -195,9 +195,9 @@ const BudgetTable = ({
                       variant="outline"
                       size="sm"
                       onClick={() => onEdit(budget)}
-                      className="flex-1 min-w-0"
+                      className="h-8 text-xs"
                     >
-                      <Edit className="h-4 w-4 mr-1" />
+                      <Edit className="h-3 w-3 mr-1" />
                       Editar
                     </Button>
                   )}
@@ -206,9 +206,9 @@ const BudgetTable = ({
                     variant="outline"
                     size="sm"
                     onClick={() => onDuplicate(budget)}
-                    className="flex-1 min-w-0"
+                    className="h-8 text-xs"
                   >
-                    <Copy className="h-4 w-4 mr-1" />
+                    <Copy className="h-3 w-3 mr-1" />
                     Duplicar
                   </Button>
 
@@ -217,9 +217,9 @@ const BudgetTable = ({
                       variant="outline"
                       size="sm"
                       onClick={() => onConvert(budget)}
-                      className="flex-1 min-w-0"
+                      className="h-8 text-xs"
                     >
-                      <ShoppingCart className="h-4 w-4 mr-1" />
+                      <ShoppingCart className="h-3 w-3 mr-1" />
                       Converter
                     </Button>
                   )}
@@ -229,9 +229,9 @@ const BudgetTable = ({
                       variant="outline"
                       size="sm"
                       onClick={() => onSendForApproval!(budget.id)}
-                      className="flex-1 min-w-0"
+                      className="h-8 text-xs"
                     >
-                      <Send className="h-4 w-4 mr-1" />
+                      <Send className="h-3 w-3 mr-1" />
                       Enviar
                     </Button>
                   )}
@@ -241,22 +241,23 @@ const BudgetTable = ({
                       variant="outline"
                       size="sm"
                       onClick={() => onApprove!(budget.id)}
-                      className="flex-1 min-w-0"
+                      className="h-8 text-xs"
                     >
-                      <Check className="h-4 w-4 mr-1" />
+                      <Check className="h-3 w-3 mr-1" />
                       Aprovar
                     </Button>
                   )}
 
                   {canDelete(budget) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onDelete(budget.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => onDelete(budget.id)}
+                       className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                     >
+                       <Trash2 className="h-3 w-3 mr-1" />
+                       Excluir
+                     </Button>
                   )}
                 </div>
               </div>
