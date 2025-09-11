@@ -258,24 +258,73 @@ export const useClientExcel = () => {
       const emailsToCheck = validData.filter(item => item.email && item.email.trim()).map(item => item.email);
       let existingClients: any[] = [];
       
-      // Processar verificação de conflitos em lotes de 500 emails
-      const emailBatchSize = 500;
+      // Processar verificação de conflitos em lotes menores (100 por vez)
+      const emailBatchSize = 100;
+      const totalBatches = Math.ceil(emailsToCheck.length / emailBatchSize);
+      
       for (let i = 0; i < emailsToCheck.length; i += emailBatchSize) {
         const emailBatch = emailsToCheck.slice(i, i + emailBatchSize);
-        console.log(`Verificando conflitos - lote ${Math.floor(i/emailBatchSize) + 1}/${Math.ceil(emailsToCheck.length/emailBatchSize)}`);
+        const currentBatch = Math.floor(i/emailBatchSize) + 1;
         
-        const { data: batchClients, error } = await supabase
-          .from('clients')
-          .select('*')
-          .in('email', emailBatch);
+        console.log(`Verificando conflitos - lote ${currentBatch}/${totalBatches} (${emailBatch.length} emails)`);
+        setImportStatus(`Verificando conflitos - lote ${currentBatch}/${totalBatches}`);
+        
+        // Atualizar progresso da verificação de conflitos (50% a 80%)
+        const conflictProgress = 50 + Math.round((currentBatch / totalBatches) * 30);
+        setImportProgress(conflictProgress);
+        
+        try {
+          // Adicionar timeout para evitar travamentos
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error(`Timeout na verificação do lote ${currentBatch}`)), 15000)
+          );
           
-        if (error) {
-          console.error('Erro ao verificar conflitos:', error);
-          throw error;
-        }
-        
-        if (batchClients) {
-          existingClients = [...existingClients, ...batchClients];
+          const queryPromise = supabase
+            .from('clients')
+            .select('*')
+            .in('email', emailBatch);
+            
+          const { data: batchClients, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+          
+          if (error) {
+            console.error(`Erro ao verificar conflitos no lote ${currentBatch}:`, error);
+            throw error;
+          }
+          
+          if (batchClients) {
+            existingClients = [...existingClients, ...batchClients];
+            console.log(`Lote ${currentBatch} processado: ${batchClients.length} conflitos encontrados`);
+          }
+          
+          // Pequena pausa entre lotes para não sobrecarregar o banco
+          if (i + emailBatchSize < emailsToCheck.length) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+          
+        } catch (batchError) {
+          console.error(`Erro crítico no lote ${currentBatch}:`, batchError);
+          // Se der timeout, tenta processar emails individuais deste lote
+          if (batchError instanceof Error && batchError.message.includes('Timeout')) {
+            console.log(`Processando lote ${currentBatch} individualmente devido ao timeout`);
+            for (const email of emailBatch) {
+              try {
+                const { data: individualClient } = await supabase
+                  .from('clients')
+                  .select('*')
+                  .eq('email', email)
+                  .maybeSingle();
+                  
+                if (individualClient) {
+                  existingClients.push(individualClient);
+                }
+              } catch (individualError) {
+                console.error(`Erro ao verificar email individual ${email}:`, individualError);
+                // Continua mesmo com erro individual
+              }
+            }
+          } else {
+            throw batchError;
+          }
         }
       }
 
