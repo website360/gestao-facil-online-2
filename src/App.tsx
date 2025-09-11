@@ -8,6 +8,7 @@ import Auth from '@/pages/Auth';
 import Index from "@/pages/Index";
 import BudgetApproval from "@/pages/BudgetApproval";
 import Catalog from "@/pages/Catalog";
+import Register from "@/pages/Register";
 import CatalogDesigner from "@/pages/CatalogDesigner";
 import Reports from "@/pages/Reports";
 
@@ -39,6 +40,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/budget-approval/:budgetId" element={<BudgetApproval />} />
               <Route path="/catalog" element={<Catalog />} />
+              <Route path="/cadastro" element={<Register />} />
               <Route path="/catalog-public" element={<Catalog />} />
               <Route path="/catalog-designer" element={<CatalogDesigner />} />
               <Route path="/reports" element={
