@@ -9,12 +9,15 @@ interface BudgetManagementHeaderProps {
 
 const BudgetManagementHeader = ({ onNewBudget }: BudgetManagementHeaderProps) => {
   return (
-    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+    <div className="flex flex-col gap-4">
       <h1 className="text-xl md:text-2xl font-bold text-gray-900">Gerenciamento de Orçamentos</h1>
-      <Button onClick={onNewBudget} className="btn-gradient w-full md:w-auto">
-        <Plus className="h-4 w-4 mr-2" />
-        Novo Orçamento
-      </Button>
+      <div className="flex justify-end">
+        <Button onClick={onNewBudget} className="btn-gradient">
+          <Plus className="h-4 w-4 mr-2" />
+          <span className="hidden sm:inline">Novo Orçamento</span>
+          <span className="sm:hidden">Novo</span>
+        </Button>
+      </div>
     </div>
   );
 };

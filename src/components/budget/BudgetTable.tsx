@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Eye, Edit, Copy, ShoppingCart, Send, Check, Trash2 } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsTabletOrMobile } from '@/hooks/use-tablet-mobile';
 import BudgetTableRow from './BudgetTableRow';
 import { formatCurrency } from '@/lib/formatters';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
@@ -49,7 +49,7 @@ const BudgetTable = ({
   isPartiallySelected = false,
   showBulkActions = false
 }: BudgetTableProps) => {
-  const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
 
   const formatBudgetId = (id: string, index: number) => {
     const sequentialNumber = (index + 1).toString().padStart(8, '0');
@@ -113,7 +113,7 @@ const BudgetTable = ({
     );
   }
 
-  if (isMobile) {
+  if (isTabletOrMobile) {
     return (
       <div className="space-y-4">
         {showBulkActions && selectedItems && onItemSelect && onSelectAll && (
@@ -156,8 +156,8 @@ const BudgetTable = ({
                   <p className="font-medium">{budget.clients?.name || 'Cliente não encontrado'}</p>
                 </div>
 
-                {/* Data e Total */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* Data, Total e Vendedor */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <span className="text-sm text-gray-500">Data:</span>
                     <p className="text-sm">{new Date(budget.created_at).toLocaleDateString('pt-BR')}</p>
@@ -166,18 +166,16 @@ const BudgetTable = ({
                     <span className="text-sm text-gray-500">Total:</span>
                     <p className="font-medium">{formatCurrency(budget.total_amount)}</p>
                   </div>
+                  {isAdmin && (
+                    <div>
+                      <span className="text-sm text-gray-500">Vendedor:</span>
+                      <p className="text-sm">{budget.creator_profile?.name || 'N/A'}</p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Vendedor (se admin) */}
-                {isAdmin && (
-                  <div>
-                    <span className="text-sm text-gray-500">Vendedor:</span>
-                    <p className="text-sm">{budget.creator_profile?.name || 'N/A'}</p>
-                  </div>
-                )}
-
-                {/* Ações */}
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                {/* Ações organizadas em grid responsivo */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 pt-2 border-t border-gray-100">
                   <Button
                     variant="outline"
                     size="sm"
