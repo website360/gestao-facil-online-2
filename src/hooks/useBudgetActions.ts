@@ -139,7 +139,10 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
           payment_type_id: budgetToUse.payment_type_id,
           shipping_option_id: budgetToUse.shipping_option_id,
           shipping_cost: budgetToUse.shipping_cost || 0,
-          installments: budgetToUse.installments || 1
+          installments: budgetToUse.installments || 1,
+          discount_percentage: budgetToUse.discount_percentage || 0,
+          invoice_percentage: budgetToUse.invoice_percentage || 0,
+          local_delivery_info: budgetToUse.local_delivery_info
         })
         .select()
         .single();
@@ -154,7 +157,6 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
         product_id: item.product_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        discount_percentage: item.discount_percentage || 0,
         total_price: item.total_price
       }));
 
