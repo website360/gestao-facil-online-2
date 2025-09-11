@@ -147,7 +147,7 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
     const item = saleItems.find(item => 
       item.products?.internal_code === code.trim() || 
       item.products?.barcode === code.trim() || 
-      item.products?.name.toLowerCase().includes(code.trim().toLowerCase())
+      item.products?.name.toLowerCase() === code.trim().toLowerCase()
     );
     if (item) {
       setFoundItem(item);

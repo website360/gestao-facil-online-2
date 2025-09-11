@@ -151,7 +151,11 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
       });
       return;
     }
-    const foundItem = saleItems.find(item => item.products?.internal_code === code.trim() || item.products?.barcode === code.trim());
+    const foundItem = saleItems.find(item => 
+      item.products?.internal_code === code.trim() || 
+      item.products?.barcode === code.trim() ||
+      item.products?.name.toLowerCase() === code.trim().toLowerCase()
+    );
     if (foundItem) {
       setCodeVerification({
         status: 'found',
