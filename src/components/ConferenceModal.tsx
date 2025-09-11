@@ -277,8 +277,14 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
     setShowVolumeModal(false);
   };
   const formatSaleId = (id: string) => {
-    const timestamp = new Date().getTime();
-    const sequentialNumber = (timestamp % 100000000).toString().padStart(8, '0');
+    // Usar hash do ID da venda para gerar um número consistente
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      const char = id.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    const sequentialNumber = Math.abs(hash % 100000000).toString().padStart(8, '0');
     return `#V${sequentialNumber}`;
   };
   const getConferenceStatus = (itemId: string) => {
