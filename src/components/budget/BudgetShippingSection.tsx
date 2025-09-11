@@ -120,7 +120,7 @@ const BudgetShippingSection = ({
     let totalWeight = 0;
     let maxWidth = 0;
     let maxLength = 0;
-    let totalHeight = 0;
+    let maxHeight = 0;
     let missingDimensions: string[] = [];
 
     console.log('=== CÁLCULO DE DIMENSÕES DEBUG ===');
@@ -168,14 +168,14 @@ const BudgetShippingSection = ({
           maxLength = Math.max(maxLength, productLength);
         }
 
-        // Altura - obrigatória
+        // Altura - obrigatória (usar a maior altura, não somar)
         const productHeight = product.height;
         console.log('DEBUG - Altura:', productHeight, 'Válida:', !(!productHeight || productHeight <= 0));
         if (!productHeight || productHeight <= 0) {
           missingDimensions.push(`${product.name || product.id}: altura`);
           console.log('DEBUG - Altura FALTANDO para:', product.name || product.id);
         } else {
-          totalHeight += item.quantity * productHeight;
+          maxHeight = Math.max(maxHeight, productHeight);
         }
       } else {
         missingDimensions.push(`Produto não encontrado: ${item.product_id}`);
@@ -198,7 +198,7 @@ const BudgetShippingSection = ({
     // NUNCA aplicar valores padrão - só usar as dimensões REAIS dos produtos
     const dimensions = {
       peso: totalWeight,
-      altura: totalHeight,
+      altura: maxHeight,
       largura: maxWidth,
       comprimento: maxLength
     };
