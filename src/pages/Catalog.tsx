@@ -251,8 +251,8 @@ const Catalog = () => {
         {/* Header section */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <ShoppingBag className="w-8 h-8 text-white" />
+            <div className="w-48 h-28 flex items-center justify-center">
+              <img src="/lovable-uploads/a16e0c44-3fe5-4408-861e-2b328ba401ea.png" alt="Irmãos Mantovani Têxtil" className="w-full h-full object-contain" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Catálogo de Produtos</h1>
@@ -344,7 +344,7 @@ const Catalog = () => {
               
               {/* Controles específicos para Admin/Gerente */}
               {userType === 'admin' && (
-                <div className="flex flex-col md:flex-row gap-4 pt-4 border-t border-gray-200/50">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200/50">
                   <div className="flex items-center space-x-2 h-12 px-3 bg-blue-50/50 border border-blue-200 rounded-xl">
                     <Checkbox
                       id="show-price"
@@ -356,7 +356,7 @@ const Catalog = () => {
                     </label>
                   </div>
                   
-                  <div className="flex items-center space-x-2 bg-blue-50/50 border border-blue-200 rounded-xl px-3">
+                  <div className="flex items-center space-x-2 bg-blue-50/50 border border-blue-200 rounded-xl px-3 justify-between">
                     <label className="text-sm text-blue-700 font-medium whitespace-nowrap">
                       Desconto (%):
                     </label>
@@ -370,29 +370,31 @@ const Catalog = () => {
                     />
                   </div>
                   
-                  <div className="flex items-center space-x-2 bg-blue-50/50 border border-blue-200 rounded-xl px-3">
+                  <div className="flex items-center space-x-2 bg-blue-50/50 border border-blue-200 rounded-xl px-3 justify-between">
                     <label className="text-sm text-blue-700 font-medium whitespace-nowrap">
-                      Estoque de:
+                      Estoque:
                     </label>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={minStock}
-                      onChange={(e) => setMinStock(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-20 h-8 text-center border-blue-300 focus:border-blue-500"
-                    />
-                    <span className="text-sm text-blue-700">até:</span>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={maxStock === 999999 ? '' : maxStock}
-                      placeholder="∞"
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value);
-                        setMaxStock(isNaN(value) ? 999999 : Math.max(1, value));
-                      }}
-                      className="w-20 h-8 text-center border-blue-300 focus:border-blue-500"
-                    />
+                    <div className="flex items-center space-x-1">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={minStock}
+                        onChange={(e) => setMinStock(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="w-16 h-8 text-center border-blue-300 focus:border-blue-500"
+                      />
+                      <span className="text-xs text-blue-600">-</span>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={maxStock === 999999 ? '' : maxStock}
+                        placeholder="∞"
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          setMaxStock(isNaN(value) ? 999999 : Math.max(1, value));
+                        }}
+                        className="w-16 h-8 text-center border-blue-300 focus:border-blue-500"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
