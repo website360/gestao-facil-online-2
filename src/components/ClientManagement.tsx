@@ -42,6 +42,8 @@ const ClientManagement = () => {
     currentPage,
     totalPages,
     totalItems,
+    sortField,
+    sortDirection,
     setSearchTerm,
     setTypeFilter,
     setItemsPerPage,
@@ -53,6 +55,7 @@ const ClientManagement = () => {
     handleFormClose,
     handleFormSuccess,
     handleDeleteConfirm,
+    handleSort,
   } = useClientManagement();
 
   const {
@@ -244,6 +247,9 @@ const ClientManagement = () => {
                 onSelectAll={toggleAll}
                 isAllSelected={isAllSelected}
                 isPartiallySelected={isPartiallySelected}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                onSort={handleSort}
               />
               <ClientPagination
                 currentPage={currentPage}

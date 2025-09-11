@@ -14,6 +14,8 @@ export const useClientManagement = () => {
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [sortField, setSortField] = useState('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Pagination state
   const [itemsPerPage, setItemsPerPage] = useState(300);
@@ -47,8 +49,48 @@ export const useClientManagement = () => {
       filtered = filtered.filter(client => client.client_type === typeFilter);
     }
 
+    // Aplicar ordenação
+    filtered = filtered.sort((a, b) => {
+      let valueA: any;
+      let valueB: any;
+
+      switch (sortField) {
+        case 'name':
+          valueA = a.name.toLowerCase();
+          valueB = b.name.toLowerCase();
+          break;
+        case 'email':
+          valueA = a.email.toLowerCase();
+          valueB = b.email.toLowerCase();
+          break;
+        case 'client_type':
+          valueA = a.client_type;
+          valueB = b.client_type;
+          break;
+        case 'phone':
+          valueA = a.phone;
+          valueB = b.phone;
+          break;
+        case 'created_at':
+          valueA = new Date(a.created_at);
+          valueB = new Date(b.created_at);
+          break;
+        default:
+          valueA = a.name.toLowerCase();
+          valueB = b.name.toLowerCase();
+      }
+
+      if (valueA < valueB) {
+        return sortDirection === 'asc' ? -1 : 1;
+      }
+      if (valueA > valueB) {
+        return sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
     setFilteredClients(filtered);
-  }, [clients, searchTerm, typeFilter]);
+  }, [clients, searchTerm, typeFilter, sortField, sortDirection]);
 
   // Pagination calculations
   const totalItems = filteredClients.length;
@@ -164,6 +206,15 @@ export const useClientManagement = () => {
     }
   };
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
   return {
     clients,
     filteredClients,
@@ -178,6 +229,8 @@ export const useClientManagement = () => {
     currentPage,
     totalPages,
     totalItems,
+    sortField,
+    sortDirection,
     setSearchTerm,
     setTypeFilter,
     setItemsPerPage,
@@ -189,5 +242,6 @@ export const useClientManagement = () => {
     handleFormClose,
     handleFormSuccess,
     handleDeleteConfirm,
+    handleSort,
   };
 };

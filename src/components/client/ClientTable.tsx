@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { Edit, Trash2, MessageCircle, User, FileText, Phone } from 'lucide-react';
+import { Edit, Trash2, MessageCircle, User, FileText, Phone, ChevronUp, ChevronDown } from 'lucide-react';
 import { Client } from './types';
 import { useIsTabletOrMobile } from '@/hooks/use-tablet-mobile';
 import { toast } from 'sonner';
@@ -19,6 +19,9 @@ interface ClientTableProps {
   onSelectAll: () => void;
   isAllSelected: boolean;
   isPartiallySelected: boolean;
+  sortField: string;
+  sortDirection: 'asc' | 'desc';
+  onSort: (field: string) => void;
 }
 
 export const ClientTable = ({ 
@@ -29,7 +32,10 @@ export const ClientTable = ({
   onItemSelect, 
   onSelectAll, 
   isAllSelected, 
-  isPartiallySelected 
+  isPartiallySelected,
+  sortField,
+  sortDirection,
+  onSort
 }: ClientTableProps) => {
   const isTabletOrMobile = useIsTabletOrMobile();
   
@@ -48,6 +54,33 @@ export const ClientTable = ({
   const openWhatsApp = (phone: string) => {
     const formattedPhone = formatPhoneForWhatsApp(phone);
     window.open(`https://wa.me/${formattedPhone}`, '_blank');
+  };
+
+  const SortableTableHead = ({ 
+    field, 
+    label, 
+    className 
+  }: { 
+    field: string; 
+    label: string; 
+    className?: string; 
+  }) => {
+    const isActive = sortField === field;
+    return (
+      <TableHead 
+        className={`cursor-pointer hover:bg-gray-100 select-none ${className || ''}`}
+        onClick={() => onSort(field)}
+      >
+        <div className="flex items-center gap-1">
+          <span>{label}</span>
+          {isActive && (
+            sortDirection === 'asc' 
+              ? <ChevronUp className="h-4 w-4" />
+              : <ChevronDown className="h-4 w-4" />
+          )}
+        </div>
+      </TableHead>
+    );
   };
 
   if (isTabletOrMobile) {
@@ -182,11 +215,11 @@ export const ClientTable = ({
                   {...(isPartiallySelected ? { 'data-state': 'indeterminate' } : {})}
                 />
               </TableHead>
-              <TableHead className="min-w-[150px]">Cliente</TableHead>
-              <TableHead className="min-w-[100px]">Tipo</TableHead>
+              <SortableTableHead field="name" label="Cliente" className="min-w-[150px]" />
+              <SortableTableHead field="client_type" label="Tipo" className="min-w-[100px]" />
               <TableHead className="min-w-[120px]">Documento</TableHead>
-              <TableHead className="min-w-[140px]">Telefone</TableHead>
-              <TableHead className="min-w-[100px]">Data</TableHead>
+              <SortableTableHead field="phone" label="Telefone" className="min-w-[140px]" />
+              <SortableTableHead field="created_at" label="Data" className="min-w-[100px]" />
               <TableHead className="w-40 min-w-[160px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
