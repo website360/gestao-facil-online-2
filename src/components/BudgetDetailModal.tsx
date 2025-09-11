@@ -239,10 +239,10 @@ const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({ isOpen, onClose, 
   return (
     <TooltipProvider>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-white">
+        <DialogContent className="max-w-[95vw] sm:max-w-6xl max-h-[90vh] overflow-y-auto bg-white">
           <DialogHeader>
             <div className="flex justify-between items-center">
-              <DialogTitle className="text-xl font-semibold">
+              <DialogTitle className="text-lg sm:text-xl font-semibold">
                 Visualizar Orçamento
               </DialogTitle>
               <div className="flex items-center gap-2">
@@ -383,7 +383,8 @@ const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({ isOpen, onClose, 
                   <h3 className="text-lg font-semibold">Itens do Orçamento</h3>
                 </div>
                 
-                <div className="overflow-x-auto">
+                {/* Desktop Table */}
+                <div className="hidden sm:block overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50">
@@ -439,6 +440,67 @@ const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({ isOpen, onClose, 
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="sm:hidden space-y-3">
+                  {budgetItems.map((item, index) => (
+                    <Card key={item.id} className="border border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          {/* Header */}
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                                #{String(index + 1).padStart(3, '0')}
+                              </span>
+                              <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                                <Package className="h-4 w-4 text-gray-500" />
+                              </div>
+                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Remover item</TooltipContent>
+                            </Tooltip>
+                          </div>
+
+                          {/* Product Name */}
+                          <div>
+                            <h4 className="font-medium text-gray-900">
+                              {item.products?.name || 'Produto não encontrado'}
+                            </h4>
+                            <p className="text-sm text-gray-500 font-mono">
+                              Código: {item.products?.internal_code || 'N/A'}
+                            </p>
+                          </div>
+
+                          {/* Details Grid */}
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <span className="text-xs text-gray-500">Quantidade:</span>
+                              <p className="font-medium">{item.quantity}</p>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-500">Preço Unit.:</span>
+                              <p className="font-medium">{formatCurrency(item.unit_price)}</p>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-500">Desconto:</span>
+                              <p className="font-medium">{item.discount_percentage || 0}%</p>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-500">Total:</span>
+                              <p className="font-semibold text-lg">{formatCurrency(item.total_price)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
 
                 {/* Resumo do Orçamento */}

@@ -582,52 +582,113 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold">Itens da Venda</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-gray-50">
-                          <TableHead className="text-center w-12">#</TableHead>
-                          <TableHead>Produto</TableHead>
-                          {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') ? (
-                            <>
-                              <TableHead className="text-center">Estoque</TableHead>
-                              <TableHead className="text-center">Código</TableHead>
-                              <TableHead className="text-center">Qtd</TableHead>
-                              <TableHead className="text-center">Preço Unit.</TableHead>
-                              <TableHead className="text-center">Desc. %</TableHead>
-                              <TableHead className="text-center">Total</TableHead>
-                              <TableHead className="text-center">Ações</TableHead>
-                            </>
-                          ) : null}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {saleItems.map((item, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="text-center font-medium">{index + 1}</TableCell>
-                            <TableCell className="font-medium">{item.products?.name || 'Produto não encontrado'}</TableCell>
-                            {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') ? (
-                              <>
-                                <TableCell className="text-center">-</TableCell>
-                                <TableCell className="text-center">{item.products?.internal_code || 'N/A'}</TableCell>
-                                <TableCell className="text-center">{item.quantity}</TableCell>
-                                <TableCell className="text-center">{formatCurrency(item.unit_price)}</TableCell>
-                                <TableCell className="text-center">0</TableCell>
-                                <TableCell className="text-center font-semibold">{formatCurrency(item.total_price)}</TableCell>
-                                <TableCell className="text-center">
-                                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </TableCell>
-                              </>
-                            ) : null}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
+                 <CardContent>
+                   {/* Desktop Table */}
+                   <div className="hidden sm:block overflow-x-auto">
+                     <Table>
+                       <TableHeader>
+                         <TableRow className="bg-gray-50">
+                           <TableHead className="text-center w-12">#</TableHead>
+                           <TableHead>Produto</TableHead>
+                           {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') ? (
+                             <>
+                               <TableHead className="text-center">Estoque</TableHead>
+                               <TableHead className="text-center">Código</TableHead>
+                               <TableHead className="text-center">Qtd</TableHead>
+                               <TableHead className="text-center">Preço Unit.</TableHead>
+                               <TableHead className="text-center">Desc. %</TableHead>
+                               <TableHead className="text-center">Total</TableHead>
+                               <TableHead className="text-center">Ações</TableHead>
+                             </>
+                           ) : null}
+                         </TableRow>
+                       </TableHeader>
+                       <TableBody>
+                         {saleItems.map((item, index) => (
+                           <TableRow key={index}>
+                             <TableCell className="text-center font-medium">{index + 1}</TableCell>
+                             <TableCell className="font-medium">{item.products?.name || 'Produto não encontrado'}</TableCell>
+                             {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') ? (
+                               <>
+                                 <TableCell className="text-center">-</TableCell>
+                                 <TableCell className="text-center">{item.products?.internal_code || 'N/A'}</TableCell>
+                                 <TableCell className="text-center">{item.quantity}</TableCell>
+                                 <TableCell className="text-center">{formatCurrency(item.unit_price)}</TableCell>
+                                 <TableCell className="text-center">0</TableCell>
+                                 <TableCell className="text-center font-semibold">{formatCurrency(item.total_price)}</TableCell>
+                                 <TableCell className="text-center">
+                                   <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                                     <Trash2 className="h-3 w-3" />
+                                   </Button>
+                                 </TableCell>
+                               </>
+                             ) : null}
+                           </TableRow>
+                         ))}
+                       </TableBody>
+                     </Table>
+                   </div>
+
+                   {/* Mobile Cards */}
+                   <div className="sm:hidden space-y-3">
+                     {saleItems.map((item, index) => (
+                       <Card key={index} className="border border-gray-200 bg-white">
+                         <CardContent className="p-4">
+                           <div className="space-y-3">
+                             {/* Header */}
+                             <div className="flex justify-between items-start">
+                               <div className="flex items-center gap-2">
+                                 <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                                   #{String(index + 1).padStart(3, '0')}
+                                 </span>
+                                 <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                                   <Package className="h-4 w-4 text-gray-500" />
+                                 </div>
+                               </div>
+                               {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') && (
+                                 <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                                   <Trash2 className="h-3 w-3" />
+                                 </Button>
+                               )}
+                             </div>
+
+                             {/* Product Name */}
+                             <div>
+                               <h4 className="font-medium text-gray-900">
+                                 {item.products?.name || 'Produto não encontrado'}
+                               </h4>
+                               <p className="text-sm text-gray-500 font-mono">
+                                 Código: {item.products?.internal_code || 'N/A'}
+                               </p>
+                             </div>
+
+                             {/* Details Grid - Only for authorized roles */}
+                             {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') && (
+                               <div className="grid grid-cols-2 gap-3 text-sm">
+                                 <div>
+                                   <span className="text-xs text-gray-500">Quantidade:</span>
+                                   <p className="font-medium">{item.quantity}</p>
+                                 </div>
+                                 <div>
+                                   <span className="text-xs text-gray-500">Preço Unit.:</span>
+                                   <p className="font-medium">{formatCurrency(item.unit_price)}</p>
+                                 </div>
+                                 <div>
+                                   <span className="text-xs text-gray-500">Desconto:</span>
+                                   <p className="font-medium">0%</p>
+                                 </div>
+                                 <div>
+                                   <span className="text-xs text-gray-500">Total:</span>
+                                   <p className="font-semibold text-lg">{formatCurrency(item.total_price)}</p>
+                                 </div>
+                               </div>
+                             )}
+                           </div>
+                         </CardContent>
+                       </Card>
+                     ))}
+                   </div>
+                 </CardContent>
               </Card>
 
               {/* Resumo da Venda */}
