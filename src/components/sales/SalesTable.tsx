@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import EmptyState from '@/components/ui/empty-state';
 import { Package, User, Calendar, DollarSign, Eye, Edit, History, Trash2, Play, Check } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsTabletOrMobile } from '@/hooks/use-tablet-mobile';
 import { formatCurrency } from '@/lib/formatters';
 import SalesTableHeaders from './SalesTableHeaders';
 import SalesTableRow from './SalesTableRow';
@@ -101,7 +101,7 @@ const SalesTable = ({
   isPartiallySelected = false,
   showBulkActions = false
 }: SalesTableProps) => {
-  const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
 
   const canEdit = (sale: any) => {
     return userRole === 'admin' || userRole === 'vendas';
@@ -137,7 +137,7 @@ const SalesTable = ({
     );
   }
 
-  if (isMobile) {
+  if (isTabletOrMobile) {
     return (
       <div className="space-y-4">
         {showBulkActions && selectedItems && onItemSelect && onSelectAll && (
@@ -183,8 +183,8 @@ const SalesTable = ({
                   </div>
                 </div>
 
-                {/* Data e Total */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* Data, Total e Responsável */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-gray-400" />
                     <div>
@@ -199,16 +199,17 @@ const SalesTable = ({
                       <p className="font-medium">{formatCurrency(sale.total_amount)}</p>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-gray-400" />
+                    <div>
+                      <span className="text-sm text-gray-500">Responsável:</span>
+                      <p className="text-sm">{getCurrentResponsible(sale)}</p>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Responsável */}
-                <div>
-                  <span className="text-sm text-gray-500">Responsável:</span>
-                  <p className="text-sm">{getCurrentResponsible(sale)}</p>
-                </div>
-
-                {/* Ações */}
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+                {/* Ações organizadas em grid responsivo */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 pt-2 border-t border-gray-100">
                   <Button
                     variant="outline"
                     size="sm"
