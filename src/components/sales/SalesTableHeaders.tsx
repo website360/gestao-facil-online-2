@@ -113,6 +113,7 @@ const SalesTableHeaders = ({ userRole, sortField, sortDirection, onSort }: Sales
           <SortButton field="total_amount">Total</SortButton>
         </TableHead>
         <TableHead className="font-semibold text-gray-700 py-4 px-6 text-left">Nº Nota</TableHead>
+        <TableHead className="font-semibold text-gray-700 py-4 px-6 text-left">Frete</TableHead>
         <TableHead className="font-semibold text-gray-700 py-4 px-6 text-left">Vendedor</TableHead>
         <TableHead className="font-semibold text-gray-700 py-4 px-6 text-center">Ações</TableHead>
       </TableRow>

@@ -34,6 +34,7 @@ interface Sale {
   invoice_number?: string;
   total_volumes?: number;
   total_weight_kg?: number;
+  shipping_option_name?: string | null;
 }
 
 interface SalesTableRowProps {
@@ -253,6 +254,9 @@ const SalesTableRow = ({
         <TableCell className="font-semibold text-green-600 py-4 px-6">{formatCurrency(sale.total_amount)}</TableCell>
         <TableCell className="text-gray-600 py-4 px-6">
           {sale.invoice_number || '-'}
+        </TableCell>
+        <TableCell className="text-gray-600 py-4 px-6">
+          {sale.shipping_option_name || '-'}
         </TableCell>
         <TableCell className="text-gray-600 py-4 px-6">{getCurrentResponsible(sale)}</TableCell>
         <TableCell className="py-4 px-6">

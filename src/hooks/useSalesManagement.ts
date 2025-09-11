@@ -31,6 +31,7 @@ interface Sale {
   sale_items?: any[];
   delivery_user_id?: string | null;
   shipping_option_visible?: boolean;
+  shipping_option_name?: string | null;
 }
 
 export const useSalesManagement = () => {
@@ -257,6 +258,7 @@ export const useSalesManagement = () => {
           clients: sale.clients ? { name: (sale.clients as any).name } : null,
           budgets: sale.budgets ? { created_by: (sale.budgets as any).created_by } : null,
           shipping_option_visible: shippingOption?.delivery_visible || false,
+          shipping_option_name: shippingOption?.name || null,
           created_by_profile: profilesData?.find(p => p.id === sale.created_by) || null,
           separation_user_profile: profilesData?.find(p => p.id === sale.separation_user_id) || null,
           conference_user_profile: profilesData?.find(p => p.id === sale.conference_user_id) || null,
