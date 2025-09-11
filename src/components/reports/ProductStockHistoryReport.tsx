@@ -225,7 +225,7 @@ const ProductStockHistoryReport = () => {
       {/* Filtros */}
       <Card>
         <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <CardTitle>Filtros de Busca</CardTitle>
               <CardDescription>
@@ -233,18 +233,20 @@ const ProductStockHistoryReport = () => {
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={clearFilters} size="sm" className="w-full sm:w-auto">
-                Limpar Filtros
+              <Button variant="outline" onClick={clearFilters} size="sm" className="flex-shrink-0">
+                <span className="hidden sm:inline">Limpar Filtros</span>
+                <span className="sm:hidden">Limpar</span>
               </Button>
-              <Button onClick={exportToExcel} variant="default" size="sm" disabled={movements.length === 0} className="w-full sm:w-auto">
+              <Button onClick={exportToExcel} variant="default" size="sm" disabled={movements.length === 0} className="flex-shrink-0">
                 <Download className="h-4 w-4 mr-2" />
-                Exportar Relatório
+                <span className="hidden sm:inline">Exportar Relatório</span>
+                <span className="sm:hidden">Exportar</span>
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="search">Buscar Produto</Label>
               <Input

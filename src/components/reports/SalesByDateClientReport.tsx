@@ -259,7 +259,7 @@ const SalesByDateClientReport = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
             <div>
               <Label htmlFor="start-date">Data de Início</Label>
               <Input
@@ -281,7 +281,7 @@ const SalesByDateClientReport = () => {
             <Button 
               onClick={generateReport} 
               disabled={isGenerating}
-              className="btn-gradient w-full md:w-auto"
+              className="btn-gradient"
             >
               {isGenerating ? 'Gerando...' : 'Gerar Relatório'}
             </Button>
@@ -299,9 +299,10 @@ const SalesByDateClientReport = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Button onClick={exportToXLS} variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
+            <Button onClick={exportToXLS} variant="outline" className="flex items-center gap-2">
               <FileSpreadsheet className="w-4 h-4" />
-              Exportar Excel
+              <span className="hidden sm:inline">Exportar Excel</span>
+              <span className="sm:hidden">Exportar</span>
             </Button>
           </CardContent>
         </Card>
