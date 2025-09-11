@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/formatters';
 import { useDiscountPermissions } from '@/hooks/useDiscountPermissions';
 import ProductSearchInput from './ProductSearchInput';
 
