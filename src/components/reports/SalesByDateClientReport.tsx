@@ -11,6 +11,7 @@ import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import * as XLSX from 'xlsx';
+import JSZip from 'jszip';
 
 interface SaleReportData {
   client_name: string;
@@ -33,6 +34,8 @@ const SalesByDateClientReport = () => {
   const [reportData, setReportData] = useState<SaleReportData[]>([]);
   const [totalSales, setTotalSales] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [salesWithAttachments, setSalesWithAttachments] = useState<string[]>([]);
+  const [isExportingAttachments, setIsExportingAttachments] = useState(false);
 
   const getStatusLabel = (status: string) => {
     const statusMap: { [key: string]: string } = {
@@ -197,6 +200,19 @@ const SalesByDateClientReport = () => {
 
       setReportData(reportArray);
       setTotalSales(totalSalesCount);
+
+      // Verificar quais vendas têm comprovantes anexados
+      if (sales && sales.length > 0) {
+        const saleIds = sales.map(sale => sale.id);
+        const { data: attachments } = await supabase
+          .from('sale_attachments')
+          .select('sale_id')
+          .in('sale_id', saleIds);
+        
+        const salesWithAttachmentsIds = [...new Set(attachments?.map(att => att.sale_id) || [])];
+        setSalesWithAttachments(salesWithAttachmentsIds);
+      }
+
       toast.success('Relatório gerado com sucesso!');
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);
@@ -259,6 +275,109 @@ const SalesByDateClientReport = () => {
     toast.success('Planilha exportada com sucesso!');
   };
 
+  const exportAttachments = async () => {
+    if (salesWithAttachments.length === 0) {
+      toast.error('Não há comprovantes de pagamento para exportar neste período');
+      return;
+    }
+
+    setIsExportingAttachments(true);
+
+    try {
+      // Buscar todos os anexos das vendas do período
+      const { data: attachments, error } = await supabase
+        .from('sale_attachments')
+        .select('*')
+        .in('sale_id', salesWithAttachments);
+
+      if (error) {
+        console.error('Erro ao buscar anexos:', error);
+        toast.error('Erro ao buscar comprovantes');
+        return;
+      }
+
+      if (!attachments || attachments.length === 0) {
+        toast.error('Nenhum comprovante encontrado');
+        return;
+      }
+
+      // Buscar informações das vendas e clientes
+      const { data: salesInfo, error: salesError } = await supabase
+        .from('sales')
+        .select(`
+          id,
+          clients!inner(
+            name
+          )
+        `)
+        .in('id', salesWithAttachments);
+
+      if (salesError) {
+        console.error('Erro ao buscar informações das vendas:', salesError);
+        toast.error('Erro ao buscar informações das vendas');
+        return;
+      }
+
+      const zip = new JSZip();
+      let processedCount = 0;
+
+      // Processar cada anexo
+      for (const attachment of attachments) {
+        try {
+          // Encontrar informações do cliente
+          const saleInfo = salesInfo?.find(s => s.id === attachment.sale_id);
+          if (!saleInfo) continue;
+
+          // Baixar o arquivo do storage
+          const { data: fileData, error: downloadError } = await supabase.storage
+            .from('payment-receipts')
+            .download(attachment.file_path);
+
+          if (downloadError) {
+            console.error(`Erro ao baixar ${attachment.stored_filename}:`, downloadError);
+            continue;
+          }
+
+          // Criar nome do arquivo organizado por cliente
+          const clientName = saleInfo.clients.name;
+          const sanitizedClientName = clientName.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+          const fileName = `${sanitizedClientName}/${attachment.stored_filename}`;
+
+          // Adicionar arquivo ao ZIP
+          zip.file(fileName, fileData);
+          processedCount++;
+
+        } catch (error) {
+          console.error(`Erro ao processar anexo ${attachment.id}:`, error);
+        }
+      }
+
+      if (processedCount === 0) {
+        toast.error('Nenhum comprovante pôde ser processado');
+        return;
+      }
+
+      // Gerar e baixar o ZIP
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `comprovantes-pagamento-${startDate}-${endDate}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(`${processedCount} comprovante(s) exportado(s) com sucesso!`);
+
+    } catch (error) {
+      console.error('Erro ao exportar anexos:', error);
+      toast.error('Erro ao exportar comprovantes');
+    } finally {
+      setIsExportingAttachments(false);
+    }
+  };
+
   const getTotalGeneral = () => {
     return reportData.reduce((total, client) => total + client.total_amount, 0);
   };
@@ -314,11 +433,30 @@ const SalesByDateClientReport = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Button onClick={exportToXLS} variant="outline" className="flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4" />
-              <span className="hidden sm:inline">Exportar Excel</span>
-              <span className="sm:hidden">Exportar</span>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={exportToXLS} variant="outline" className="flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                <span className="hidden sm:inline">Exportar Excel</span>
+                <span className="sm:hidden">Exportar</span>
+              </Button>
+              
+              {salesWithAttachments.length > 0 && (
+                <Button 
+                  onClick={exportAttachments} 
+                  variant="outline" 
+                  disabled={isExportingAttachments}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">
+                    {isExportingAttachments ? 'Exportando...' : `Exportar Comprovantes (${salesWithAttachments.length})`}
+                  </span>
+                  <span className="sm:hidden">
+                    {isExportingAttachments ? 'Exportando...' : 'Comprovantes'}
+                  </span>
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

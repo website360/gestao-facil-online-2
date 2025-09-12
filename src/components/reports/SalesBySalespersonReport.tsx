@@ -9,6 +9,7 @@ import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import * as XLSX from 'xlsx';
+import JSZip from 'jszip';
 
 interface SalespersonReportData {
   salesperson_id: string;
@@ -31,6 +32,8 @@ const SalesBySalespersonReport = () => {
   const [endDate, setEndDate] = useState('');
   const [reportData, setReportData] = useState<SalespersonReportData[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [salesWithAttachments, setSalesWithAttachments] = useState<string[]>([]);
+  const [isExportingAttachments, setIsExportingAttachments] = useState(false);
 
   const generateReport = async () => {
     if (!startDate || !endDate) {
@@ -143,6 +146,19 @@ const SalesBySalespersonReport = () => {
         .sort((a, b) => b.total_amount - a.total_amount);
 
       setReportData(reportArray);
+
+      // Verificar quais vendas têm comprovantes anexados
+      if (sales && sales.length > 0) {
+        const saleIds = sales.map(sale => sale.id);
+        const { data: attachments } = await supabase
+          .from('sale_attachments')
+          .select('sale_id')
+          .in('sale_id', saleIds);
+        
+        const salesWithAttachmentsIds = [...new Set(attachments?.map(att => att.sale_id) || [])];
+        setSalesWithAttachments(salesWithAttachmentsIds);
+      }
+
       toast.success('Relatório gerado com sucesso!');
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);
@@ -322,6 +338,142 @@ const SalesBySalespersonReport = () => {
     toast.success('Planilha exportada com sucesso!');
   };
 
+  const exportAttachments = async () => {
+    if (salesWithAttachments.length === 0) {
+      toast.error('Não há comprovantes de pagamento para exportar neste período');
+      return;
+    }
+
+    setIsExportingAttachments(true);
+
+    try {
+      // Buscar todos os anexos das vendas do período
+      const { data: attachments, error } = await supabase
+        .from('sale_attachments')
+        .select('*')
+        .in('sale_id', salesWithAttachments);
+
+      if (error) {
+        console.error('Erro ao buscar anexos:', error);
+        toast.error('Erro ao buscar comprovantes');
+        return;
+      }
+
+      if (!attachments || attachments.length === 0) {
+        toast.error('Nenhum comprovante encontrado');
+        return;
+      }
+
+      // Buscar informações das vendas, clientes e orçamentos
+      const { data: salesInfo, error: salesError } = await supabase
+        .from('sales')
+        .select(`
+          id,
+          created_by,
+          budget_id,
+          clients!inner(
+            name
+          ),
+          budgets(
+            created_by
+          )
+        `)
+        .in('id', salesWithAttachments);
+
+      if (salesError) {
+        console.error('Erro ao buscar informações das vendas:', salesError);
+        toast.error('Erro ao buscar informações das vendas');
+        return;
+      }
+
+      // Buscar informações dos vendedores para organizar por vendedor
+      const allUserIds = [...new Set([
+        ...salesInfo?.map(sale => sale.created_by).filter(Boolean) || [],
+        ...salesInfo?.map(sale => sale.budgets?.created_by).filter(Boolean) || []
+      ])];
+
+      let profilesData: any[] = [];
+      if (allUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, name, role')
+          .in('id', allUserIds);
+        profilesData = profiles || [];
+      }
+
+      const zip = new JSZip();
+      let processedCount = 0;
+
+      // Processar cada anexo
+      for (const attachment of attachments) {
+        try {
+          // Encontrar informações da venda
+          const saleInfo = salesInfo?.find(s => s.id === attachment.sale_id);
+          if (!saleInfo) continue;
+
+          // Determinar o vendedor responsável
+          let salespersonName = 'Cliente';
+          const saleCreatorProfile = profilesData.find(p => p.id === saleInfo.created_by);
+          if (saleCreatorProfile && saleCreatorProfile.role !== 'cliente') {
+            salespersonName = saleCreatorProfile.name;
+          } else if (saleInfo.budgets?.created_by) {
+            const budgetCreatorProfile = profilesData.find(p => p.id === saleInfo.budgets.created_by);
+            if (budgetCreatorProfile && budgetCreatorProfile.role !== 'cliente') {
+              salespersonName = budgetCreatorProfile.name;
+            }
+          }
+
+          // Baixar o arquivo do storage
+          const { data: fileData, error: downloadError } = await supabase.storage
+            .from('payment-receipts')
+            .download(attachment.file_path);
+
+          if (downloadError) {
+            console.error(`Erro ao baixar ${attachment.stored_filename}:`, downloadError);
+            continue;
+          }
+
+          // Criar nome do arquivo organizado por vendedor/cliente
+          const clientName = saleInfo.clients.name;
+          const sanitizedSalespersonName = salespersonName.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+          const sanitizedClientName = clientName.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+          const fileName = `${sanitizedSalespersonName}/${sanitizedClientName}/${attachment.stored_filename}`;
+
+          // Adicionar arquivo ao ZIP
+          zip.file(fileName, fileData);
+          processedCount++;
+
+        } catch (error) {
+          console.error(`Erro ao processar anexo ${attachment.id}:`, error);
+        }
+      }
+
+      if (processedCount === 0) {
+        toast.error('Nenhum comprovante pôde ser processado');
+        return;
+      }
+
+      // Gerar e baixar o ZIP
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `comprovantes-pagamento-vendedores-${startDate}-${endDate}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(`${processedCount} comprovante(s) exportado(s) com sucesso!`);
+
+    } catch (error) {
+      console.error('Erro ao exportar anexos:', error);
+      toast.error('Erro ao exportar comprovantes');
+    } finally {
+      setIsExportingAttachments(false);
+    }
+  };
+
   const getTotalGeneral = () => {
     return reportData.reduce((total, salesperson) => total + salesperson.total_amount, 0);
   };
@@ -377,11 +529,30 @@ const SalesBySalespersonReport = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Button onClick={exportToXLS} variant="outline" className="flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4" />
-              <span className="hidden sm:inline">Exportar Excel</span>
-              <span className="sm:hidden">Exportar</span>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={exportToXLS} variant="outline" className="flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                <span className="hidden sm:inline">Exportar Excel</span>
+                <span className="sm:hidden">Exportar</span>
+              </Button>
+              
+              {salesWithAttachments.length > 0 && (
+                <Button 
+                  onClick={exportAttachments} 
+                  variant="outline" 
+                  disabled={isExportingAttachments}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">
+                    {isExportingAttachments ? 'Exportando...' : `Exportar Comprovantes (${salesWithAttachments.length})`}
+                  </span>
+                  <span className="sm:hidden">
+                    {isExportingAttachments ? 'Exportando...' : 'Comprovantes'}
+                  </span>
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
