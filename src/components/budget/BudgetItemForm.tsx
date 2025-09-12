@@ -68,11 +68,6 @@ const BudgetItemForm = ({
       return;
     }
     
-    if (newQuantity > currentStock) {
-      toast.error(`Estoque insuficiente! Disponível: ${currentStock} unidades`);
-      return;
-    }
-    
     onItemUpdate(index, 'quantity', newQuantity);
   };
 
@@ -134,10 +129,9 @@ const BudgetItemForm = ({
         <Input
           type="number"
           min="1"
-          max={currentStock}
           value={item.quantity}
           onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-          className={`h-8 text-xs text-center w-20 ${item.quantity > currentStock ? 'border-red-500 bg-red-50' : ''}`}
+          className="h-8 text-xs text-center w-20"
           disabled={readonly}
         />
       </td>

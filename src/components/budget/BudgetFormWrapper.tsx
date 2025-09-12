@@ -18,7 +18,7 @@ interface BudgetFormWrapperProps {
 const BudgetFormWrapper = ({ editingBudget, onSuccess, onCancel }: BudgetFormWrapperProps) => {
   const { clients, products, loading, setLoading, dataLoaded } = useBudgetFormData();
   const { formData, setFormData } = useBudgetFormState(editingBudget);
-  const { user, isClient, clientData } = useAuth();
+  const { user, isClient, clientData, userProfile } = useAuth();
 
   console.log('=== BUDGET FORM WRAPPER RENDER ===');
   console.log('Editing budget ID:', editingBudget?.id || 'none');
@@ -69,10 +69,10 @@ const BudgetFormWrapper = ({ editingBudget, onSuccess, onCancel }: BudgetFormWra
 
       if (editingBudget) {
         console.log('Updating existing budget with ID:', editingBudget.id);
-        await BudgetService.updateBudget(formData, editingBudget, isClient);
+        await BudgetService.updateBudget(formData, editingBudget, isClient, userProfile?.role);
       } else {
         console.log('Creating new budget');
-        await BudgetService.createBudget(formData, createdBy, isClient);
+        await BudgetService.createBudget(formData, createdBy, isClient, userProfile?.role);
       }
 
       console.log('Budget operation completed successfully');

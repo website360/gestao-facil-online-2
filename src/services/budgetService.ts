@@ -69,13 +69,14 @@ export class BudgetService {
     return true;
   }
 
-  static async validateStock(formData: BudgetFormData, isClient: boolean = false): Promise<boolean> {
+  static async validateStock(formData: BudgetFormData, isClient: boolean = false, userRole?: string): Promise<boolean> {
     console.log('=== VALIDATING STOCK ===');
     console.log('Is client user:', isClient);
+    console.log('User role:', userRole);
     
-    // Clientes não têm validação de estoque
-    if (isClient) {
-      console.log('Skipping stock validation for client user');
+    // Clientes e vendedores não têm validação de estoque - apenas admin e gerente
+    if (isClient || (userRole && userRole !== 'admin' && userRole !== 'gerente')) {
+      console.log('Skipping stock validation for client or non-admin/gerente user');
       console.log('=== END STOCK VALIDATION ===');
       return true;
     }
@@ -122,7 +123,7 @@ export class BudgetService {
     return finalTotal;
   }
 
-  static async createBudget(formData: BudgetFormData, userId: string, isClient: boolean = false): Promise<void> {
+  static async createBudget(formData: BudgetFormData, userId: string, isClient: boolean = false, userRole?: string): Promise<void> {
     console.log('=== CREATING BUDGET ===');
     console.log('Form data for creation:', formData);
     console.log('User ID:', userId);
@@ -134,7 +135,7 @@ export class BudgetService {
     }
     
     // Validate stock before creating budget
-    if (!(await this.validateStock(formData, isClient))) {
+    if (!(await this.validateStock(formData, isClient, userRole))) {
       return;
     }
     
@@ -205,7 +206,7 @@ export class BudgetService {
     toast.success('Orçamento criado com sucesso!');
   }
 
-  static async updateBudget(formData: BudgetFormData, editingBudget: LocalBudget, isClient: boolean = false): Promise<void> {
+  static async updateBudget(formData: BudgetFormData, editingBudget: LocalBudget, isClient: boolean = false, userRole?: string): Promise<void> {
     console.log('=== UPDATING BUDGET ===');
     console.log('Form data for update:', formData);
     console.log('Editing budget:', editingBudget);
@@ -217,7 +218,7 @@ export class BudgetService {
     }
     
     // Validate stock before updating budget
-    if (!(await this.validateStock(formData, isClient))) {
+    if (!(await this.validateStock(formData, isClient, userRole))) {
       return;
     }
     
