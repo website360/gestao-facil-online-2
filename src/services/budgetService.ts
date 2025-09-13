@@ -127,178 +127,204 @@ export class BudgetService {
     console.log('=== CREATING BUDGET ===');
     console.log('Form data for creation:', formData);
     console.log('User ID:', userId);
+    console.log('Is client:', isClient);
+    console.log('User role:', userRole);
     
-    // Validar se o campo de nota fiscal está preenchido
-    if (formData.invoice_percentage === 0 || formData.invoice_percentage === null || formData.invoice_percentage === undefined) {
-      toast.error('O campo "Nota Fiscal (%) - Apenas Informativo" é obrigatório');
-      throw new Error('Campo Nota Fiscal é obrigatório');
-    }
-    
-    // Validate stock before creating budget
-    if (!(await this.validateStock(formData, isClient, userRole))) {
-      return;
-    }
-    
-    const totalAmount = this.calculateTotalAmount(formData);
-
-    const budgetPayload = {
-      client_id: formData.client_id,
-      created_by: userId,
-      notes: formData.notes,
-      status: 'processando' as const,
-      total_amount: totalAmount,
-      discount_percentage: formData.discount_percentage,
-      invoice_percentage: formData.invoice_percentage,
-      payment_method_id: formData.payment_method_id || null,
-      payment_type_id: formData.payment_type_id || null,
-      shipping_option_id: formData.shipping_option_id || null,
-      shipping_cost: formData.shipping_cost,
-      local_delivery_info: formData.local_delivery_info || null,
-      installments: formData.installments,
-      check_installments: formData.check_installments,
-      check_due_dates: formData.check_due_dates,
-      boleto_installments: formData.boleto_installments,
-      boleto_due_dates: formData.boleto_due_dates
-    };
-
-    console.log('Budget payload to insert:', budgetPayload);
-
-    const { data: budgetData, error: budgetError } = await supabase
-      .from('budgets')
-      .insert(budgetPayload)
-      .select()
-      .single();
-
-    if (budgetError) {
-      console.error('Error creating budget:', budgetError);
-      throw budgetError;
-    }
-
-    console.log('Budget created successfully:', budgetData);
-
-    // Filtrar apenas itens válidos para inserção
-    const budgetItems = formData.items
-      .filter(item => item.product_id && item.product_id.trim() !== '' && item.quantity > 0)
-      .map(item => ({
-        budget_id: budgetData.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        discount_percentage: item.discount_percentage,
-        total_price: item.quantity * item.unit_price * (1 - item.discount_percentage / 100)
-      }));
-
-    console.log('Budget items to insert:', budgetItems);
-
-    if (budgetItems.length > 0) {
-      const { error: itemsError } = await supabase
-        .from('budget_items')
-        .insert(budgetItems);
-
-      if (itemsError) {
-        console.error('Error inserting budget items:', itemsError);
-        throw itemsError;
+    try {
+      // Validar se o campo de nota fiscal está preenchido
+      if (formData.invoice_percentage === 0 || formData.invoice_percentage === null || formData.invoice_percentage === undefined) {
+        console.error('Invoice percentage validation failed:', formData.invoice_percentage);
+        toast.error('O campo "Nota Fiscal (%) - Apenas Informativo" é obrigatório');
+        throw new Error('Campo Nota Fiscal é obrigatório');
       }
-    }
+      
+      // Validate stock before creating budget
+      console.log('Starting stock validation...');
+      if (!(await this.validateStock(formData, isClient, userRole))) {
+        console.error('Stock validation failed');
+        return;
+      }
+      
+      console.log('Calculating total amount...');
+      const totalAmount = this.calculateTotalAmount(formData);
+      console.log('Total amount calculated:', totalAmount);
 
-    console.log('Budget items created successfully');
-    console.log('=== END CREATING BUDGET ===');
-    toast.success('Orçamento criado com sucesso!');
+      const budgetPayload = {
+        client_id: formData.client_id,
+        created_by: userId,
+        notes: formData.notes,
+        status: 'processando' as const,
+        total_amount: totalAmount,
+        discount_percentage: formData.discount_percentage,
+        invoice_percentage: formData.invoice_percentage,
+        payment_method_id: formData.payment_method_id || null,
+        payment_type_id: formData.payment_type_id || null,
+        shipping_option_id: formData.shipping_option_id || null,
+        shipping_cost: formData.shipping_cost,
+        local_delivery_info: formData.local_delivery_info || null,
+        installments: formData.installments,
+        check_installments: formData.check_installments,
+        check_due_dates: formData.check_due_dates,
+        boleto_installments: formData.boleto_installments,
+        boleto_due_dates: formData.boleto_due_dates
+      };
+
+      console.log('Budget payload to insert:', budgetPayload);
+
+      const { data: budgetData, error: budgetError } = await supabase
+        .from('budgets')
+        .insert(budgetPayload)
+        .select()
+        .single();
+
+      if (budgetError) {
+        console.error('Error creating budget:', budgetError);
+        throw budgetError;
+      }
+
+      console.log('Budget created successfully:', budgetData);
+
+      // Filtrar apenas itens válidos para inserção
+      const budgetItems = formData.items
+        .filter(item => item.product_id && item.product_id.trim() !== '' && item.quantity > 0)
+        .map(item => ({
+          budget_id: budgetData.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_percentage: item.discount_percentage,
+          total_price: item.quantity * item.unit_price * (1 - item.discount_percentage / 100)
+        }));
+
+      console.log('Budget items to insert:', budgetItems);
+
+      if (budgetItems.length > 0) {
+        const { error: itemsError } = await supabase
+          .from('budget_items')
+          .insert(budgetItems);
+
+        if (itemsError) {
+          console.error('Error inserting budget items:', itemsError);
+          throw itemsError;
+        }
+      }
+
+      console.log('Budget items created successfully');
+      console.log('=== END CREATING BUDGET ===');
+      toast.success('Orçamento criado com sucesso!');
+    } catch (error) {
+      console.error('Error in createBudget:', error);
+      toast.error('Erro ao criar orçamento: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+      throw error;
+    }
   }
 
   static async updateBudget(formData: BudgetFormData, editingBudget: LocalBudget, isClient: boolean = false, userRole?: string): Promise<void> {
     console.log('=== UPDATING BUDGET ===');
     console.log('Form data for update:', formData);
     console.log('Editing budget:', editingBudget);
+    console.log('Is client:', isClient);
+    console.log('User role:', userRole);
     
-    // Validar se o campo de nota fiscal está preenchido
-    if (formData.invoice_percentage === 0 || formData.invoice_percentage === null || formData.invoice_percentage === undefined) {
-      toast.error('O campo "Nota Fiscal (%) - Apenas Informativo" é obrigatório');
-      throw new Error('Campo Nota Fiscal é obrigatório');
-    }
-    
-    // Validate stock before updating budget
-    if (!(await this.validateStock(formData, isClient, userRole))) {
-      return;
-    }
-    
-    const totalAmount = this.calculateTotalAmount(formData);
-
-    const budgetPayload = {
-      client_id: formData.client_id,
-      notes: formData.notes,
-      status: 'processando' as const,
-      total_amount: totalAmount,
-      discount_percentage: formData.discount_percentage,
-      invoice_percentage: formData.invoice_percentage,
-      payment_method_id: formData.payment_method_id || null,
-      payment_type_id: formData.payment_type_id || null,
-      shipping_option_id: formData.shipping_option_id || null,
-      shipping_cost: formData.shipping_cost,
-      local_delivery_info: formData.local_delivery_info || null,
-      installments: formData.installments,
-      check_installments: formData.check_installments,
-      check_due_dates: formData.check_due_dates,
-      boleto_installments: formData.boleto_installments,
-      boleto_due_dates: formData.boleto_due_dates,
-      updated_at: new Date().toISOString()
-    };
-
-    console.log('Budget update payload:', budgetPayload);
-
-    // Update existing budget
-    const { error: budgetError } = await supabase
-      .from('budgets')
-      .update(budgetPayload)
-      .eq('id', editingBudget.id);
-
-    if (budgetError) {
-      console.error('Error updating budget:', budgetError);
-      throw budgetError;
-    }
-
-    console.log('Budget updated successfully');
-
-    // Delete existing budget items
-    const { error: deleteError } = await supabase
-      .from('budget_items')
-      .delete()
-      .eq('budget_id', editingBudget.id);
-
-    if (deleteError) {
-      console.error('Error deleting existing items:', deleteError);
-      throw deleteError;
-    }
-
-    console.log('Existing budget items deleted');
-
-    // Filtrar apenas itens válidos para inserção
-    const budgetItems = formData.items
-      .filter(item => item.product_id && item.product_id.trim() !== '' && item.quantity > 0)
-      .map(item => ({
-        budget_id: editingBudget.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        discount_percentage: item.discount_percentage,
-        total_price: item.quantity * item.unit_price * (1 - item.discount_percentage / 100)
-      }));
-
-    console.log('New budget items to insert:', budgetItems);
-
-    if (budgetItems.length > 0) {
-      const { error: itemsError } = await supabase
-        .from('budget_items')
-        .insert(budgetItems);
-
-      if (itemsError) {
-        console.error('Error inserting budget items:', itemsError);
-        throw itemsError;
+    try {
+      // Validar se o campo de nota fiscal está preenchido
+      if (formData.invoice_percentage === 0 || formData.invoice_percentage === null || formData.invoice_percentage === undefined) {
+        console.error('Invoice percentage validation failed:', formData.invoice_percentage);
+        toast.error('O campo "Nota Fiscal (%) - Apenas Informativo" é obrigatório');
+        throw new Error('Campo Nota Fiscal é obrigatório');
       }
-    }
+      
+      // Validate stock before updating budget
+      console.log('Starting stock validation...');
+      if (!(await this.validateStock(formData, isClient, userRole))) {
+        console.error('Stock validation failed');
+        return;
+      }
+      
+      console.log('Calculating total amount...');
+      const totalAmount = this.calculateTotalAmount(formData);
+      console.log('Total amount calculated:', totalAmount);
 
-    console.log('New budget items inserted successfully');
-    console.log('=== END UPDATING BUDGET ===');
-    toast.success('Orçamento atualizado com sucesso!');
+      const budgetPayload = {
+        client_id: formData.client_id,
+        notes: formData.notes,
+        status: 'processando' as const,
+        total_amount: totalAmount,
+        discount_percentage: formData.discount_percentage,
+        invoice_percentage: formData.invoice_percentage,
+        payment_method_id: formData.payment_method_id || null,
+        payment_type_id: formData.payment_type_id || null,
+        shipping_option_id: formData.shipping_option_id || null,
+        shipping_cost: formData.shipping_cost,
+        local_delivery_info: formData.local_delivery_info || null,
+        installments: formData.installments,
+        check_installments: formData.check_installments,
+        check_due_dates: formData.check_due_dates,
+        boleto_installments: formData.boleto_installments,
+        boleto_due_dates: formData.boleto_due_dates,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('Budget update payload:', budgetPayload);
+
+      // Update existing budget
+      const { error: budgetError } = await supabase
+        .from('budgets')
+        .update(budgetPayload)
+        .eq('id', editingBudget.id);
+
+      if (budgetError) {
+        console.error('Error updating budget:', budgetError);
+        throw budgetError;
+      }
+
+      console.log('Budget updated successfully');
+
+      // Delete existing budget items
+      const { error: deleteError } = await supabase
+        .from('budget_items')
+        .delete()
+        .eq('budget_id', editingBudget.id);
+
+      if (deleteError) {
+        console.error('Error deleting existing items:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('Existing budget items deleted');
+
+      // Filtrar apenas itens válidos para inserção
+      const budgetItems = formData.items
+        .filter(item => item.product_id && item.product_id.trim() !== '' && item.quantity > 0)
+        .map(item => ({
+          budget_id: editingBudget.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_percentage: item.discount_percentage,
+          total_price: item.quantity * item.unit_price * (1 - item.discount_percentage / 100)
+        }));
+
+      console.log('New budget items to insert:', budgetItems);
+
+      if (budgetItems.length > 0) {
+        const { error: itemsError } = await supabase
+          .from('budget_items')
+          .insert(budgetItems);
+
+        if (itemsError) {
+          console.error('Error inserting budget items:', itemsError);
+          throw itemsError;
+        }
+      }
+
+      console.log('New budget items inserted successfully');
+      console.log('=== END UPDATING BUDGET ===');
+      toast.success('Orçamento atualizado com sucesso!');
+    } catch (error) {
+      console.error('Error in updateBudget:', error);
+      toast.error('Erro ao atualizar orçamento: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+      throw error;
+    }
   }
 }
