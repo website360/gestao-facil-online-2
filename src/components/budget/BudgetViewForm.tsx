@@ -59,7 +59,7 @@ const BudgetViewForm = ({
     calculateTotalDiscountAmount 
   } = useBudgetCalculations();
 
-  const { isClient } = useAuth();
+  const { isClient, userProfile } = useAuth();
   const [shippingOptions, setShippingOptions] = useState<Array<{ id: string; name: string; price: number }>>([]);
 
   // Carregar opções de envio
@@ -182,6 +182,7 @@ const BudgetViewForm = ({
           onRemoveItem={noopValueHandler}
           calculateItemTotal={calculateItemTotal}
           readonly={true}
+          showStock={userProfile?.role === 'admin' || userProfile?.role === 'gerente'}
         />
       )}
 

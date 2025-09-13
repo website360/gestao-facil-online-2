@@ -77,7 +77,7 @@ const BudgetForm = ({
     handleProductChange 
   } = useBudgetFormOperations(formData, setFormData, products);
 
-  const { isClient, clientData } = useAuth();
+  const { isClient, clientData, userProfile } = useAuth();
   const [shippingOptions, setShippingOptions] = useState<Array<{ id: string; name: string; price: number }>>([]);
 
   // Se for cliente, definir automaticamente o client_id
@@ -207,6 +207,7 @@ const BudgetForm = ({
           onItemUpdate={updateItem}
           onRemoveItem={removeItem}
           calculateItemTotal={calculateItemTotal}
+          showStock={userProfile?.role === 'admin' || userProfile?.role === 'gerente'}
         />
       )}
 

@@ -28,6 +28,7 @@ interface BudgetItemFormProps {
   onRemove: (index: number) => void;
   calculateItemTotal: (item: BudgetItem) => number;
   readonly?: boolean;
+  showStock?: boolean;
 }
 
 const BudgetItemForm = ({
@@ -41,7 +42,8 @@ const BudgetItemForm = ({
   onItemUpdate,
   onRemove,
   calculateItemTotal,
-  readonly = false
+  readonly = false,
+  showStock = false
 }: BudgetItemFormProps) => {
   console.log('BudgetItemForm - productOptions:', productOptions);
   console.log('BudgetItemForm - item.product_id:', item.product_id);
@@ -106,14 +108,16 @@ const BudgetItemForm = ({
         />
       </td>
 
-      <td className="p-2">
-        <Input
-          value={currentStock.toString()}
-          readOnly
-          className="h-8 text-xs text-center bg-gray-100 border-gray-300"
-          placeholder="0"
-        />
-      </td>
+      {showStock && (
+        <td className="p-2">
+          <Input
+            value={currentStock.toString()}
+            readOnly
+            className="h-8 text-xs text-center bg-gray-100 border-gray-300"
+            placeholder="0"
+          />
+        </td>
+      )}
 
       <td className="p-2">
         <Input
