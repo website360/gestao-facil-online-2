@@ -169,6 +169,7 @@ const BudgetViewForm = ({
           onRemoveItem={noopValueHandler}
           calculateItemTotal={calculateItemTotal}
           readonly={true}
+          showStock={false}
         />
       ) : (
         <BudgetItemsTable

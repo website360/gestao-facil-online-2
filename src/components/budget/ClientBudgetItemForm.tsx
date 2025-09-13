@@ -26,6 +26,7 @@ interface ClientBudgetItemFormProps {
   onRemove: (index: number) => void;
   calculateItemTotal: (item: BudgetItem) => number;
   readonly?: boolean;
+  showStock?: boolean;
 }
 
 const ClientBudgetItemForm = ({
@@ -39,7 +40,8 @@ const ClientBudgetItemForm = ({
   onItemUpdate,
   onRemove,
   calculateItemTotal,
-  readonly = false
+  readonly = false,
+  showStock = false
 }: ClientBudgetItemFormProps) => {
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -71,14 +73,16 @@ const ClientBudgetItemForm = ({
         />
       </td>
 
-      <td className="p-2">
-        <Input
-          value={products.find(p => p.id === item.product_id)?.stock?.toString() || '0'}
-          readOnly
-          className="h-8 text-xs text-center bg-gray-100 border-gray-300"
-          placeholder="0"
-        />
-      </td>
+      {showStock && (
+        <td className="p-2">
+          <Input
+            value={products.find(p => p.id === item.product_id)?.stock?.toString() || '0'}
+            readOnly
+            className="h-8 text-xs text-center bg-gray-100 border-gray-300"
+            placeholder="0"
+          />
+        </td>
+      )}
 
       <td className="p-2">
         <Input

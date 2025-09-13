@@ -24,6 +24,7 @@ interface ClientBudgetItemsTableProps {
   onRemoveItem: (index: number) => void;
   calculateItemTotal: (item: BudgetItem) => number;
   readonly?: boolean;
+  showStock?: boolean;
 }
 
 const ClientBudgetItemsTable = ({
@@ -36,7 +37,8 @@ const ClientBudgetItemsTable = ({
   onItemUpdate,
   onRemoveItem,
   calculateItemTotal,
-  readonly = false
+  readonly = false,
+  showStock = false
 }: ClientBudgetItemsTableProps) => {
   return (
     <div className="space-y-3">
@@ -56,7 +58,7 @@ const ClientBudgetItemsTable = ({
             <TableRow className="bg-gray-50">
               <TableHead className="w-12 text-center text-xs">#</TableHead>
               <TableHead className="min-w-[120px] text-xs">Produto</TableHead>
-              <TableHead className="w-16 text-center text-xs">Estoque</TableHead>
+              {showStock && <TableHead className="w-16 text-center text-xs">Estoque</TableHead>}
               <TableHead className="w-24 text-xs">Código</TableHead>
               <TableHead className="w-20 text-center text-xs">Qtd</TableHead>
               <TableHead className="w-24 text-center text-xs">Preço Un</TableHead>
@@ -81,6 +83,7 @@ const ClientBudgetItemsTable = ({
                 calculateItemTotal={calculateItemTotal}
                 generalDiscount={generalDiscount}
                 readonly={readonly}
+                showStock={showStock}
               />
             ))}
           </TableBody>

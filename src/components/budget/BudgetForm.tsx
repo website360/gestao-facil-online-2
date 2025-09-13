@@ -195,6 +195,7 @@ const BudgetForm = ({
           onItemUpdate={updateItem}
           onRemoveItem={removeItem}
           calculateItemTotal={calculateItemTotal}
+          showStock={false}
         />
       ) : (
         <BudgetItemsTable
