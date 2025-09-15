@@ -131,11 +131,12 @@ export class BudgetService {
     console.log('User role:', userRole);
     
     try {
-      // Validar se o campo de nota fiscal está preenchido
-      if (formData.invoice_percentage === 0 || formData.invoice_percentage === null || formData.invoice_percentage === undefined) {
-        console.error('Invoice percentage validation failed:', formData.invoice_percentage);
-        toast.error('O campo "Nota Fiscal (%) - Apenas Informativo" é obrigatório');
-        throw new Error('Campo Nota Fiscal é obrigatório');
+      // Validar Nota Fiscal apenas para admin/gerente (não clientes)
+      const requireInvoice = !isClient && (userRole === 'admin' || userRole === 'gerente');
+      if (requireInvoice && (formData.invoice_percentage === 0 || formData.invoice_percentage === null || formData.invoice_percentage === undefined)) {
+        console.error('Invoice percentage validation failed (admin/gerente required):', formData.invoice_percentage);
+        toast.error('O campo "Nota Fiscal (%) - Apenas Informativo" é obrigatório para administradores e gerentes');
+        throw new Error('Campo Nota Fiscal é obrigatório para admin/gerente');
       }
       
       // Validate stock before creating budget
@@ -227,11 +228,12 @@ export class BudgetService {
     console.log('User role:', userRole);
     
     try {
-      // Validar se o campo de nota fiscal está preenchido
-      if (formData.invoice_percentage === 0 || formData.invoice_percentage === null || formData.invoice_percentage === undefined) {
-        console.error('Invoice percentage validation failed:', formData.invoice_percentage);
-        toast.error('O campo "Nota Fiscal (%) - Apenas Informativo" é obrigatório');
-        throw new Error('Campo Nota Fiscal é obrigatório');
+      // Validar Nota Fiscal apenas para admin/gerente (não clientes)
+      const requireInvoice = !isClient && (userRole === 'admin' || userRole === 'gerente');
+      if (requireInvoice && (formData.invoice_percentage === 0 || formData.invoice_percentage === null || formData.invoice_percentage === undefined)) {
+        console.error('Invoice percentage validation failed (admin/gerente required):', formData.invoice_percentage);
+        toast.error('O campo "Nota Fiscal (%) - Apenas Informativo" é obrigatório para administradores e gerentes');
+        throw new Error('Campo Nota Fiscal é obrigatório para admin/gerente');
       }
       
       // Validate stock before updating budget
