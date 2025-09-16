@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ClientSearchInput } from './ClientSearchInput';
 
 interface BudgetFormHeaderProps {
   clientId: string;
@@ -34,18 +34,13 @@ const BudgetFormHeader = ({
             {clientOptions.find(c => c.value === clientId)?.label || 'Cliente'}
           </div>
         ) : (
-          <Select value={clientId} onValueChange={onClientChange} disabled={readonly}>
-            <SelectTrigger className="bg-background">
-              <SelectValue placeholder="Selecione um cliente..." />
-            </SelectTrigger>
-            <SelectContent className="bg-white border shadow-lg z-[9999] max-h-60 overflow-auto">
-              {clientOptions.map((client) => (
-                <SelectItem key={client.value} value={client.value} className="bg-white hover:bg-gray-50">
-                  {client.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ClientSearchInput
+            value={clientId}
+            onValueChange={onClientChange}
+            options={clientOptions}
+            placeholder="Buscar cliente..."
+            disabled={readonly}
+          />
         )}
       </div>
     </div>
