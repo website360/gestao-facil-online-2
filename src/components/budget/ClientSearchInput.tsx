@@ -63,7 +63,9 @@ export const ClientSearchInput = ({
   };
 
   // Função para selecionar uma opção
-  const handleOptionSelect = (option: ClientOption) => {
+  const handleOptionSelect = (event: React.MouseEvent, option: ClientOption) => {
+    event.preventDefault();
+    event.stopPropagation();
     console.log('Selecting client option:', option.value, option.label);
     onValueChange(option.value);
     setSearchTerm(option.label);
@@ -191,7 +193,7 @@ export const ClientSearchInput = ({
                 <li key={option.value}>
                   <button
                     type="button"
-                    onClick={() => handleOptionSelect(option)}
+                    onClick={(event) => handleOptionSelect(event, option)}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-muted focus:bg-muted focus:outline-none"
                   >
                     {option.label}
