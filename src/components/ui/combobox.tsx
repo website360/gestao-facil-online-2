@@ -26,6 +26,7 @@ interface ComboboxProps {
   emptyText?: string
   searchPlaceholder?: string
   className?: string
+  disabled?: boolean
 }
 
 export function Combobox({
@@ -35,19 +36,21 @@ export function Combobox({
   placeholder = "Selecione uma opção...",
   emptyText = "Nenhum resultado encontrado.",
   searchPlaceholder = "Buscar...",
-  className
+  className,
+  disabled = false
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
   const selectedOption = options.find((option) => option.value === value)
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(next) => !disabled && setOpen(next)}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          disabled={disabled}
           className={cn("w-full justify-between", className)}
         >
           {selectedOption ? selectedOption.label : placeholder}
@@ -57,7 +60,7 @@ export function Combobox({
       <PopoverContent className="w-full p-0" style={{ zIndex: 9999 }}>
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
-          <CommandList>
+          <CommandList className="max-h-60 overflow-auto overscroll-contain" onWheel={(e) => e.stopPropagation()}>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
