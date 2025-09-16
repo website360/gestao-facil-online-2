@@ -75,9 +75,11 @@ export class CatalogPDFGenerator {
   private doc: jsPDF;
   private customLayout: LayoutConfig | null = null;
   private catalogConfig: any = null;
+  private userType: string = 'admin'; // Default to admin for backward compatibility
 
-  constructor() {
+  constructor(userType: string = 'admin') {
     this.doc = new jsPDF();
+    this.userType = userType;
     this.loadCustomLayout();
     this.loadCatalogConfiguration();
   }
@@ -738,6 +740,10 @@ export class CatalogPDFGenerator {
       case 'price':
         return `${product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
       case 'stock':
+        // Não mostrar estoque para cliente, vendedor ou público
+        if (this.userType === 'public' || this.userType === 'client' || this.userType === 'seller') {
+          return '';
+        }
         return `**Estoque:** ${product.stock}`;
       case 'unit':
         return `**Unidade:** ${product.stock_unit || 'Un'}`;
@@ -829,7 +835,8 @@ export class CatalogPDFGenerator {
     // Todas as informações disponíveis do produto
     const productInfo = [];
     
-    if (product.stock !== undefined) {
+    if (product.stock !== undefined && 
+        !(this.userType === 'public' || this.userType === 'client' || this.userType === 'seller')) {
       productInfo.push(`Estoque: ${product.stock}${product.stock_unit ? ' ' + product.stock_unit : ''}`);
     }
     

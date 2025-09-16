@@ -495,9 +495,12 @@ const Catalog = () => {
                           {product.categories.name}
                         </Badge>
                       )}
-                      <Badge variant={getStockBadgeVariant(product.stock)}>
-                        {getStockStatusText(product.stock)}
-                      </Badge>
+                      {/* Mostrar estoque apenas para admin e gerente */}
+                      {userType === 'admin' && (
+                        <Badge variant={getStockBadgeVariant(product.stock)}>
+                          {getStockStatusText(product.stock)}
+                        </Badge>
+                      )}
                     </div>
                     
                     {product.observation && (
