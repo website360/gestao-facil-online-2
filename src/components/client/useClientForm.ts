@@ -83,11 +83,17 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
       const documentField = clientType === 'fisica' ? 'cpf' : 'cnpj';
       
       if (documentToCheck) {
-        const { data: existingClients, error: checkError } = await supabase
+        let query = supabase
           .from('clients')
           .select('id')
-          .eq(documentField, documentToCheck)
-          .neq('id', editingClient?.id || ''); // Excluir o próprio cliente na edição
+          .eq(documentField, documentToCheck);
+
+        // Excluir o próprio cliente na edição (evitar passar UUID vazio)
+        if (editingClient?.id) {
+          query = query.neq('id', editingClient.id);
+        }
+
+        const { data: existingClients, error: checkError } = await query;
 
         if (checkError) {
           console.error('Erro ao verificar documento:', checkError);
@@ -119,7 +125,7 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
         state: state || null,
         allow_system_access: allowSystemAccess,
         system_password: allowSystemAccess ? systemPassword : null,
-        assigned_user_id: assignedUserId === 'all' ? null : assignedUserId,
+        assigned_user_id: !assignedUserId || assignedUserId === 'all' ? null : assignedUserId,
       };
 
       console.log('Salvando cliente:', clientData);
