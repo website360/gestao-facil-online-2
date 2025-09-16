@@ -16,7 +16,7 @@ export const useDashboardAlerts = () => {
   const { userProfile } = useUserProfile();
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
 
-  const isVendasUser = userProfile?.role === 'vendas';
+  const isVendasUser = userProfile?.role === 'vendedor_externo' || userProfile?.role === 'vendedor_interno';
 
   const fetchAlerts = async () => {
     try {

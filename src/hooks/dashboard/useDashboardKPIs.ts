@@ -44,7 +44,7 @@ export const useDashboardKPIs = (dateRange?: DateRange) => {
     salesFinalizado: 0,
   });
 
-  const isVendasUser = userProfile?.role === 'vendas';
+  const isVendasUser = userProfile?.role === 'vendedor_externo' || userProfile?.role === 'vendedor_interno';
 
   const getDateRangeFilters = () => {
     if (dateRange?.startDate && dateRange?.endDate) {

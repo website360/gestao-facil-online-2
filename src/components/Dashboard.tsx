@@ -33,7 +33,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
   const { kpis, alerts, loading, refetch } = useDashboardData(appliedDateRange);
   
   // Verificar se é usuário de vendas para filtrar dados
-  const isVendasUser = userProfile?.role === 'vendas';
+  const isVendasUser = userProfile?.role === 'vendedor_externo' || userProfile?.role === 'vendedor_interno';
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

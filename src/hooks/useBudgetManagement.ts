@@ -166,8 +166,8 @@ export const useBudgetManagement = (userRole?: string) => {
         }
       }
       
-      // Para vendas, mostrar apenas orçamentos criados por eles
-      if (userRole === 'vendas' && user?.id) {
+      // Para vendedores, mostrar apenas orçamentos criados por eles
+      if ((userRole === 'vendedor_externo' || userRole === 'vendedor_interno') && user?.id) {
         query = query.eq('created_by', user.id);
       }
       

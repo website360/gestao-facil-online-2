@@ -740,8 +740,8 @@ export class CatalogPDFGenerator {
       case 'price':
         return `${product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
       case 'stock':
-        // Não mostrar estoque para cliente, vendedor ou público
-        if (this.userType === 'public' || this.userType === 'client' || this.userType === 'seller') {
+        // Não mostrar estoque para cliente, vendedor externo ou público
+        if (this.userType === 'public' || this.userType === 'client' || this.userType === 'seller_external') {
           return '';
         }
         return `**Estoque:** ${product.stock}`;
@@ -836,7 +836,7 @@ export class CatalogPDFGenerator {
     const productInfo = [];
     
     if (product.stock !== undefined && 
-        !(this.userType === 'public' || this.userType === 'client' || this.userType === 'seller')) {
+        !(this.userType === 'public' || this.userType === 'client' || this.userType === 'seller_external')) {
       productInfo.push(`Estoque: ${product.stock}${product.stock_unit ? ' ' + product.stock_unit : ''}`);
     }
     

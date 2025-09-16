@@ -348,7 +348,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
             <div id="sale-print-content" className="space-y-6">
 
               {/* Informações completas do cliente */}
-              {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') && client && (
+              {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendedor_externo' || userRole === 'vendedor_interno') && client && (
                 <Card style={{ backgroundColor: '#F9FAFB' }} className="border-blue-200">
                   <CardHeader>
                     <CardTitle className="text-lg font-semibold">Dados Completos do Cliente</CardTitle>
@@ -572,7 +572,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                           <TableRow className="bg-gray-50">
                             <TableHead className="text-center w-12">#</TableHead>
                             <TableHead>Produto</TableHead>
-                            {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') ? (
+                            {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendedor_externo' || userRole === 'vendedor_interno') ? (
                               <>
                                 <TableHead className="text-center">Estoque</TableHead>
                                 <TableHead className="text-center">Código</TableHead>
@@ -592,7 +592,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                            <TableRow key={index}>
                              <TableCell className="text-center font-medium">{index + 1}</TableCell>
                              <TableCell className="font-medium">{item.products?.name || 'Produto não encontrado'}</TableCell>
-                              {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') ? (
+                              {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendedor_externo' || userRole === 'vendedor_interno') ? (
                                 <>
                                   <TableCell className="text-center">-</TableCell>
                                   <TableCell className="text-center">{item.products?.internal_code || 'N/A'}</TableCell>
@@ -633,7 +633,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                                    <Package className="h-4 w-4 text-gray-500" />
                                  </div>
                                </div>
-                               {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') && (
+                               {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendedor_externo' || userRole === 'vendedor_interno') && (
                                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
                                    <Trash2 className="h-3 w-3" />
                                  </Button>
@@ -651,7 +651,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                              </div>
 
                              {/* Details Grid - Only for authorized roles */}
-                             {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') && (
+                             {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendedor_externo' || userRole === 'vendedor_interno') && (
                                <div className="grid grid-cols-2 gap-3 text-sm">
                                  <div>
                                    <span className="text-xs text-gray-500">Quantidade:</span>
@@ -680,7 +680,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
               </Card>
 
               {/* Resumo da Venda */}
-              {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendas') ? (
+              {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente' || userRole === 'vendedor_externo' || userRole === 'vendedor_interno') ? (
                 <Card style={{ backgroundColor: '#F9FAFB' }} className="border-gray-200">
                   <CardHeader>
                     <CardTitle className="text-lg font-semibold">Resumo da Venda</CardTitle>

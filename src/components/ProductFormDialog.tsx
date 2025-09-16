@@ -164,7 +164,7 @@ const ProductFormDialog = ({ showForm, editingProduct, onClose, onSuccess, readO
           )}
 
           {/* Apenas Preço para Vendedores */}
-          {userRole === 'vendas' && (
+          {userRole === 'vendedor_externo' && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">

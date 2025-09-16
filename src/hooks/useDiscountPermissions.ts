@@ -63,7 +63,7 @@ export const useDiscountPermissions = () => {
   // Definir permissões baseado no tipo de usuário
   const canEditDiscount = !isClient; // Clientes não podem editar desconto
   const isAdminOrManager = userProfile?.role === 'admin' || userProfile?.role === 'gerente';
-  const isSales = userProfile?.role === 'vendas';
+  const isSales = userProfile?.role === 'vendedor_externo' || userProfile?.role === 'vendedor_interno';
 
   // Verificar se um valor de desconto é válido
   const isValidGeneralDiscount = (value: number): boolean => {

@@ -265,7 +265,7 @@ const ProductManagement = () => {
         editingProduct={editingProduct}
         onClose={handleFormClose}
         onSuccess={handleFormSuccess}
-        readOnly={userProfile?.role === 'vendas'}
+        readOnly={userProfile?.role === 'vendedor_externo'}
         userRole={userProfile?.role}
       />
 

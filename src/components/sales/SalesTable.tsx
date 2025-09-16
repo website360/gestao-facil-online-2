@@ -104,7 +104,7 @@ const SalesTable = ({
   const isTabletOrMobile = useIsTabletOrMobile();
 
   const canEdit = (sale: any) => {
-    return userRole === 'admin' || userRole === 'vendas';
+    return userRole === 'admin' || userRole === 'vendedor_externo' || userRole === 'vendedor_interno';
   };
 
   const canDelete = (sale: any) => {

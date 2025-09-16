@@ -54,13 +54,14 @@ const Catalog = () => {
   const getUserType = () => {
     if (!user && !isClient) return 'public'; // Usuário não logado
     if (isClient) return 'client'; // Cliente logado
-    if (userProfile?.role === 'vendas') return 'seller'; // Vendedor
+    if (userProfile?.role === 'vendedor_externo') return 'seller_external'; // Vendedor Externo
+    if (userProfile?.role === 'vendedor_interno') return 'seller_internal'; // Vendedor Interno
     if (userProfile?.role === 'admin' || userProfile?.role === 'gerente') return 'admin'; // Admin/Gerente
-    return 'seller'; // Default para outros roles
+    return 'seller_external'; // Default para outros roles
   };
   
   const userType = getUserType();
-  const shouldUseStockLimit = ['public', 'client', 'seller'].includes(userType);
+  const shouldUseStockLimit = ['public', 'client', 'seller_external'].includes(userType);
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -139,10 +140,10 @@ const Catalog = () => {
       // Apply stock filter
       if (!showOutOfStock) {
         if (shouldUseStockLimit) {
-          // Para público, cliente e vendedor: produtos com mais de 10 unidades são considerados "em estoque"
+          // Para público, cliente e vendedor externo: produtos com mais de 10 unidades são considerados "em estoque"
           query = query.gt('stock', 10);
         } else {
-          // Para admin e gerente: produtos com 1 ou mais unidades são considerados "em estoque"
+          // Para admin, gerente e vendedor interno: produtos com 1 ou mais unidades são considerados "em estoque"
           query = query.gte('stock', 1);
         }
       }
@@ -180,9 +181,9 @@ const Catalog = () => {
   // Função para determinar se produto está em estoque baseado no tipo de usuário
   const isProductInStock = (stock: number) => {
     if (shouldUseStockLimit) {
-      return stock > 10; // Público, cliente e vendedor: mais de 10 unidades
+      return stock > 10; // Público, cliente e vendedor externo: mais de 10 unidades
     }
-    return stock > 0; // Admin e gerente: qualquer quantidade acima de 0
+    return stock > 0; // Admin, gerente e vendedor interno: qualquer quantidade acima de 0
   };
 
   // Função para obter texto do status de estoque
@@ -264,7 +265,8 @@ const Catalog = () => {
               <Badge variant="outline" className="text-sm">
                 {userType === 'admin' ? 'Visualização Administrativa (estoque real)' : 
                  userType === 'client' ? 'Visualização Cliente' : 
-                 userType === 'seller' ? 'Visualização Vendedor' : 'Visualização Pública'}
+                 userType === 'seller_internal' ? 'Visualização Vendedor Interno' :
+                 userType === 'seller_external' ? 'Visualização Vendedor Externo' : 'Visualização Pública'}
               </Badge>
             </div>
           )}
@@ -495,8 +497,8 @@ const Catalog = () => {
                           {product.categories.name}
                         </Badge>
                       )}
-                      {/* Mostrar estoque apenas para admin e gerente */}
-                      {userType === 'admin' && (
+                      {/* Mostrar estoque para admin, gerente e vendedor interno */}
+                      {(userType === 'admin' || userType === 'seller_internal') && (
                         <Badge variant={getStockBadgeVariant(product.stock)}>
                           {getStockStatusText(product.stock)}
                         </Badge>

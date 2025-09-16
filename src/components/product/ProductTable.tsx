@@ -127,7 +127,7 @@ const ProductTable = ({
 
                 {/* Informações organizadas lado a lado */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  {userRole !== 'vendas' && (
+                  {userRole !== 'vendedor_externo' && (
                     <div>
                       <span className="text-xs text-gray-500 block">Estoque:</span>
                       <Badge className={`text-xs mt-1 ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -145,7 +145,7 @@ const ProductTable = ({
                     </div>
                   )}
 
-                  {userRole !== 'vendas' && product.suppliers?.name && (
+                  {userRole !== 'vendedor_externo' && userRole !== 'vendedor_interno' && product.suppliers?.name && (
                     <div>
                       <span className="text-xs text-gray-500 block">Fornecedor:</span>
                       <Badge className="bg-purple-100 text-purple-800 text-xs mt-1">
@@ -221,10 +221,10 @@ const ProductTable = ({
               <TableHead>Foto</TableHead>
               {renderSortableHeader('name', 'Produto')}
               {renderSortableHeader('category', 'Categoria')}
-              {userRole !== 'vendas' && renderSortableHeader('supplier', 'Fornecedor')}
+              {userRole !== 'vendedor_externo' && userRole !== 'vendedor_interno' && renderSortableHeader('supplier', 'Fornecedor')}
               {renderSortableHeader('internal_code', 'Código')}
               {renderSortableHeader('price', 'Preço', 'text-right')}
-              {userRole !== 'vendas' && renderSortableHeader('stock', 'Estoque', 'text-right')}
+              {userRole !== 'vendedor_externo' && renderSortableHeader('stock', 'Estoque', 'text-right')}
               {renderSortableHeader('created_at', 'Data')}
               {canManageProducts && <TableHead className="w-40">Ações</TableHead>}
               {!canManageProducts && <TableHead className="w-40">Visualizar</TableHead>}
@@ -267,7 +267,7 @@ const ProductTable = ({
                   </Badge>
                 )}
               </TableCell>
-              {userRole !== 'vendas' && (
+              {userRole !== 'vendedor_externo' && userRole !== 'vendedor_interno' && (
                 <TableCell>
                   {product.suppliers?.name && (
                     <Badge className="bg-green-100 text-green-800">
@@ -282,7 +282,7 @@ const ProductTable = ({
               <TableCell className="text-right font-medium">
                 {formatCurrency(product.price)}
               </TableCell>
-              {userRole !== 'vendas' && (
+              {userRole !== 'vendedor_externo' && (
                 <TableCell className="text-right">
                   <Badge className={product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
                     {product.stock} {product.stock_unit || 'un'}

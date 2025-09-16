@@ -125,7 +125,7 @@ export const useClientManagement = () => {
 
         // Se for vendas, filtrar apenas clientes atribuídos especificamente ao usuário
         // Clientes sem vendedor responsável (assigned_user_id null) ficam visíveis apenas para admin e gerente
-        if (userProfile && userProfile.role === 'vendas') {
+        if (userProfile && (userProfile.role === 'vendedor_externo' || userProfile.role === 'vendedor_interno')) {
           query = query.eq('assigned_user_id', userProfile.id);
         }
 

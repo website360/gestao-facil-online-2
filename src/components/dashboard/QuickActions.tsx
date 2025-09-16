@@ -28,7 +28,7 @@ const QuickActions = ({ onAction, userRole }: QuickActionsProps) => {
       }
     ];
 
-    if (userRole === 'admin' || userRole === 'vendas') {
+    if (userRole === 'admin' || userRole === 'vendedor_externo' || userRole === 'vendedor_interno') {
       actions.push(
         {
           id: 'new-client',

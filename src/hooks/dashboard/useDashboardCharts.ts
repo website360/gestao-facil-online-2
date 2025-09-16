@@ -26,7 +26,7 @@ export const useDashboardCharts = (dateRange?: DateRange) => {
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [budgetStatusData, setBudgetStatusData] = useState<BudgetStatusData[]>([]);
 
-  const isVendasUser = userProfile?.role === 'vendas';
+  const isVendasUser = userProfile?.role === 'vendedor_externo' || userProfile?.role === 'vendedor_interno';
 
   const getDateRangeFilters = () => {
     if (dateRange?.startDate && dateRange?.endDate) {

@@ -320,7 +320,8 @@ export const useSalesManagement = () => {
       switch (userRole) {
         case 'admin':
         case 'gerente':
-        case 'vendas':
+        case 'vendedor_externo':
+        case 'vendedor_interno':
           return true;
         case 'separacao':
           return sale.status === 'separacao';
