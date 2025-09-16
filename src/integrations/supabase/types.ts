@@ -1088,9 +1088,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      anon_can_manage_budget: {
+        Args: { p_budget_id: string }
+        Returns: boolean
+      }
       check_budget_stock_availability: {
         Args: { budget_id_param: string }
         Returns: Json
+      }
+      client_has_system_access: {
+        Args: { p_client_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
