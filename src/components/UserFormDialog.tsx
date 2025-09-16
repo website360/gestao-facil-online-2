@@ -227,7 +227,8 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
                <SelectContent>
                  <SelectItem value="admin">Administrador</SelectItem>
                  <SelectItem value="gerente">Gerente</SelectItem>
-                 <SelectItem value="vendas">Vendas</SelectItem>
+                 <SelectItem value="vendedor_externo">Vendedor Externo</SelectItem>
+                 <SelectItem value="vendedor_interno">Vendedor Interno</SelectItem>
                  <SelectItem value="separacao">Separação</SelectItem>
                  <SelectItem value="conferencia">Conferência</SelectItem>
                  <SelectItem value="nota_fiscal">Nota Fiscal</SelectItem>
