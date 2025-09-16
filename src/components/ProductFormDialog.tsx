@@ -141,7 +141,7 @@ const ProductFormDialog = ({ showForm, editingProduct, onClose, onSuccess, readO
           </Card>
 
           {/* Preço e Estoque */}
-          {userRole !== 'vendas' && (
+          {userRole !== 'vendedor_externo' && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">

@@ -104,7 +104,7 @@ const ProductBasicInfoForm = ({
         </div>
       </div>
 
-      {userRole !== 'vendas' && (
+      {userRole !== 'vendedor_externo' && (
         <div>
           <Label htmlFor="supplier">Fornecedor</Label>
           <Select value={supplierId || "none"} onValueChange={readOnly ? undefined : handleSupplierChange}>

@@ -145,7 +145,7 @@ const ProductTable = ({
                     </div>
                   )}
 
-                  {userRole !== 'vendedor_externo' && userRole !== 'vendedor_interno' && product.suppliers?.name && (
+                  {userRole !== 'vendedor_externo' && product.suppliers?.name && (
                     <div>
                       <span className="text-xs text-gray-500 block">Fornecedor:</span>
                       <Badge className="bg-purple-100 text-purple-800 text-xs mt-1">
@@ -221,7 +221,7 @@ const ProductTable = ({
               <TableHead>Foto</TableHead>
               {renderSortableHeader('name', 'Produto')}
               {renderSortableHeader('category', 'Categoria')}
-              {userRole !== 'vendedor_externo' && userRole !== 'vendedor_interno' && renderSortableHeader('supplier', 'Fornecedor')}
+              {userRole !== 'vendedor_externo' && renderSortableHeader('supplier', 'Fornecedor')}
               {renderSortableHeader('internal_code', 'Código')}
               {renderSortableHeader('price', 'Preço', 'text-right')}
               {userRole !== 'vendedor_externo' && renderSortableHeader('stock', 'Estoque', 'text-right')}
@@ -267,7 +267,7 @@ const ProductTable = ({
                   </Badge>
                 )}
               </TableCell>
-              {userRole !== 'vendedor_externo' && userRole !== 'vendedor_interno' && (
+              {userRole !== 'vendedor_externo' && (
                 <TableCell>
                   {product.suppliers?.name && (
                     <Badge className="bg-green-100 text-green-800">
