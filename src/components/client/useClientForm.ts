@@ -78,6 +78,29 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
     setLoading(true);
 
     try {
+      // Verificar duplicação de documento
+      const documentToCheck = clientType === 'fisica' ? cpf : cnpj;
+      const documentField = clientType === 'fisica' ? 'cpf' : 'cnpj';
+      
+      if (documentToCheck) {
+        const { data: existingClients, error: checkError } = await supabase
+          .from('clients')
+          .select('id')
+          .eq(documentField, documentToCheck)
+          .neq('id', editingClient?.id || ''); // Excluir o próprio cliente na edição
+
+        if (checkError) {
+          console.error('Erro ao verificar documento:', checkError);
+          throw checkError;
+        }
+
+        if (existingClients && existingClients.length > 0) {
+          toast.error(`Já existe um cliente cadastrado com este ${clientType === 'fisica' ? 'CPF' : 'CNPJ'}.`);
+          setLoading(false);
+          return;
+        }
+      }
+
       const clientData = {
         name,
         email,
