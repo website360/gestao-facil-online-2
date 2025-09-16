@@ -124,13 +124,13 @@ export const ClientSearchInput = ({
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
       window.addEventListener('resize', handleResize);
       window.addEventListener('scroll', handleScroll, true);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll, true);
     };
@@ -193,7 +193,7 @@ export const ClientSearchInput = ({
                 <li key={option.value}>
                   <button
                     type="button"
-                    onClick={(event) => handleOptionSelect(event, option)}
+                    onMouseDown={(event) => handleOptionSelect(event, option)}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-muted focus:bg-muted focus:outline-none"
                   >
                     {option.label}
