@@ -10,11 +10,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
+import { mapRole, isVendorOrOldVendasRole, type OldRole } from '@/utils/roleMapper';
+
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'gerente' | 'vendas' | 'separacao' | 'conferencia' | 'nota_fiscal' | 'cliente' | 'entregador';
+  role: OldRole;
   created_at: string;
 }
 
@@ -30,7 +32,7 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'admin' | 'gerente' | 'vendas' | 'separacao' | 'conferencia' | 'nota_fiscal' | 'cliente' | 'entregador'>('vendas');
+  const [role, setRole] = useState<OldRole>('vendedor_externo');
   const [loading, setLoading] = useState(false);
   const [changePassword, setChangePassword] = useState(false);
 
@@ -44,7 +46,7 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
     } else {
       setName('');
       setEmail('');
-      setRole('vendas');
+      setRole('vendedor_externo');
       setPassword('');
       setChangePassword(false);
     }
@@ -126,7 +128,7 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
         setName('');
         setEmail('');
         setPassword('');
-        setRole('vendas');
+        setRole('vendedor_externo');
       }
     } catch (error) {
       console.error('Error saving user:', error);
@@ -218,7 +220,7 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
           )}
           <div>
             <Label htmlFor="role">Função *</Label>
-            <Select value={role} onValueChange={(value: 'admin' | 'gerente' | 'vendas' | 'separacao' | 'conferencia' | 'nota_fiscal' | 'cliente' | 'entregador') => setRole(value)}>
+            <Select value={role} onValueChange={(value: OldRole) => setRole(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a função" />
               </SelectTrigger>

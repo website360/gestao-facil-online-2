@@ -39,9 +39,10 @@ import {
   Copy,
   Check
 } from "lucide-react";
+import { mapRole, isVendorOrOldVendasRole, type OldRole } from '@/utils/roleMapper';
 
 interface Profile {
-  role: 'admin' | 'gerente' | 'vendas' | 'separacao' | 'conferencia' | 'nota_fiscal' | 'cliente' | 'entregador';
+  role: OldRole;
   email: string;
   name: string;
 }
@@ -63,7 +64,7 @@ const Index = () => {
     } else if (isClient) {
       // Para clientes, usar dados do clientData
       setUserProfile({
-        role: 'vendas', // Dar role de vendas para clientes conseguirem criar orçamentos
+        role: 'vendedor_externo', // Dar role de vendedor externo para clientes conseguirem criar orçamentos
         email: clientData?.email || '',
         name: clientData?.name || 'Cliente'
       });
@@ -81,7 +82,7 @@ const Index = () => {
       if (restrictedRoles.includes(userProfile.role)) {
         // Roles restritas sempre vão para vendas
         setActiveModule('sales');
-      } else if (userProfile.role === 'admin' || userProfile.role === 'gerente' || userProfile.role === 'vendas') {
+      } else if (userProfile.role === 'admin' || userProfile.role === 'gerente' || isVendorOrOldVendasRole(userProfile.role)) {
         // Outras roles podem ir para dashboard se não foi especificado outro módulo
         if (activeModule === 'sales' && !location.search.includes('redirect=sales')) {
           setActiveModule('dashboard');
@@ -196,7 +197,7 @@ const Index = () => {
       ];
     }
     
-    if (role === 'vendas') {
+    if (isVendorOrOldVendasRole(role)) {
       return [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'clients', label: 'Clientes', icon: Users },

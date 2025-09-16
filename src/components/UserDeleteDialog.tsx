@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { mapRole, isVendorOrOldVendasRole, type OldRole } from '@/utils/roleMapper';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'gerente' | 'vendas' | 'separacao' | 'conferencia' | 'nota_fiscal' | 'cliente' | 'entregador';
+  role: OldRole;
   created_at: string;
 }
 

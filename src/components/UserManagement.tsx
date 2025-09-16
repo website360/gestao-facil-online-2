@@ -13,11 +13,13 @@ import UserDeleteDialog from './UserDeleteDialog';
 import { toast } from 'sonner';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
+import { mapRole, isVendorOrOldVendasRole, type OldRole } from '@/utils/roleMapper';
+
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'gerente' | 'vendas' | 'separacao' | 'conferencia' | 'nota_fiscal' | 'cliente' | 'entregador';
+  role: OldRole;
   created_at: string;
 }
 
@@ -234,7 +236,9 @@ const UserManagement = () => {
     switch (role) {
       case 'admin': return 'Administrador';
       case 'gerente': return 'Gerente';
-      case 'vendas': return 'Vendas';
+      case 'vendas': return 'Vendedor (Legacy)';
+      case 'vendedor_externo': return 'Vendedor Externo';
+      case 'vendedor_interno': return 'Vendedor Interno';
       case 'separacao': return 'Separação';
       case 'conferencia': return 'Conferência';
       case 'nota_fiscal': return 'Nota Fiscal';
@@ -248,7 +252,9 @@ const UserManagement = () => {
     switch (role) {
       case 'admin': return 'bg-purple-100 text-purple-800';
       case 'gerente': return 'bg-indigo-100 text-indigo-800';
-      case 'vendas': return 'bg-blue-100 text-blue-800';
+      case 'vendas': return 'bg-orange-100 text-orange-800';
+      case 'vendedor_externo': return 'bg-blue-100 text-blue-800';
+      case 'vendedor_interno': return 'bg-purple-100 text-purple-800';
       case 'separacao': return 'bg-orange-100 text-orange-800';
       case 'conferencia': return 'bg-green-100 text-green-800';
       case 'nota_fiscal': return 'bg-yellow-100 text-yellow-800';
