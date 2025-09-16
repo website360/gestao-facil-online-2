@@ -21,11 +21,11 @@ export const addItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: number
   
   // Dynamic column positioning based on configuration
   const showColumns = config.table?.showColumns || { quantity: true, unitPrice: true, discount: true, total: true };
-  const columnWidths = config.table?.columnWidths || { item: 50, quantity: 10, unitPrice: 15, discount: 10, total: 15 };
+  const columnWidths = config.table?.columnWidths || { item: 65, quantity: 10, unitPrice: 15, discount: 10, total: 15 };
   let currentX = 20;
   
   doc.text('Item', currentX, headerVerticalCenter);
-  currentX += (columnWidths.item || 50) * 2;
+  currentX += (columnWidths.item || 65) * 2;
   
   if (showColumns.quantity !== false) {
     doc.text('Qtd', currentX, headerVerticalCenter, { align: 'center' });
@@ -73,7 +73,7 @@ export const addItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: number
       // Redraw dynamic columns
       let currentXNew = 20;
       doc.text('Item', currentXNew, headerVerticalCenterNew);
-      currentXNew += (columnWidths.item || 50) * 2;
+      currentXNew += (columnWidths.item || 65) * 2;
       
       if (showColumns.quantity !== false) {
         doc.text('Qtd', currentXNew, headerVerticalCenterNew, { align: 'center' });
@@ -112,7 +112,7 @@ export const addItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: number
     }
     
     const productName = item.products?.name || 'Produto não encontrado';
-    const splitProductName = doc.splitTextToSize(productName, pageWidth - 130);
+    const splitProductName = doc.splitTextToSize(productName, pageWidth - 100);
     
     // Vertical centering for row content
     const rowVerticalCenter = yPosition + (rowHeight / 2) - 2;
@@ -120,7 +120,7 @@ export const addItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: number
     // Dynamic column content positioning
     let currentXData = 20;
     doc.text(splitProductName[0], currentXData, rowVerticalCenter);
-    currentXData += (columnWidths.item || 50) * 2;
+    currentXData += (columnWidths.item || 65) * 2;
     
     if (showColumns.quantity !== false) {
       doc.text(item.quantity.toString(), currentXData, rowVerticalCenter, { align: 'center' });

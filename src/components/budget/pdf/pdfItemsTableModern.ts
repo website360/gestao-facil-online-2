@@ -10,7 +10,7 @@ export const addModernItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: 
 
   const tableConfig = config.table || {
     showColumns: { quantity: true, unitPrice: true, discount: true, total: true },
-    columnWidths: { item: 50, quantity: 10, unitPrice: 15, discount: 10, total: 15 }
+    columnWidths: { item: 65, quantity: 10, unitPrice: 15, discount: 10, total: 15 }
   };
 
   // Título da seção
