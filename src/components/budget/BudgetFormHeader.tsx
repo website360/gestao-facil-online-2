@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Combobox } from '@/components/ui/combobox';
+import ProductSearchInput from './ProductSearchInput';
 
 interface BudgetFormHeaderProps {
   clientId: string;
@@ -34,10 +34,10 @@ const BudgetFormHeader = ({
             {clientOptions.find(c => c.value === clientId)?.label || 'Cliente'}
           </div>
         ) : (
-          <Combobox
-            options={clientOptions}
+          <ProductSearchInput
             value={clientId}
             onValueChange={onClientChange}
+            options={clientOptions}
             placeholder="Buscar cliente..."
             disabled={readonly}
           />
