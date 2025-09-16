@@ -33,6 +33,8 @@ interface Sale {
   budget_id: string | null;
 }
 
+import { formatBudgetId } from '@/lib/budgetFormatter';
+
 interface ClientHistoryModalProps {
   clientId: string;
   clientName: string;
@@ -248,7 +250,7 @@ const ClientHistoryModal: React.FC<ClientHistoryModalProps> = ({
                           {budgets.map((budget, index) => (
                             <TableRow key={budget.id}>
                               <TableCell className="font-mono text-sm">
-                                {budget.id.slice(0, 8)}
+                                {formatBudgetId(budget.id, budget.created_at)}
                               </TableCell>
                               <TableCell>
                                 {new Date(budget.created_at).toLocaleDateString('pt-BR')}

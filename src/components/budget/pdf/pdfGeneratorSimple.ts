@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 import { getPaymentMethodText, getPaymentTypeText, getShippingOptionText } from './pdfHelpers';
+import { formatBudgetId } from '@/lib/budgetFormatter';
 
 export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudgetTotal: (budget: LocalBudget) => number) => {
   console.log('🚀 FUNÇÃO PDF EXECUTADA!');
@@ -34,8 +35,7 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
     doc.setTextColor(darkColor.r, darkColor.g, darkColor.b);
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    const budgetNumber = budget.id.substring(0, 8).toUpperCase();
-    const titleText = `ORÇAMENTO #${budgetNumber}`;
+    const titleText = `ORÇAMENTO ${formatBudgetId(budget.id, budget.created_at)}`;
     doc.text(titleText, 16, yPosition);
 
     // Data alinhada à direita

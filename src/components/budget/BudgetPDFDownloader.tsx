@@ -38,6 +38,8 @@ interface Budget {
   budget_items?: BudgetItem[];
 }
 
+import { formatBudgetId } from '@/lib/budgetFormatter';
+
 interface BudgetPDFDownloaderProps {
   budget: Budget;
   className?: string;
@@ -47,13 +49,14 @@ const BudgetPDFDownloader = ({ budget, className }: BudgetPDFDownloaderProps) =>
   const downloadPDF = () => {
     const currentDate = new Date().toLocaleDateString('pt-BR');
     const budgetDate = new Date(budget.created_at).toLocaleDateString('pt-BR');
+    const formattedBudgetId = formatBudgetId(budget.id, budget.created_at);
 
     const htmlContent = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
-        <title>Orçamento ${budget.id.slice(0, 8)}</title>
+        <title>Orçamento ${formattedBudgetId}</title>
         <style>
           body {
             font-family: Arial, sans-serif;
@@ -149,7 +152,7 @@ const BudgetPDFDownloader = ({ budget, className }: BudgetPDFDownloaderProps) =>
       <body>
         <div class="header">
           <div class="company-name">Sistema de Gestão</div>
-          <div class="budget-title">ORÇAMENTO Nº ${budget.id.slice(0, 8).toUpperCase()}</div>
+          <div class="budget-title">ORÇAMENTO Nº ${formattedBudgetId}</div>
           <div>Data: ${budgetDate}</div>
           <div>Status: <span class="status status-${budget.status}">${budget.status}</span></div>
         </div>
@@ -208,7 +211,7 @@ const BudgetPDFDownloader = ({ budget, className }: BudgetPDFDownloaderProps) =>
     // Criar link de download
     const link = document.createElement('a');
     link.href = url;
-    link.download = `orcamento-${budget.id.slice(0, 8)}.html`;
+    link.download = `orcamento-${formattedBudgetId.replace('#', '')}.html`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

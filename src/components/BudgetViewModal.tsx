@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import BudgetViewWrapper from './budget/BudgetViewWrapper';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 
+import { formatBudgetId } from '@/lib/budgetFormatter';
+
 interface BudgetViewModalProps {
   budget: LocalBudget | null;
   open: boolean;
@@ -18,17 +20,13 @@ const BudgetViewModal: React.FC<BudgetViewModalProps> = ({
 }) => {
   if (!budget) return null;
 
-  const formatBudgetId = (id: string, index: number) => {
-    const sequentialNumber = (index + 1).toString().padStart(8, '0');
-    return `#O${sequentialNumber}`;
-  };
-
+  // Usar a função centralizada
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] md:max-w-7xl w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg md:text-xl">
-            Visualizar Orçamento {formatBudgetId(budget.id, budgetIndex)}
+            Visualizar Orçamento {formatBudgetId(budget.id, budget.created_at)}
           </DialogTitle>
         </DialogHeader>
 

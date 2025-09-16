@@ -71,6 +71,8 @@ interface ShippingOption {
   name: string;
 }
 
+import { formatBudgetId } from '@/lib/budgetFormatter';
+
 interface BudgetDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -204,11 +206,7 @@ const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({ isOpen, onClose, 
     }
   };
 
-  const formatBudgetId = (id: string) => {
-    const timestamp = new Date().getTime();
-    const sequentialNumber = (timestamp % 100000000).toString().padStart(8, '0');
-    return `#O${sequentialNumber}`;
-  };
+  // Remover função local - agora usa a centralizada
 
 
   const getPaymentMethodName = (id?: string) => {

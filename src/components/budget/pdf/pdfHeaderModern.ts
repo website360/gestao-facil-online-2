@@ -2,6 +2,7 @@
 import jsPDF from 'jspdf';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 import type { PDFConfig } from './pdfConfigLoader';
+import { formatBudgetId } from '@/lib/budgetFormatter';
 
 export const addModernPDFHeader = async (doc: jsPDF, budget: LocalBudget, config: PDFConfig) => {
   const pageWidth = doc.internal.pageSize.width;
@@ -31,12 +32,11 @@ export const addModernPDFHeader = async (doc: jsPDF, budget: LocalBudget, config
   doc.text(titleText, (pageWidth - titleWidth) / 2, 32);
 
   // Número do orçamento (lado direito)
-  const budgetNumber = budget.id.substring(0, 8).toUpperCase();
+  const budgetNumber = formatBudgetId(budget.id, budget.created_at);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
-  const numberText = `#${budgetNumber}`;
-  const numberWidth = doc.getTextWidth(numberText);
-  doc.text(numberText, pageWidth - 25 - numberWidth, 22);
+  const numberWidth = doc.getTextWidth(budgetNumber);
+  doc.text(budgetNumber, pageWidth - 25 - numberWidth, 22);
 
   // Data (lado direito, abaixo do número)
   const dateText = new Date(budget.created_at).toLocaleDateString('pt-BR');

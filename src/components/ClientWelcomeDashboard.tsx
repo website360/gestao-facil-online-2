@@ -16,6 +16,8 @@ import { useBudgetCalculations } from '@/hooks/useBudgetCalculations';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 import { toast } from 'sonner';
 
+import { formatBudgetId, formatSaleId } from '@/lib/budgetFormatter';
+
 interface CombinedItem {
   id: string;
   type: 'budget' | 'sale';
@@ -309,9 +311,10 @@ const ClientWelcomeDashboard = () => {
     }
   };
 
-  const formatItemId = (item: CombinedItem, index: number) => {
-    const sequentialNumber = (index + 1).toString().padStart(8, '0');
-    return item.type === 'budget' ? `#O${sequentialNumber}` : `#V${sequentialNumber}`;
+  const formatItemId = (item: CombinedItem) => {
+    return item.type === 'budget' 
+      ? formatBudgetId(item.id, item.created_at) 
+      : formatSaleId(item.id, item.created_at);
   };
 
   if (loading || salesLoading) {
@@ -437,7 +440,7 @@ const ClientWelcomeDashboard = () => {
                 return (
                   <TableRow key={`${item.type}-${item.id}`} className="hover:bg-gray-50">
                     <TableCell className="text-center font-medium">
-                      {formatItemId(item, index)}
+                      {formatItemId(item)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">

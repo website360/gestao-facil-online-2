@@ -12,6 +12,8 @@ import BudgetTableRow from './BudgetTableRow';
 import { formatCurrency } from '@/lib/formatters';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 
+import { formatBudgetId } from '@/lib/budgetFormatter';
+
 interface BudgetTableProps {
   budgets: LocalBudget[];
   onEdit: (budget: LocalBudget) => void;
@@ -51,10 +53,7 @@ const BudgetTable = ({
 }: BudgetTableProps) => {
   const isTabletOrMobile = useIsTabletOrMobile();
 
-  const formatBudgetId = (id: string, index: number) => {
-    const sequentialNumber = (index + 1).toString().padStart(8, '0');
-    return `#O${sequentialNumber}`;
-  };
+  // Usar função centralizada
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -138,11 +137,11 @@ const BudgetTable = ({
                       <Checkbox
                         checked={selectedItems.has(budget.id)}
                         onCheckedChange={() => onItemSelect(budget.id)}
-                        aria-label={`Selecionar orçamento ${formatBudgetId(budget.id, index)}`}
+                        aria-label={`Selecionar orçamento ${formatBudgetId(budget.id, budget.created_at)}`}
                       />
                     )}
                     <span className="font-mono text-sm font-medium">
-                      {formatBudgetId(budget.id, index)}
+                      {formatBudgetId(budget.id, budget.created_at)}
                     </span>
                   </div>
                   <Badge className={getStatusColor(budget.status)}>

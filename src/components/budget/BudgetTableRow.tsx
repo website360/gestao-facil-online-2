@@ -21,6 +21,8 @@ import BudgetPDFGenerator from './BudgetPDFGenerator';
 import BudgetApprovalDialog from './BudgetApprovalDialog';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 
+import { formatBudgetId } from '@/lib/budgetFormatter';
+
 interface BudgetTableRowProps {
   budget: LocalBudget;
   index: number;
@@ -57,10 +59,7 @@ const BudgetTableRow = ({
   const { calculateBudgetTotal } = useBudgetCalculations();
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
 
-  const formatBudgetId = (id: string, index: number) => {
-    const sequentialNumber = (index + 1).toString().padStart(8, '0');
-    return `#O${sequentialNumber}`;
-  };
+  // Usar função centralizada
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -180,7 +179,7 @@ const BudgetTableRow = ({
       <TableCell className="text-center font-medium">
         <div className="flex items-center gap-2 justify-center">
           {isAdmin && getCreatorIcon()}
-          {formatBudgetId(budget.id, index)}
+          {formatBudgetId(budget.id, budget.created_at)}
         </div>
       </TableCell>
       <TableCell>

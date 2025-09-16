@@ -2,6 +2,7 @@
 import jsPDF from 'jspdf';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 import type { PDFConfig } from './pdfConfigLoader';
+import { formatBudgetId } from '@/lib/budgetFormatter';
 
 export const addPDFHeader = async (doc: jsPDF, budget: LocalBudget, config: PDFConfig) => {
   const pageWidth = doc.internal.pageSize.width;
@@ -31,8 +32,7 @@ export const addPDFHeader = async (doc: jsPDF, budget: LocalBudget, config: PDFC
   // Badge com o número do orçamento (pill à direita)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  const budgetNumber = budget.id.substring(0, 8).toUpperCase();
-  const pillText = `ORÇAMENTO #O${budgetNumber}`;
+  const pillText = `ORÇAMENTO ${formatBudgetId(budget.id, budget.created_at)}`;
   const pillPaddingX = 3;
   const pillHeight = 8;
   const pillTextWidth = doc.getTextWidth(pillText);
@@ -42,6 +42,7 @@ export const addPDFHeader = async (doc: jsPDF, budget: LocalBudget, config: PDFC
   doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b);
   doc.rect(pillX, pillY, pillWidth, pillHeight, 'F');
   doc.setTextColor(255, 255, 255);
+  doc.text(pillText, pillX + pillPaddingX, pillY + 6);
   doc.text(pillText, pillX + pillPaddingX, pillY + 6);
 
   // Título e metadados
