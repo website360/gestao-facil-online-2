@@ -44,9 +44,10 @@ interface ProductFormDialogProps {
   onClose: () => void;
   onSuccess: () => void;
   readOnly?: boolean;
+  userRole?: string;
 }
 
-const ProductFormDialog = ({ showForm, editingProduct, onClose, onSuccess, readOnly = false }: ProductFormDialogProps) => {
+const ProductFormDialog = ({ showForm, editingProduct, onClose, onSuccess, readOnly = false, userRole }: ProductFormDialogProps) => {
   const {
     name, setName,
     internalCode, setInternalCode,
@@ -134,30 +135,62 @@ const ProductFormDialog = ({ showForm, editingProduct, onClose, onSuccess, readO
                 categories={categories}
                 suppliers={suppliers}
                 readOnly={readOnly}
+                userRole={userRole}
               />
             </CardContent>
           </Card>
 
           {/* Preço e Estoque */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <DollarSign className="h-5 w-5 text-primary" />
-                Preço e Estoque
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ProductPriceStockForm
-                price={price}
-                setPrice={setPrice}
-                stock={stock}
-                setStock={setStock}
-                stockUnit={stockUnit}
-                setStockUnit={setStockUnit}
-                readOnly={readOnly}
-              />
-            </CardContent>
-          </Card>
+          {userRole !== 'vendas' && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  Preço e Estoque
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ProductPriceStockForm
+                  price={price}
+                  setPrice={setPrice}
+                  stock={stock}
+                  setStock={setStock}
+                  stockUnit={stockUnit}
+                  setStockUnit={setStockUnit}
+                  readOnly={readOnly}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Apenas Preço para Vendedores */}
+          {userRole === 'vendas' && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  Preço
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Preço *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      required
+                      disabled={readOnly}
+                      placeholder="0,00"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Medidas e Peso */}
           <Card>

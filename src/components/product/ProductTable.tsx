@@ -127,12 +127,14 @@ const ProductTable = ({
 
                 {/* Informações organizadas lado a lado */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <div>
-                    <span className="text-xs text-gray-500 block">Estoque:</span>
-                    <Badge className={`text-xs mt-1 ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {product.stock} {product.stock_unit || 'un'}
-                    </Badge>
-                  </div>
+                  {userRole !== 'vendas' && (
+                    <div>
+                      <span className="text-xs text-gray-500 block">Estoque:</span>
+                      <Badge className={`text-xs mt-1 ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {product.stock} {product.stock_unit || 'un'}
+                      </Badge>
+                    </div>
+                  )}
 
                   {product.categories?.name && (
                     <div>
@@ -143,7 +145,7 @@ const ProductTable = ({
                     </div>
                   )}
 
-                  {product.suppliers?.name && (
+                  {userRole !== 'vendas' && product.suppliers?.name && (
                     <div>
                       <span className="text-xs text-gray-500 block">Fornecedor:</span>
                       <Badge className="bg-purple-100 text-purple-800 text-xs mt-1">
@@ -219,10 +221,10 @@ const ProductTable = ({
               <TableHead>Foto</TableHead>
               {renderSortableHeader('name', 'Produto')}
               {renderSortableHeader('category', 'Categoria')}
-              {renderSortableHeader('supplier', 'Fornecedor')}
+              {userRole !== 'vendas' && renderSortableHeader('supplier', 'Fornecedor')}
               {renderSortableHeader('internal_code', 'Código')}
               {renderSortableHeader('price', 'Preço', 'text-right')}
-              {renderSortableHeader('stock', 'Estoque', 'text-right')}
+              {userRole !== 'vendas' && renderSortableHeader('stock', 'Estoque', 'text-right')}
               {renderSortableHeader('created_at', 'Data')}
               {canManageProducts && <TableHead className="w-40">Ações</TableHead>}
               {!canManageProducts && <TableHead className="w-40">Visualizar</TableHead>}
@@ -265,24 +267,28 @@ const ProductTable = ({
                   </Badge>
                 )}
               </TableCell>
-              <TableCell>
-                {product.suppliers?.name && (
-                  <Badge className="bg-green-100 text-green-800">
-                    {product.suppliers.name}
-                  </Badge>
-                )}
-              </TableCell>
+              {userRole !== 'vendas' && (
+                <TableCell>
+                  {product.suppliers?.name && (
+                    <Badge className="bg-green-100 text-green-800">
+                      {product.suppliers.name}
+                    </Badge>
+                  )}
+                </TableCell>
+              )}
               <TableCell className="font-mono text-sm">
                 {product.internal_code}
               </TableCell>
               <TableCell className="text-right font-medium">
                 {formatCurrency(product.price)}
               </TableCell>
-              <TableCell className="text-right">
-                <Badge className={product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                  {product.stock} {product.stock_unit || 'un'}
-                </Badge>
-              </TableCell>
+              {userRole !== 'vendas' && (
+                <TableCell className="text-right">
+                  <Badge className={product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                    {product.stock} {product.stock_unit || 'un'}
+                  </Badge>
+                </TableCell>
+              )}
               <TableCell>
                 {new Date(product.created_at).toLocaleDateString('pt-BR')}
               </TableCell>

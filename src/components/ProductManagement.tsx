@@ -266,6 +266,7 @@ const ProductManagement = () => {
         onClose={handleFormClose}
         onSuccess={handleFormSuccess}
         readOnly={userProfile?.role === 'vendas'}
+        userRole={userProfile?.role}
       />
 
       <ProductDeleteDialog

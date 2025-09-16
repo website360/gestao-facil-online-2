@@ -18,6 +18,7 @@ interface ProductBasicInfoFormProps {
   categories: any[];
   suppliers: any[];
   readOnly?: boolean;
+  userRole?: string;
 }
 
 const ProductBasicInfoForm = ({
@@ -33,7 +34,8 @@ const ProductBasicInfoForm = ({
   setSupplierId,
   categories,
   suppliers,
-  readOnly = false
+  readOnly = false,
+  userRole
 }: ProductBasicInfoFormProps) => {
   // Handle category change - convert "none" back to empty string
   const handleCategoryChange = (value: string) => {
@@ -102,22 +104,24 @@ const ProductBasicInfoForm = ({
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="supplier">Fornecedor</Label>
-        <Select value={supplierId || "none"} onValueChange={readOnly ? undefined : handleSupplierChange}>
-          <SelectTrigger className={readOnly ? "pointer-events-none opacity-50" : ""}>
-            <SelectValue placeholder="Selecione um fornecedor" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Nenhum fornecedor</SelectItem>
-            {suppliers.map((supplier) => (
-              <SelectItem key={supplier.id} value={supplier.id}>
-                {supplier.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {userRole !== 'vendas' && (
+        <div>
+          <Label htmlFor="supplier">Fornecedor</Label>
+          <Select value={supplierId || "none"} onValueChange={readOnly ? undefined : handleSupplierChange}>
+            <SelectTrigger className={readOnly ? "pointer-events-none opacity-50" : ""}>
+              <SelectValue placeholder="Selecione um fornecedor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Nenhum fornecedor</SelectItem>
+              {suppliers.map((supplier) => (
+                <SelectItem key={supplier.id} value={supplier.id}>
+                  {supplier.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 };
