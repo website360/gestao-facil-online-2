@@ -190,10 +190,10 @@ const DEFAULT_CONFIG: PDFConfig = {
   },
   table: {
     showColumns: { quantity: true, unitPrice: true, discount: true, total: true },
-    columnWidths: { item: 50, quantity: 10, unitPrice: 15, discount: 10, total: 15 },
+    columnWidths: { item: 70, quantity: 8, unitPrice: 12, discount: 5, total: 5 },
     headerBackgroundColor: '#0EA5E9',
     zebraColor: '#F8F8F8',
-    rowHeight: 8,
+    rowHeight: 10,
   },
 };
 

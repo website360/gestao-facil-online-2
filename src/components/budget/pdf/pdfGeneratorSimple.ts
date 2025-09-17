@@ -199,15 +199,15 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text('PRODUTO', 20, yPosition + 6.5);
-    doc.text('QTD', 92, yPosition + 6.5);
-    doc.text('VALOR UNIT.', 112, yPosition + 6.5);
-    doc.text('DESC.', 142, yPosition + 6.5);
+    doc.text('QTD', 120, yPosition + 6.5);
+    doc.text('VALOR UNIT.', 150, yPosition + 6.5);
+    doc.text('DESC.', 170, yPosition + 6.5);
     doc.text('TOTAL', pageWidth - 20, yPosition + 6.5, { align: 'right' });
 
     yPosition += headerHeight;
 
     // Linhas dos produtos
-    const rowHeight = 10;
+    let rowHeight = 10;
     let subtotal = 0;
     let totalDiscount = 0;
 
@@ -217,6 +217,17 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
     budget.budget_items?.forEach((item, index) => {
       console.log(`Processando item ${index + 1}/${budget.budget_items?.length}: ${item.products?.name}`);
       console.log('yPosition atual:', yPosition, 'pageHeight:', pageHeight, 'espaço restante:', pageHeight - yPosition);
+      
+      // Calcular quebras e altura dinâmica da linha com base no nome do produto
+      const colXQty = 120;
+      const colXUnit = 150;
+      const colXDesc = 170;
+      const nameStartX = 20;
+      const nameMaxWidth = colXQty - nameStartX - 4;
+
+      const productName = item.products?.name || "Produto não encontrado";
+      const nameLines = doc.splitTextToSize(productName, nameMaxWidth);
+      rowHeight = Math.max(10, 6 + (nameLines.length - 1) * 4);
       
       // Verificar se precisa de nova página - usar margem menor para aproveitar mais espaço
       if (yPosition + rowHeight > pageHeight - 15) { // Margem reduzida de 25 para 15
@@ -232,9 +243,9 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text('PRODUTO', 20, yPosition + 6.5);
-        doc.text('QTD', 92, yPosition + 6.5);
-        doc.text('VALOR UNIT.', 112, yPosition + 6.5);
-        doc.text('DESC.', 142, yPosition + 6.5);
+        doc.text('QTD', 120, yPosition + 6.5);
+        doc.text('VALOR UNIT.', 150, yPosition + 6.5);
+        doc.text('DESC.', 170, yPosition + 6.5);
         doc.text('TOTAL', pageWidth - 20, yPosition + 6.5, { align: 'right' });
         
         yPosition += headerHeight;
@@ -252,15 +263,19 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
 
-      const productName = item.products?.name || 'Produto não encontrado';
-      const truncatedName = productName.length > 25 ? productName.substring(0, 22) + '...' : productName;
+      // Nome do produto (quebra em múltiplas linhas)
+      nameLines.forEach((line: string, lineIndex: number) => {
+        if (lineIndex < 4) {
+          doc.text(line, 20, yPosition + 5 + (lineIndex * 4));
+        }
+      });
       
-      doc.text(truncatedName, 20, yPosition + 5);
-      doc.text(item.quantity.toString(), 92, yPosition + 5);
-      doc.text(formatCurrency(item.unit_price), 112, yPosition + 5);
+      // Outras colunas
+      doc.text(item.quantity.toString(), colXQty, yPosition + 5);
+      doc.text(formatCurrency(item.unit_price), colXUnit, yPosition + 5);
       
       const discount = item.discount_percentage || 0;
-      doc.text(`${discount}%`, 142, yPosition + 5);
+      doc.text(`${discount}%`, colXDesc, yPosition + 5);
 
       // Cálculos
       const itemSubtotal = item.quantity * item.unit_price;
