@@ -11,7 +11,7 @@ export const useDiscountPermissions = () => {
 
   useEffect(() => {
     fetchDiscountConfig();
-  }, []);
+  }, [userProfile?.role]); // Adicionar dependência para recarregar quando o perfil mudar
 
   // Expor função para recarregar quando necessário
   const refreshConfig = () => {
