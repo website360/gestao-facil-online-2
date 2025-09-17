@@ -124,10 +124,12 @@ const BudgetForm = ({
   const clientOptions = React.useMemo(() => {
     if (!Array.isArray(clients) || clients.length === 0) return [];
     return clients
-      .filter(client => client && client.id && client.name)
+      .filter(client => client && client.id && (client.name || client.razao_social))
       .map(client => ({
         value: client.id,
-        label: client.name
+        label: [client.name, client.razao_social, client.cnpj, client.cpf]
+          .filter(Boolean)
+          .join(' - ')
       }));
   }, [clients]);
 

@@ -81,9 +81,10 @@ export const ClientSearchInput = ({
     }
   };
 
-  // Filtrar opções baseado no termo de busca
+  // Filtrar opções baseado no termo de busca (tolerante a acentos)
+  const normalize = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}+/gu, '').toLowerCase();
   const filteredOptions = options.filter(option =>
-    option.label.toLowerCase().includes(searchTerm.toLowerCase())
+    normalize(option.label).includes(normalize(searchTerm))
   );
 
   // Atualizar searchTerm quando value muda externamente
