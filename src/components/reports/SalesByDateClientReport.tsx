@@ -94,7 +94,7 @@ const SalesByDateClientReport = () => {
         .lte('created_at', endDate + 'T23:59:59');
 
       // Aplicar filtro de status se selecionado
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== 'all') {
         query = query.eq('status', statusFilter as any);
       }
 
@@ -509,7 +509,7 @@ const SalesByDateClientReport = () => {
                   <SelectValue placeholder="Todos os status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="separacao">Separação</SelectItem>
                   <SelectItem value="conferencia">Conferência</SelectItem>
                   <SelectItem value="nota_fiscal">Nota Fiscal</SelectItem>
