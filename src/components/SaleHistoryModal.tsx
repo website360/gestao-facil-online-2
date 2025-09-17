@@ -447,9 +447,11 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                       })()}
                       {(() => {
                         const log = getStatusLogForStatus('entrega_realizada') || getStatusLogForStatus('aguardando_entrega');
-                        const isCurrentStatusChange = currentStatus === 'entrega_realizada' || currentStatus === 'aguardando_entrega';
+                        // Sempre mostrar o motivo se a entrega foi realizada
+                        const shouldShowReason = currentStatus === 'entrega_realizada' || 
+                                                (currentStatus === 'aguardando_entrega' && log?.new_status === 'aguardando_entrega');
                         
-                        return log?.reason && isCurrentStatusChange && (
+                        return log?.reason && shouldShowReason && (
                           <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
                             <p className="text-sm text-blue-800">
                               <span className="font-semibold">Motivo:</span> {log.reason}
