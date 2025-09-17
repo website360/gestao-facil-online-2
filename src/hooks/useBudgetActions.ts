@@ -91,21 +91,32 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
 
   const handleConvertToSaleConfirm = async (updatedBudget?: LocalBudget, attachments?: any[]) => {
     const budgetToUse = updatedBudget || budgetToConvert;
-    if (!budgetToUse) return;
+    if (!budgetToUse) {
+      console.error('No budget to convert');
+      toast.error('Nenhum orçamento para converter');
+      return;
+    }
 
     try {
+      console.log('=== STARTING BUDGET CONVERSION TO SALE ===');
+      console.log('Budget to convert:', budgetToUse);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.error('User not authenticated');
         toast.error('Usuário não autenticado');
         return;
       }
 
-      console.log('Starting budget conversion to sale...');
+      console.log('User authenticated:', user.id);
       console.log('Budget items:', budgetToUse.budget_items);
       console.log('Attachments:', attachments);
 
       // Validate stock availability before proceeding
+      console.log('Starting stock validation...');
       for (const item of budgetToUse.budget_items) {
+        console.log(`Checking stock for product ${item.product_id}, quantity needed: ${item.quantity}`);
+        
         const { data: product, error: productError } = await supabase
           .from('products')
           .select('stock, name')
@@ -118,43 +129,55 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
           return;
         }
 
+        console.log(`Product ${product.name}: available stock = ${product.stock}, needed = ${item.quantity}`);
+        
         if (product.stock < item.quantity) {
+          console.error(`Insufficient stock for ${product.name}`);
           toast.error(`Estoque insuficiente para ${product.name}. Disponível: ${product.stock}, Necessário: ${item.quantity}`);
           return;
         }
       }
+      console.log('Stock validation completed successfully');
 
       // Create sale with original budget creation date and conversion timestamp
+      console.log('Creating sale from budget...');
+      const salePayload = {
+        client_id: budgetToUse.client_id,
+        budget_id: budgetToUse.id,
+        created_by: budgetToUse.created_by, // Preservar o vendedor original que criou o orçamento
+        // Usar a data atual da conversão para o número da venda seguir o novo padrão
+        converted_from_budget_at: new Date().toISOString(), // Data atual da conversão
+        total_amount: budgetToUse.total_amount,
+        notes: budgetToUse.notes,
+        status: 'separacao' as const,
+        payment_method_id: budgetToUse.payment_method_id,
+        payment_type_id: budgetToUse.payment_type_id,
+        shipping_option_id: budgetToUse.shipping_option_id,
+        shipping_cost: budgetToUse.shipping_cost || 0,
+        installments: budgetToUse.installments || 1,
+        discount_percentage: budgetToUse.discount_percentage || 0,
+        invoice_percentage: budgetToUse.invoice_percentage || 0,
+        local_delivery_info: budgetToUse.local_delivery_info
+      };
+      
+      console.log('Sale payload:', salePayload);
+      
       const { data: saleData, error: saleError } = await supabase
         .from('sales')
-        .insert({
-          client_id: budgetToUse.client_id,
-          budget_id: budgetToUse.id,
-          created_by: budgetToUse.created_by, // Preservar o vendedor original que criou o orçamento
-          // Usar a data atual da conversão para o número da venda seguir o novo padrão
-          converted_from_budget_at: new Date().toISOString(), // Data atual da conversão
-          total_amount: budgetToUse.total_amount,
-          notes: budgetToUse.notes,
-          status: 'separacao',
-          payment_method_id: budgetToUse.payment_method_id,
-          payment_type_id: budgetToUse.payment_type_id,
-          shipping_option_id: budgetToUse.shipping_option_id,
-          shipping_cost: budgetToUse.shipping_cost || 0,
-          installments: budgetToUse.installments || 1,
-          discount_percentage: budgetToUse.discount_percentage || 0,
-          invoice_percentage: budgetToUse.invoice_percentage || 0,
-          local_delivery_info: budgetToUse.local_delivery_info
-        })
+        .insert(salePayload)
         .select()
         .single();
 
-      if (saleError) throw saleError;
+      if (saleError) {
+        console.error('Error creating sale:', saleError);
+        throw saleError;
+      }
 
-      console.log('Sale created successfully:', saleData);
+      console.log('Sale created successfully with ID:', saleData.id);
 
       // Upload attachments if provided
       if (attachments && attachments.length > 0) {
-        console.log('Uploading payment receipts...');
+        console.log('Uploading payment receipts...', attachments.length, 'files');
         
         for (const attachment of attachments) {
           try {
@@ -199,6 +222,7 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
       }
 
       // Create sale items from budget items
+      console.log('Creating sale items...');
       const saleItems = budgetToUse.budget_items.map(item => ({
         sale_id: saleData.id,
         product_id: item.product_id,
@@ -207,35 +231,54 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
         total_price: item.total_price
       }));
 
+      console.log('Sale items to create:', saleItems);
+
       const { error: itemsError } = await supabase
         .from('sale_items')
         .insert(saleItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error('Error creating sale items:', itemsError);
+        throw itemsError;
+      }
 
       console.log('Sale items created successfully');
 
       // Update product stock for each item
+      console.log('Updating product stock...');
       for (const item of budgetToUse.budget_items) {
+        console.log(`Updating stock for product ${item.product_id}, reducing by ${item.quantity}`);
         await updateProductStock(item.product_id, item.quantity, saleData.id);
       }
 
       console.log('Stock updated successfully for all products');
 
       // Update budget status to 'convertido'
+      console.log('Updating budget status to convertido...');
       const { error: updateError } = await supabase
         .from('budgets')
-        .update({ status: 'convertido' })
+        .update({ status: 'convertido' as const })
         .eq('id', budgetToUse.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating budget status:', updateError);
+        throw updateError;
+      }
 
-      toast.success('Orçamento convertido em venda com sucesso! Comprovantes anexados.');
+      console.log('Budget status updated successfully');
+      console.log('=== BUDGET CONVERSION COMPLETED SUCCESSFULLY ===');
+      
+      toast.success('Orçamento convertido em venda com sucesso!');
       fetchBudgets();
       navigate('/'); // Navigate to sales page
     } catch (error) {
-      console.error('Erro ao converter orçamento:', error);
-      toast.error(error instanceof Error ? error.message : 'Erro ao converter orçamento em venda');
+      console.error('=== ERROR IN BUDGET CONVERSION ===');
+      console.error('Full error object:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Erro desconhecido');
+      console.error('Error details:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao converter orçamento em venda';
+      toast.error(`Erro ao converter orçamento em venda: ${errorMessage}`);
     } finally {
       setBudgetToConvert(null);
     }
