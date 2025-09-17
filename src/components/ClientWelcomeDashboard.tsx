@@ -481,8 +481,19 @@ const ClientWelcomeDashboard = () => {
                         
                         {item.type === 'budget' ? (
                           <>
-                            {/* Ícones para orçamentos baseados no status */}
-                            {(item.status === 'aguardando_aprovacao' || item.status === 'rejeitado') && (
+                            {/* Botão de visualizar - sempre disponível */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleView(item)}
+                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
+                              title="Visualizar orçamento"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            
+                            {/* Botões para status 'processando' e 'rejeitado' */}
+                            {(item.status === 'processando' || item.status === 'rejeitado') && (
                               <>
                                 <Button
                                   variant="ghost"
@@ -500,22 +511,18 @@ const ClientWelcomeDashboard = () => {
                                   className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
                                   title="Enviar para aprovação"
                                 >
-                                  <CheckCircle className="h-4 w-4" />
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDelete(item.id)}
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                  title="Excluir orçamento"
+                                >
+                                  <AlertCircle className="h-4 w-4" />
                                 </Button>
                               </>
-                            )}
-                            
-                            {/* Apenas visualizar para status enviado ou aprovado */}
-                            {(item.status === 'aguardando_aprovacao' || item.status === 'aprovado') && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleView(item)}
-                                className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
-                                title="Visualizar orçamento"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
                             )}
                           </>
                         ) : (
