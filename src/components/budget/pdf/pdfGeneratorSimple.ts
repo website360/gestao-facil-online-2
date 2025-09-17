@@ -199,9 +199,9 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text('PRODUTO', 20, yPosition + 6.5);
-    doc.text('QTD', 120, yPosition + 6.5);
-    doc.text('VALOR UNIT.', 150, yPosition + 6.5);
-    doc.text('DESC.', 170, yPosition + 6.5);
+    doc.text('QTD', 110, yPosition + 6.5);
+    doc.text('VALOR UNIT.', 135, yPosition + 6.5);
+    doc.text('DESC.', 165, yPosition + 6.5);
     doc.text('TOTAL', pageWidth - 20, yPosition + 6.5, { align: 'right' });
 
     yPosition += headerHeight;
@@ -219,9 +219,9 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
       console.log('yPosition atual:', yPosition, 'pageHeight:', pageHeight, 'espaço restante:', pageHeight - yPosition);
       
       // Calcular quebras e altura dinâmica da linha com base no nome do produto
-      const colXQty = 120;
-      const colXUnit = 150;
-      const colXDesc = 170;
+      const colXQty = 110;
+      const colXUnit = 135;
+      const colXDesc = 165;
       const nameStartX = 20;
       const nameMaxWidth = colXQty - nameStartX - 4;
 
@@ -243,9 +243,9 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text('PRODUTO', 20, yPosition + 6.5);
-        doc.text('QTD', 120, yPosition + 6.5);
-        doc.text('VALOR UNIT.', 150, yPosition + 6.5);
-        doc.text('DESC.', 170, yPosition + 6.5);
+        doc.text('QTD', 110, yPosition + 6.5);
+        doc.text('VALOR UNIT.', 135, yPosition + 6.5);
+        doc.text('DESC.', 165, yPosition + 6.5);
         doc.text('TOTAL', pageWidth - 20, yPosition + 6.5, { align: 'right' });
         
         yPosition += headerHeight;
