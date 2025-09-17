@@ -15,6 +15,7 @@ import { CheckCircle, Eye, XCircle, ClipboardCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/formatters';
+import { formatBudgetId } from '@/lib/budgetFormatter';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 
 const BudgetApproval = () => {
