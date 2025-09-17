@@ -52,9 +52,14 @@ const ProductPriceStockForm = ({
     // Se já está formatado, retorna como está
     if (price.includes('R$')) return price;
     
-    // Se é um número simples, formata
+    // Se é um número simples vindo do banco de dados, formata corretamente
     if (price && !isNaN(Number(price))) {
-      return formatPrice((Number(price) * 100).toString());
+      const numericValue = Number(price);
+      return numericValue.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2
+      });
     }
     
     return price;
