@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, Download, FileSpreadsheet } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Calendar, Download, FileSpreadsheet, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/formatters';
@@ -26,6 +27,7 @@ interface SaleReportData {
   total_amount: number;
   invoice_percentage: number;
   invoice_value: number;
+  receipt_names: string;
 }
 
 const SalesByDateClientReport = () => {
@@ -36,6 +38,8 @@ const SalesByDateClientReport = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [salesWithAttachments, setSalesWithAttachments] = useState<string[]>([]);
   const [isExportingAttachments, setIsExportingAttachments] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [attachmentsData, setAttachmentsData] = useState<any[]>([]);
 
   const getStatusLabel = (status: string) => {
     const statusMap: { [key: string]: string } = {
@@ -185,7 +189,8 @@ const SalesByDateClientReport = () => {
             payment_dates: paymentDates,
             total_amount: 0,
             invoice_percentage: budget?.invoice_percentage || 0,
-            invoice_value: 0
+            invoice_value: 0,
+            receipt_names: ''
           };
         }
 
@@ -201,16 +206,39 @@ const SalesByDateClientReport = () => {
       setReportData(reportArray);
       setTotalSales(totalSalesCount);
 
-      // Verificar quais vendas têm comprovantes anexados
+      // Verificar quais vendas têm comprovantes anexados e obter nomes dos comprovantes
       if (sales && sales.length > 0) {
         const saleIds = sales.map(sale => sale.id);
         const { data: attachments } = await supabase
           .from('sale_attachments')
-          .select('sale_id')
+          .select('sale_id, stored_filename')
           .in('sale_id', saleIds);
         
         const salesWithAttachmentsIds = [...new Set(attachments?.map(att => att.sale_id) || [])];
         setSalesWithAttachments(salesWithAttachmentsIds);
+
+        // Agrupar nomes dos comprovantes por venda e adicionar ao relatório
+        const attachmentsBySale: { [key: string]: string[] } = {};
+        attachments?.forEach(att => {
+          if (!attachmentsBySale[att.sale_id]) {
+            attachmentsBySale[att.sale_id] = [];
+          }
+          attachmentsBySale[att.sale_id].push(att.stored_filename);
+        });
+
+        // Atualizar dados do relatório com nomes dos comprovantes
+        Object.keys(groupedData).forEach(clientId => {
+          const clientSales = sales.filter(sale => sale.clients.id === clientId);
+          const receiptNames: string[] = [];
+          
+          clientSales.forEach(sale => {
+            if (attachmentsBySale[sale.id]) {
+              receiptNames.push(...attachmentsBySale[sale.id]);
+            }
+          });
+          
+          groupedData[clientId].receipt_names = receiptNames.join(', ');
+        });
       }
 
       toast.success('Relatório gerado com sucesso!');
@@ -234,7 +262,7 @@ const SalesByDateClientReport = () => {
     // Cabeçalho
     worksheetData.push([
       'Cliente',
-      'Vendedor',
+      'Vendedor', 
       'Data da Venda',
       'Status',
       'Meio de Pagamento',
@@ -244,7 +272,8 @@ const SalesByDateClientReport = () => {
       'Datas de Vencimento',
       'Total Final',
       'Nota Fiscal (%)',
-      'Valor Nota Fiscal'
+      'Valor Nota Fiscal',
+      'Nome dos Comprovantes'
     ]);
 
     // Dados
@@ -261,7 +290,8 @@ const SalesByDateClientReport = () => {
         clientData.payment_dates,
         clientData.total_amount,
         clientData.invoice_percentage + '%',
-        clientData.invoice_value
+        clientData.invoice_value,
+        clientData.receipt_names
       ]);
     });
 
@@ -275,7 +305,7 @@ const SalesByDateClientReport = () => {
     toast.success('Planilha exportada com sucesso!');
   };
 
-  const exportAttachments = async () => {
+  const handleExportAttachments = async () => {
     if (salesWithAttachments.length === 0) {
       toast.error('Não há comprovantes de pagamento para exportar neste período');
       return;
@@ -300,6 +330,9 @@ const SalesByDateClientReport = () => {
         toast.error('Nenhum comprovante encontrado');
         return;
       }
+
+      // Armazenar dados dos anexos para possível exclusão posterior
+      setAttachmentsData(attachments);
 
       // Buscar informações das vendas e clientes
       const { data: salesInfo, error: salesError } = await supabase
@@ -375,6 +408,55 @@ const SalesByDateClientReport = () => {
       toast.error('Erro ao exportar comprovantes');
     } finally {
       setIsExportingAttachments(false);
+    }
+  };
+
+  const exportAttachments = () => {
+    setShowDeleteConfirmation(true);
+  };
+
+  const handleExportOnly = async () => {
+    setShowDeleteConfirmation(false);
+    await handleExportAttachments();
+  };
+
+  const handleExportAndDelete = async () => {
+    setShowDeleteConfirmation(false);
+    await handleExportAttachments();
+    
+    // Após o download, excluir os comprovantes
+    if (attachmentsData.length > 0) {
+      try {
+        // Excluir arquivos do storage
+        const filesToDelete = attachmentsData.map(att => att.file_path);
+        const { error: storageError } = await supabase.storage
+          .from('payment-receipts')
+          .remove(filesToDelete);
+
+        if (storageError) {
+          console.error('Erro ao deletar arquivos do storage:', storageError);
+        }
+
+        // Excluir registros da tabela
+        const attachmentIds = attachmentsData.map(att => att.id);
+        const { error: dbError } = await supabase
+          .from('sale_attachments')
+          .delete()
+          .in('id', attachmentIds);
+
+        if (dbError) {
+          console.error('Erro ao deletar registros do banco:', dbError);
+          toast.error('Erro ao excluir comprovantes do banco de dados');
+        } else {
+          toast.success(`${attachmentsData.length} comprovante(s) excluído(s) com sucesso!`);
+          // Limpar os dados de anexos
+          setSalesWithAttachments([]);
+          setAttachmentsData([]);
+        }
+      } catch (error) {
+        console.error('Erro ao excluir comprovantes:', error);
+        toast.error('Erro ao excluir comprovantes');
+      }
     }
   };
 
@@ -509,6 +591,7 @@ const SalesByDateClientReport = () => {
                     <TableHead className="text-right">Total Final</TableHead>
                     <TableHead className="text-center">Nota Fiscal (%)</TableHead>
                     <TableHead className="text-right">Valor Nota Fiscal</TableHead>
+                    <TableHead>Comprovantes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -530,6 +613,11 @@ const SalesByDateClientReport = () => {
                       <TableCell className="text-right font-medium">
                         {formatCurrency(clientData.invoice_value)}
                       </TableCell>
+                      <TableCell className="max-w-xs">
+                        <div className="truncate" title={clientData.receipt_names}>
+                          {clientData.receipt_names || 'Nenhum'}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -547,6 +635,40 @@ const SalesByDateClientReport = () => {
           </CardContent>
         </Card>
       )}
+      
+      {/* Modal de Confirmação para Exportar Comprovantes */}
+      <AlertDialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Exportar Comprovantes</AlertDialogTitle>
+            <AlertDialogDescription>
+              O que você deseja fazer com os comprovantes do período selecionado?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
+            <AlertDialogCancel>
+              Cancelar
+            </AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={handleExportOnly}
+              disabled={isExportingAttachments}
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Apenas Baixar
+            </Button>
+            <AlertDialogAction
+              onClick={handleExportAndDelete}
+              disabled={isExportingAttachments}
+              className="flex items-center gap-2 bg-red-500 hover:bg-red-600"
+            >
+              <Trash2 className="w-4 h-4" />
+              Baixar e Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
