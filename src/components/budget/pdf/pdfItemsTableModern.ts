@@ -10,7 +10,7 @@ export const addModernItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: 
 
   const tableConfig = config.table || {
     showColumns: { quantity: true, unitPrice: true, discount: true, total: true },
-    columnWidths: { item: 65, quantity: 10, unitPrice: 15, discount: 10, total: 15 }
+    columnWidths: { item: 75, quantity: 8, unitPrice: 12, discount: 8, total: 12 }
   };
 
   // Título da seção
@@ -64,7 +64,7 @@ export const addModernItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: 
   yPosition += headerHeight;
 
   // Linhas da tabela
-  const rowHeight = 15;
+  const rowHeight = 20; // Aumentar altura da linha para acomodar mais texto
   budget.budget_items?.forEach((item, index) => {
     // Verificar se precisa de nova página
     if (yPosition + rowHeight > 250) {
@@ -124,30 +124,33 @@ export const addModernItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: 
     let xPosContent = 25;
     
     // Nome do produto
-    const productName = item.products?.name || 'Produto não encontrado';
+    const productName = item.products?.name || "Produto não encontrado";
     const splitName = doc.splitTextToSize(productName, itemWidth - 10);
-    doc.text(splitName[0], xPosContent + 5, yPosition + 6);
-    if (splitName.length > 1) {
-      doc.text(splitName[1], xPosContent + 5, yPosition + 11);
-    }
+    
+    // Renderizar todas as linhas do nome do produto
+    splitName.forEach((line: string, lineIndex: number) => {
+      if (lineIndex < 3) { // Limitar a 3 linhas para não quebrar o layout
+        doc.text(line, xPosContent + 5, yPosition + 6 + (lineIndex * 4));
+      }
+    });
     xPosContent += itemWidth;
 
     // Quantidade
     if (tableConfig.showColumns.quantity) {
-      doc.text(item.quantity.toString(), xPosContent + 5, yPosition + 8);
+      doc.text(item.quantity.toString(), xPosContent + 5, yPosition + 10);
       xPosContent += qtyWidth;
     }
 
     // Preço unitário
     if (tableConfig.showColumns.unitPrice) {
-      doc.text(formatCurrency(item.unit_price), xPosContent + 5, yPosition + 8);
+      doc.text(formatCurrency(item.unit_price), xPosContent + 5, yPosition + 10);
       xPosContent += priceWidth;
     }
 
     // Desconto
     if (tableConfig.showColumns.discount) {
       const discount = item.discount_percentage || 0;
-      doc.text(`${discount}%`, xPosContent + 5, yPosition + 8);
+      doc.text(`${discount}%`, xPosContent + 5, yPosition + 10);
       xPosContent += discountWidth;
     }
 
@@ -157,7 +160,7 @@ export const addModernItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: 
       const itemDiscountPercentage = item.discount_percentage || 0;
       const itemDiscount = itemSubtotal * (itemDiscountPercentage / 100);
       const itemTotal = itemSubtotal - itemDiscount;
-      doc.text(formatCurrency(itemTotal), pageWidth - 30, yPosition + 8, { align: 'right' });
+      doc.text(formatCurrency(itemTotal), pageWidth - 30, yPosition + 10, { align: "right" });
     }
 
     yPosition += rowHeight;

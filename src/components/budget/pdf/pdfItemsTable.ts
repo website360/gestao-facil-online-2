@@ -21,25 +21,25 @@ export const addItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: number
   
   // Dynamic column positioning based on configuration
   const showColumns = config.table?.showColumns || { quantity: true, unitPrice: true, discount: true, total: true };
-  const columnWidths = config.table?.columnWidths || { item: 65, quantity: 10, unitPrice: 15, discount: 10, total: 15 };
+  const columnWidths = config.table?.columnWidths || { item: 75, quantity: 8, unitPrice: 12, discount: 8, total: 12 };
   let currentX = 20;
   
   doc.text('Item', currentX, headerVerticalCenter);
-  currentX += (columnWidths.item || 65) * 2;
+  currentX += (columnWidths.item || 75) * 2;
   
   if (showColumns.quantity !== false) {
-    doc.text('Qtd', currentX, headerVerticalCenter, { align: 'center' });
-    currentX += (columnWidths.quantity || 10) * 2;
+    doc.text("Qtd", currentX, headerVerticalCenter, { align: "center" });
+    currentX += (columnWidths.quantity || 8) * 2;
   }
   
   if (showColumns.unitPrice !== false) {
-    doc.text('Valor Unit.', currentX, headerVerticalCenter, { align: 'center' });
-    currentX += (columnWidths.unitPrice || 15) * 2;
+    doc.text("Valor Unit.", currentX, headerVerticalCenter, { align: "center" });
+    currentX += (columnWidths.unitPrice || 12) * 2;
   }
   
   if (showColumns.discount !== false) {
-    doc.text('Desc.', currentX, headerVerticalCenter, { align: 'center' });
-    currentX += (columnWidths.discount || 10) * 2;
+    doc.text("Desc.", currentX, headerVerticalCenter, { align: "center" });
+    currentX += (columnWidths.discount || 8) * 2;
   }
   
   if (showColumns.total !== false) {
@@ -73,21 +73,21 @@ export const addItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: number
       // Redraw dynamic columns
       let currentXNew = 20;
       doc.text('Item', currentXNew, headerVerticalCenterNew);
-      currentXNew += (columnWidths.item || 65) * 2;
+      currentXNew += (columnWidths.item || 75) * 2;
       
       if (showColumns.quantity !== false) {
-        doc.text('Qtd', currentXNew, headerVerticalCenterNew, { align: 'center' });
-        currentXNew += (columnWidths.quantity || 10) * 2;
+        doc.text("Qtd", currentXNew, headerVerticalCenterNew, { align: "center" });
+        currentXNew += (columnWidths.quantity || 8) * 2;
       }
       
       if (showColumns.unitPrice !== false) {
-        doc.text('Valor Unit.', currentXNew, headerVerticalCenterNew, { align: 'center' });
-        currentXNew += (columnWidths.unitPrice || 15) * 2;
+        doc.text("Valor Unit.", currentXNew, headerVerticalCenterNew, { align: "center" });
+        currentXNew += (columnWidths.unitPrice || 12) * 2;
       }
       
       if (showColumns.discount !== false) {
-        doc.text('Desc.', currentXNew, headerVerticalCenterNew, { align: 'center' });
-        currentXNew += (columnWidths.discount || 10) * 2;
+        doc.text("Desc.", currentXNew, headerVerticalCenterNew, { align: "center" });
+        currentXNew += (columnWidths.discount || 8) * 2;
       }
       
       if (showColumns.total !== false) {
@@ -102,7 +102,7 @@ export const addItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: number
       doc.setFont('helvetica', 'normal');
     }
     
-    const rowHeight = config.table?.rowHeight || 8;
+    const rowHeight = config.table?.rowHeight || 12; // Aumentar altura padrão da linha
     
     // Alternate row background with configurable color
     if (index % 2 === 0) {
@@ -111,46 +111,44 @@ export const addItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: number
       doc.rect(15, yPosition - 2, pageWidth - 30, rowHeight, 'F');
     }
     
-    const productName = item.products?.name || 'Produto não encontrado';
-    const splitProductName = doc.splitTextToSize(productName, pageWidth - 100);
+    const productName = item.products?.name || "Produto não encontrado";
+    const itemWidth = (columnWidths.item || 75) * 2;
+    const splitProductName = doc.splitTextToSize(productName, itemWidth - 10);
     
     // Vertical centering for row content
     const rowVerticalCenter = yPosition + (rowHeight / 2) - 2;
     
     // Dynamic column content positioning
     let currentXData = 20;
-    doc.text(splitProductName[0], currentXData, rowVerticalCenter);
-    currentXData += (columnWidths.item || 65) * 2;
+    
+    // Renderizar todas as linhas do nome do produto (limitado a 2 linhas)
+    splitProductName.slice(0, 2).forEach((line: string, lineIndex: number) => {
+      doc.text(line, currentXData, rowVerticalCenter + (lineIndex * 4));
+    });
+    
+    currentXData += (columnWidths.item || 75) * 2;
     
     if (showColumns.quantity !== false) {
-      doc.text(item.quantity.toString(), currentXData, rowVerticalCenter, { align: 'center' });
-      currentXData += (columnWidths.quantity || 10) * 2;
+      doc.text(item.quantity.toString(), currentXData, rowVerticalCenter, { align: "center" });
+      currentXData += (columnWidths.quantity || 8) * 2;
     }
     
     if (showColumns.unitPrice !== false) {
-      doc.text(formatCurrency(item.unit_price), currentXData, rowVerticalCenter, { align: 'center' });
-      currentXData += (columnWidths.unitPrice || 15) * 2;
+      doc.text(formatCurrency(item.unit_price), currentXData, rowVerticalCenter, { align: "center" });
+      currentXData += (columnWidths.unitPrice || 12) * 2;
     }
     
     if (showColumns.discount !== false) {
-      const discountText = (item.discount_percentage || 0) > 0 ? `${(item.discount_percentage || 0)}%` : '—';
-      doc.text(discountText, currentXData, rowVerticalCenter, { align: 'center' });
-      currentXData += (columnWidths.discount || 10) * 2;
+      const discountText = (item.discount_percentage || 0) > 0 ? `${(item.discount_percentage || 0)}%` : "—";
+      doc.text(discountText, currentXData, rowVerticalCenter, { align: "center" });
+      currentXData += (columnWidths.discount || 8) * 2;
     }
     
     if (showColumns.total !== false) {
-      doc.text(formatCurrency(item.total_price), pageWidth - 20, rowVerticalCenter, { align: 'right' });
+      doc.text(formatCurrency(item.total_price), pageWidth - 20, rowVerticalCenter, { align: "right" });
     }
     
     yPosition += rowHeight;
-    
-    // Add additional lines for long product names
-    if (splitProductName.length > 1) {
-      for (let i = 1; i < splitProductName.length; i++) {
-        doc.text(splitProductName[i], 20, yPosition);
-        yPosition += 4;
-      }
-    }
   });
 
   return yPosition + 5;
