@@ -72,11 +72,20 @@ export const useBudgetManagement = (userRole?: string) => {
   const { user, clientData, isClient } = useAuth();
   const [budgets, setBudgets] = useState<LocalBudget[]>([]);
   const [filteredBudgets, setFilteredBudgets] = useState<LocalBudget[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Evitar buscar antes do contexto estar pronto para reduzir flicker
+    if (userRole === undefined) return;
+
+    // Para vendedores, aguardar ter o user.id
+    if ((userRole === 'vendedor_externo' || userRole === 'vendedor_interno') && !user?.id) return;
+
+    // Para clientes, se autenticado pelo sistema próprio, aguardar clientData
+    if (userRole === 'cliente' && isClient && !clientData) return;
+
     fetchBudgets();
-  }, [userRole, clientData, isClient]);
+  }, [userRole, clientData, isClient, user?.id]);
 
   const fetchBudgets = async () => {
     setLoading(true);
