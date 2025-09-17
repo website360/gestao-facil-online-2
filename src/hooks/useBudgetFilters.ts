@@ -10,9 +10,10 @@ export const useBudgetFilters = (budgets: LocalBudget[], userRole?: string) => {
   useEffect(() => {
     let filtered = budgets;
 
-    // Exibir todos os orçamentos por padrão; o filtro de status controla a visualização
-    // Removido filtro que ocultava convertidos para vendedores para evitar listas vazias
-
+    // Por padrão, excluir orçamentos convertidos (só mostra se especificamente filtrado)
+    if (statusFilter !== 'convertido') {
+      filtered = filtered.filter(budget => budget.status !== 'convertido');
+    }
 
     if (searchTerm) {
       filtered = filtered.filter(budget =>
