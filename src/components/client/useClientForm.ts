@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Client } from './types';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { isVendorOrOldVendasRole } from '@/utils/roleMapper';
 
 interface UseClientFormProps {
   editingClient: Client | null;
@@ -10,6 +12,7 @@ interface UseClientFormProps {
 }
 
 export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) => {
+  const { userProfile } = useUserProfile();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -29,6 +32,9 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
   const [systemPassword, setSystemPassword] = useState('');
   const [assignedUserId, setAssignedUserId] = useState('all');
   const [loading, setLoading] = useState(false);
+
+  // Verificar se o usuário é vendedor
+  const isVendor = userProfile && isVendorOrOldVendasRole(userProfile.role as any);
 
   useEffect(() => {
     if (editingClient) {
@@ -68,9 +74,10 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
       setState('');
       setAllowSystemAccess(false);
       setSystemPassword('');
-      setAssignedUserId('all');
+      // Se é vendedor, definir automaticamente como responsável
+      setAssignedUserId(isVendor && userProfile ? userProfile.id : 'all');
     }
-  }, [editingClient]);
+  }, [editingClient, isVendor, userProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,7 +132,14 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
         state: state || null,
         allow_system_access: allowSystemAccess,
         system_password: allowSystemAccess ? systemPassword : null,
-        assigned_user_id: !assignedUserId || assignedUserId === 'all' ? null : assignedUserId,
+        assigned_user_id: (() => {
+          // Se é vendedor, sempre usar o ID do vendedor logado
+          if (isVendor && userProfile) {
+            return userProfile.id;
+          }
+          // Se não é vendedor, usar o valor selecionado
+          return !assignedUserId || assignedUserId === 'all' ? null : assignedUserId;
+        })(),
       };
 
       console.log('Salvando cliente:', clientData);
@@ -184,7 +198,7 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
         setState('');
         setAllowSystemAccess(false);
         setSystemPassword('');
-        setAssignedUserId('all');
+        setAssignedUserId(isVendor && userProfile ? userProfile.id : 'all');
       }
     } catch (error: any) {
       console.error('Error saving client:', error);
