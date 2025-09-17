@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, FileText, Truck, Settings, Scale } from 'lucide-react';
+import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, FileText, Truck, Settings, Scale, PackageCheck } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import SaleAttachmentsDropdown from './SaleAttachmentsDropdown';
 
@@ -508,7 +508,7 @@ const SalesTableRow = ({
                   onClick={() => onConfirmDelivery(sale.id)}
                   className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
                 >
-                  <CheckCircle className="h-4 w-4" />
+                  <PackageCheck className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
