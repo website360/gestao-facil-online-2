@@ -56,6 +56,7 @@ interface SalesTableRowProps {
   onStatusChange: (saleId: string) => void;
   onViewVolumes: (saleId: string) => void;
   onConfirmDelivery: (saleId: string) => void;
+  onViewDeliveryNotes: (saleId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -82,6 +83,7 @@ const SalesTableRow = ({
   onStatusChange,
   onViewVolumes,
   onConfirmDelivery,
+  onViewDeliveryNotes,
   getStatusColor,
   getStatusLabel,
   formatSaleId,
@@ -513,6 +515,27 @@ const SalesTableRow = ({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Confirmar Entrega</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Botão para visualizar detalhes da entrega realizada */}
+          {(userRole === 'admin' || userRole === 'gerente') && 
+           sale.status === 'entrega_realizada' && 
+           sale.shipping_option_visible === false && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onViewDeliveryNotes(sale.id)}
+                  className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                >
+                  <PackageCheck className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Ver Detalhes da Entrega</p>
               </TooltipContent>
             </Tooltip>
           )}

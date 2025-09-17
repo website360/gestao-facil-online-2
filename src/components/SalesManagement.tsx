@@ -12,6 +12,7 @@ import SalesEditModal from './SalesEditModal';
 import SaleHistoryModal from './SaleHistoryModal';
 import InvoiceNumberModal from './sales/InvoiceNumberModal';
 import DeliveryConfirmModal from './sales/DeliveryConfirmModal';
+import DeliveryNotesModal from './sales/DeliveryNotesModal';
 import StatusChangeModal from './sales/StatusChangeModal';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,6 +53,9 @@ const SalesManagement = () => {
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [adminDeliveryModalOpen, setAdminDeliveryModalOpen] = useState(false);
   const [selectedSaleForAdminDelivery, setSelectedSaleForAdminDelivery] = useState<string | null>(null);
+  const [deliveryNotesModalOpen, setDeliveryNotesModalOpen] = useState(false);
+  const [selectedSaleForDeliveryNotes, setSelectedSaleForDeliveryNotes] = useState<string | null>(null);
+  const [deliveryNotesText, setDeliveryNotesText] = useState<string>('');
   const [statusChangeModalOpen, setStatusChangeModalOpen] = useState(false);
   const [volumeViewModalOpen, setVolumeViewModalOpen] = useState(false);
   const [selectedSaleForDelivery, setSelectedSaleForDelivery] = useState<string | null>(null);
@@ -246,6 +250,22 @@ const SalesManagement = () => {
     setAdminDeliveryModalOpen(true);
   };
 
+  const handleViewDeliveryNotes = async (saleId: string) => {
+    // Buscar as observações da entrega
+    const { data: logData } = await supabase
+      .from('sale_status_logs')
+      .select('reason')
+      .eq('sale_id', saleId)
+      .eq('new_status', 'entrega_realizada')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    
+    setDeliveryNotesText(logData?.reason || 'Nenhuma observação registrada.');
+    setSelectedSaleForDeliveryNotes(saleId);
+    setDeliveryNotesModalOpen(true);
+  };
+
   const handleViewVolumes = (saleId: string) => {
     setSelectedSaleId(saleId);
     setVolumeViewModalOpen(true);
@@ -306,6 +326,7 @@ const SalesManagement = () => {
         onStatusChange={handleStatusChange}
         onViewVolumes={handleViewVolumes}
         onConfirmDelivery={handleConfirmDelivery}
+        onViewDeliveryNotes={handleViewDeliveryNotes}
         getStatusColor={getStatusColor}
         getStatusLabel={getStatusLabel}
         formatSaleId={formatSaleIdWithData}
@@ -384,6 +405,14 @@ const SalesManagement = () => {
         onClose={() => setAdminDeliveryModalOpen(false)}
         sale={selectedSaleForAdminDelivery ? sales.find(s => s.id === selectedSaleForAdminDelivery) : null}
         onDeliveryConfirmed={fetchSales}
+      />
+
+      {/* Modal de Visualização de Observações da Entrega */}
+      <DeliveryNotesModal
+        isOpen={deliveryNotesModalOpen}
+        onClose={() => setDeliveryNotesModalOpen(false)}
+        sale={selectedSaleForDeliveryNotes ? sales.find(s => s.id === selectedSaleForDeliveryNotes) : null}
+        deliveryNotes={deliveryNotesText}
       />
 
       {/* Modal de Alteração de Status */}
