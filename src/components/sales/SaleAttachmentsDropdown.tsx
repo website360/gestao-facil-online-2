@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { Paperclip, Download, FileImage, FileText } from 'lucide-react';
+import { Paperclip, Download, FileImage, FileText, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface SaleAttachment {
   id: string;
@@ -24,6 +25,8 @@ const SaleAttachmentsDropdown = ({ saleId, className }: SaleAttachmentsDropdownP
   const [attachments, setAttachments] = useState<SaleAttachment[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const { isAdmin } = useUserProfile();
 
   useEffect(() => {
     fetchAttachments();
@@ -76,6 +79,37 @@ const SaleAttachmentsDropdown = ({ saleId, className }: SaleAttachmentsDropdownP
     }
   };
 
+  const deleteAttachment = async (attachment: SaleAttachment) => {
+    try {
+      setDeleting(attachment.id);
+      
+      // Delete file from storage
+      const { error: storageError } = await supabase.storage
+        .from('payment-receipts')
+        .remove([attachment.file_path]);
+
+      if (storageError) throw storageError;
+
+      // Delete record from database
+      const { error: dbError } = await supabase
+        .from('sale_attachments')
+        .delete()
+        .eq('id', attachment.id);
+
+      if (dbError) throw dbError;
+
+      // Update local state
+      setAttachments(prev => prev.filter(a => a.id !== attachment.id));
+      
+      toast.success('Comprovante excluído com sucesso!');
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+      toast.error('Erro ao excluir comprovante');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   const getFileIcon = (mimeType: string) => {
     if (mimeType === 'application/pdf') {
       return <FileText className="w-4 h-4 text-red-500" />;
@@ -118,9 +152,8 @@ const SaleAttachmentsDropdown = ({ saleId, className }: SaleAttachmentsDropdownP
         {attachments.map((attachment) => (
           <DropdownMenuItem
             key={attachment.id}
-            onClick={() => downloadAttachment(attachment)}
-            disabled={downloading === attachment.id}
-            className="flex items-center gap-2 p-3 cursor-pointer hover:bg-muted"
+            className="flex items-center gap-2 p-3 focus:bg-muted"
+            onSelect={(e) => e.preventDefault()} // Prevent dropdown from closing
           >
             <div className="flex-shrink-0">
               {getFileIcon(attachment.mime_type)}
@@ -135,13 +168,45 @@ const SaleAttachmentsDropdown = ({ saleId, className }: SaleAttachmentsDropdownP
               </p>
             </div>
             
-            {downloading === attachment.id ? (
-              <div className="flex-shrink-0 text-xs text-muted-foreground">
-                Baixando...
-              </div>
-            ) : (
-              <Download className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-            )}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  downloadAttachment(attachment);
+                }}
+                disabled={downloading === attachment.id || deleting === attachment.id}
+                className="h-7 w-7 p-0"
+                title="Baixar comprovante"
+              >
+                {downloading === attachment.id ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                ) : (
+                  <Download className="w-3 h-3" />
+                )}
+              </Button>
+              
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteAttachment(attachment);
+                  }}
+                  disabled={downloading === attachment.id || deleting === attachment.id}
+                  className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  title="Excluir comprovante"
+                >
+                  {deleting === attachment.id ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-destructive"></div>
+                  ) : (
+                    <Trash2 className="w-3 h-3" />
+                  )}
+                </Button>
+              )}
+            </div>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
