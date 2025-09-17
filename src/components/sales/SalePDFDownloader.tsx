@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatSaleId } from '@/lib/budgetFormatter';
 
 interface Client {
   name: string;
@@ -44,17 +45,10 @@ interface SalePDFDownloaderProps {
 }
 
 const SalePDFDownloader = ({ sale, className }: SalePDFDownloaderProps) => {
-  const formatSaleId = (id: string) => {
-    // Simular um número sequencial baseado no timestamp
-    const timestamp = new Date(sale.created_at).getTime();
-    const sequentialNumber = (timestamp % 100000000).toString().padStart(8, '0');
-    return `#V${sequentialNumber}`;
-  };
-
   const downloadPDF = () => {
     const currentDate = new Date().toLocaleDateString('pt-BR');
     const saleDate = new Date(sale.created_at).toLocaleDateString('pt-BR');
-    const saleId = formatSaleId(sale.id);
+    const saleId = formatSaleId(sale.id, sale.created_at);
 
     // Determinar nome do vendedor
     let salespersonName = 'N/A';

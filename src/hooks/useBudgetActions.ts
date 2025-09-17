@@ -131,7 +131,7 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
           client_id: budgetToUse.client_id,
           budget_id: budgetToUse.id,
           created_by: budgetToUse.created_by, // Preservar o vendedor original que criou o orçamento
-          created_at: budgetToUse.created_at, // Usar a data original do orçamento
+          // Usar a data atual da conversão para o número da venda seguir o novo padrão
           converted_from_budget_at: new Date().toISOString(), // Data atual da conversão
           total_amount: budgetToUse.total_amount,
           notes: budgetToUse.notes,

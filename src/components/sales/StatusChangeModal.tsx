@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { formatSaleId } from '@/lib/budgetFormatter';
 import { Settings, AlertTriangle, User } from 'lucide-react';
 
 interface StatusChangeModalProps {
@@ -132,12 +133,6 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
     }
   };
 
-  const formatSaleId = (id: string) => {
-    const timestamp = new Date().getTime();
-    const sequentialNumber = (timestamp % 100000000).toString().padStart(8, '0');
-    return `#V${sequentialNumber}`;
-  };
-
   const handleClose = () => {
     setNewStatus('');
     setNotes('');
@@ -154,7 +149,7 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
             <Settings className="w-5 h-5" />
             Alterar Status da Venda
             <Badge variant="outline" className="ml-2">
-              {formatSaleId(sale.id)}
+              {formatSaleId(sale.id, sale.created_at)}
             </Badge>
           </DialogTitle>
         </DialogHeader>

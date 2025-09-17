@@ -146,10 +146,6 @@ const BudgetApproval = () => {
     }
   };
 
-  const formatBudgetId = (id: string, index: number) => {
-    return `${String(index + 1).padStart(3, '0')}-${id.slice(-6).toUpperCase()}`;
-  };
-
   if (!isAdmin && userProfile?.role !== 'gerente') {
     return (
       <div className="container mx-auto p-6">
@@ -220,7 +216,7 @@ const BudgetApproval = () => {
               {filteredBudgets.map((budget, index) => (
                 <TableRow key={budget.id}>
                   <TableCell className="font-medium">
-                    {formatBudgetId(budget.id, index)}
+                    {formatBudgetId(budget.id, budget.created_at)}
                   </TableCell>
                   <TableCell>
                     <div>

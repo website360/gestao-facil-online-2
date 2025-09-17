@@ -5,22 +5,22 @@
 
 export const formatBudgetId = (budgetId: string, createdAt?: string): string => {
   if (createdAt) {
-    // Usar a data de criação para gerar um número sequencial
+    // Usar a data de criação no formato solicitado: DDMMYY + HHMM
     const date = new Date(createdAt);
-    const baseDate = new Date('2025-01-01'); // Data base para início da contagem
-    const daysDiff = Math.floor((date.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Combinar dias + horário para criar sequência única
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-    const milliseconds = date.getMilliseconds();
+    // Obter componentes da data
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2); // Últimos 2 dígitos do ano
     
-    // Criar número sequencial baseado na data/hora (máximo 8 dígitos)
-    const timeBasedNumber = (daysDiff * 100000) + (hours * 3600) + (minutes * 60) + seconds;
-    const sequentialNumber = timeBasedNumber.toString().padStart(8, '0');
+    // Obter componentes da hora
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
     
-    return `#O${sequentialNumber}`;
+    // Formato: #O + DDMMYY + HHMM
+    const formattedNumber = `${day}${month}${year}${hours}${minutes}`;
+    
+    return `#O${formattedNumber}`;
   }
   
   // Fallback para quando não há data (manter compatibilidade)
@@ -36,22 +36,22 @@ export const formatBudgetId = (budgetId: string, createdAt?: string): string => 
 
 export const formatSaleId = (saleId: string, createdAt?: string): string => {
   if (createdAt) {
-    // Usar a data de criação para gerar um número sequencial
+    // Usar a data de criação no formato solicitado: DDMMYY + HHMM
     const date = new Date(createdAt);
-    const baseDate = new Date('2025-01-01'); // Data base para início da contagem
-    const daysDiff = Math.floor((date.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Combinar dias + horário para criar sequência única
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-    const milliseconds = date.getMilliseconds();
+    // Obter componentes da data
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2); // Últimos 2 dígitos do ano
     
-    // Criar número sequencial baseado na data/hora (máximo 8 dígitos)
-    const timeBasedNumber = (daysDiff * 100000) + (hours * 3600) + (minutes * 60) + seconds;
-    const sequentialNumber = timeBasedNumber.toString().padStart(8, '0');
+    // Obter componentes da hora
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
     
-    return `#V${sequentialNumber}`;
+    // Formato: #V + DDMMYY + HHMM
+    const formattedNumber = `${day}${month}${year}${hours}${minutes}`;
+    
+    return `#V${formattedNumber}`;
   }
   
   // Fallback para quando não há data (manter compatibilidade)

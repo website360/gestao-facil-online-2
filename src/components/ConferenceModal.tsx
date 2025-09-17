@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { Package, CheckCircle, X, Scan } from 'lucide-react';
+import { formatSaleId } from '@/lib/budgetFormatter';
 import VolumeWeightModal from './VolumeWeightModal';
 interface SaleItem {
   id: string;
@@ -276,17 +277,6 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
     onClose();
     setShowVolumeModal(false);
   };
-  const formatSaleId = (id: string) => {
-    // Usar hash do ID da venda para gerar um número consistente
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) {
-      const char = id.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    const sequentialNumber = Math.abs(hash % 100000000).toString().padStart(8, '0');
-    return `#V${sequentialNumber}`;
-  };
   const getConferenceStatus = (itemId: string) => {
     return conferenceItems.find(ci => ci.sale_item_id === itemId);
   };
@@ -314,7 +304,7 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
                     <strong>Cliente:</strong> {saleData.clients?.name || 'N/A'}
                   </div>
                   <div>
-                    <strong>Venda:</strong> {formatSaleId(saleData.id)}
+                    <strong>Venda:</strong> {formatSaleId(saleData.id, saleData.created_at)}
                   </div>
                   <div>
                     <strong>Progresso:</strong>

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Package, Scale, CheckCircle } from 'lucide-react';
+import { formatSaleId } from '@/lib/budgetFormatter';
 
 interface VolumeWeightModalProps {
   isOpen: boolean;
@@ -129,12 +130,6 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
   const handleClose = () => {
     resetModal();
     onClose();
-  };
-
-  const formatSaleId = (id: string) => {
-    const timestamp = new Date().getTime();
-    const sequentialNumber = (timestamp % 100000000).toString().padStart(8, '0');
-    return `#V${sequentialNumber}`;
   };
 
   const totalWeight = volumes.reduce((sum, vol) => sum + vol.weight_kg, 0);

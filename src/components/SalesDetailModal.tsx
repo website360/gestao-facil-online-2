@@ -271,13 +271,6 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
     }
   };
 
-  const formatSaleId = (id: string) => {
-    const timestamp = new Date().getTime();
-    const sequentialNumber = (timestamp % 100000000).toString().padStart(8, '0');
-    return `#V${sequentialNumber}`;
-  };
-
-
   const getPaymentMethodName = (id?: string) => {
     if (!id) return 'Não informado';
     const method = paymentMethods.find(m => m.id === id);

@@ -15,6 +15,7 @@ import DeliveryConfirmModal from './sales/DeliveryConfirmModal';
 import StatusChangeModal from './sales/StatusChangeModal';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { formatSaleId } from '@/lib/budgetFormatter';
 
 const SalesManagement = () => {
   const {
@@ -79,12 +80,8 @@ const SalesManagement = () => {
     }
   };
 
-  const formatSaleId = (sale: any) => {
-    // Encontrar o índice original na lista completa de vendas
-    const originalIndex = sales.findIndex(s => s.id === sale.id);
-    const startIndex = (currentPage - 1) * 20;
-    const sequentialNumber = (startIndex + originalIndex + 1).toString().padStart(8, '0');
-    return `#V${sequentialNumber}`;
+  const formatSaleIdWithData = (sale: any) => {
+    return formatSaleId(sale.id, sale.created_at);
   };
 
   const getCurrentResponsible = (sale: any) => {
@@ -303,7 +300,7 @@ const SalesManagement = () => {
         onViewVolumes={handleViewVolumes}
         getStatusColor={getStatusColor}
         getStatusLabel={getStatusLabel}
-        formatSaleId={formatSaleId}
+        formatSaleId={formatSaleIdWithData}
         getCurrentResponsible={getCurrentResponsible}
       />
 
@@ -354,7 +351,7 @@ const SalesManagement = () => {
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
-        saleId={selectedSale ? formatSaleId(selectedSale) : ''}
+        saleId={selectedSale ? formatSaleIdWithData(selectedSale) : ''}
         clientName={selectedSale?.clients?.name || 'N/A'}
         isDeleting={isDeleting}
       />
@@ -370,7 +367,7 @@ const SalesManagement = () => {
         open={deliveryModalOpen}
         onOpenChange={setDeliveryModalOpen}
         onConfirm={handleDeliveryConfirmation}
-        saleId={selectedDeliverySale ? formatSaleId(selectedDeliverySale) : ''}
+        saleId={selectedDeliverySale ? formatSaleIdWithData(selectedDeliverySale) : ''}
       />
 
       {/* Modal de Alteração de Status */}

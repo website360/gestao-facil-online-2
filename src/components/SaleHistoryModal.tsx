@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, User, CheckCircle, Package, FileText, TrendingUp, Truck } from 'lucide-react';
+import { formatSaleId } from '@/lib/budgetFormatter';
 
 interface SaleHistoryData {
   id: string;
@@ -94,12 +95,6 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
     }
   };
 
-  const formatSaleId = (id: string) => {
-    const timestamp = new Date().getTime();
-    const sequentialNumber = (timestamp % 100000000).toString().padStart(8, '0');
-    return `#V${sequentialNumber}`;
-  };
-
   const getStepStatus = (stepCompleted: boolean, currentStep: boolean) => {
     if (stepCompleted) return 'completed';
     if (currentStep) return 'current';
@@ -136,7 +131,7 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock className="w-5 h-5" />
-            Histórico da Venda {formatSaleId(historyData.id)}
+            Histórico da Venda {formatSaleId(historyData.id, historyData.created_at)}
           </DialogTitle>
         </DialogHeader>
 
