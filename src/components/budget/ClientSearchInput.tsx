@@ -63,9 +63,15 @@ export const ClientSearchInput = ({
   };
 
   // Função para selecionar uma opção
-  const handleOptionSelect = (event: React.MouseEvent, option: ClientOption) => {
+  const handleOptionSelect = (event: React.MouseEvent | React.TouchEvent, option: ClientOption) => {
     event.preventDefault();
     event.stopPropagation();
+    // Evita que handlers globais capturem o evento
+    // @ts-ignore
+    if (event.nativeEvent && typeof event.nativeEvent.stopImmediatePropagation === 'function') {
+      // @ts-ignore
+      event.nativeEvent.stopImmediatePropagation();
+    }
     console.log('Selecting client option:', option.value, option.label);
     onValueChange(option.value);
     setSearchTerm(option.label);
@@ -81,11 +87,20 @@ export const ClientSearchInput = ({
     }
   };
 
-  // Filtrar opções baseado no termo de busca (tolerante a acentos)
-  const normalize = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}+/gu, '').toLowerCase();
-  const filteredOptions = options.filter(option =>
-    normalize(option.label).includes(normalize(searchTerm))
-  );
+  // Filtrar opções baseado no termo de busca (tolerante a acentos e variações como Matheus/Mateus)
+  const normalize = (s: string) =>
+    s
+      .normalize('NFD')
+      .replace(/\p{Diacritic}+/gu, '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  const normTerm = normalize(searchTerm).replace(/th/g, 't');
+  const filteredOptions = options.filter(option => {
+    const normLabel = normalize(option.label);
+    const normLabelAlt = normLabel.replace(/th/g, 't');
+    return normLabel.includes(normTerm) || normLabelAlt.includes(normTerm);
+  });
 
   // Atualizar searchTerm quando value muda externamente
   useEffect(() => {
@@ -180,7 +195,7 @@ export const ClientSearchInput = ({
       {isOpen && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed bg-background border border-border rounded-md shadow-lg z-[9999] max-h-60 overflow-auto"
+          className="fixed bg-background border border-border rounded-md shadow-lg z-[10000] max-h-60 overflow-auto pointer-events-auto"
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
@@ -195,6 +210,8 @@ export const ClientSearchInput = ({
                   <button
                     type="button"
                     onMouseDown={(event) => handleOptionSelect(event, option)}
+                    onClick={(event) => handleOptionSelect(event, option)}
+                    onTouchStart={(event) => handleOptionSelect(event, option)}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-muted focus:bg-muted focus:outline-none"
                   >
                     {option.label}
