@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import ProductSearchInput from './ProductSearchInput';
+import { ClientSearchInput } from './ClientSearchInput';
 
 interface BudgetFormHeaderProps {
   clientId: string;
@@ -34,7 +34,7 @@ const BudgetFormHeader = ({
             {clientOptions.find(c => c.value === clientId)?.label || 'Cliente'}
           </div>
         ) : (
-          <ProductSearchInput
+          <ClientSearchInput
             value={clientId}
             onValueChange={onClientChange}
             options={clientOptions}
