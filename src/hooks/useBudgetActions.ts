@@ -141,12 +141,18 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
 
       // Create sale with original budget creation date and conversion timestamp
       console.log('Creating sale from budget...');
+
+      // If the budget was created by a client (created_by === client_id), use the current authenticated user
+      const createdByForSale = (!budgetToUse.created_by || budgetToUse.created_by === budgetToUse.client_id)
+        ? user.id
+        : budgetToUse.created_by;
+
       const salePayload = {
         client_id: budgetToUse.client_id,
         budget_id: budgetToUse.id,
-        created_by: budgetToUse.created_by, // Preservar o vendedor original que criou o orçamento
-        // Usar a data atual da conversão para o número da venda seguir o novo padrão
-        converted_from_budget_at: new Date().toISOString(), // Data atual da conversão
+        created_by: createdByForSale,
+        // Use current conversion date
+        converted_from_budget_at: new Date().toISOString(),
         total_amount: budgetToUse.total_amount,
         notes: budgetToUse.notes,
         status: 'separacao' as const,
