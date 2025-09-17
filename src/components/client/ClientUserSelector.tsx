@@ -31,7 +31,7 @@ export const ClientUserSelector = ({ value, onChange }: ClientUserSelectorProps)
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, email, role')
-        .eq('role', 'vendas')
+        .in('role', ['vendas', 'vendedor_externo', 'vendedor_interno'])
         .order('name', { ascending: true });
 
       if (error) throw error;
