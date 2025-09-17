@@ -7,6 +7,16 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, User, CheckCircle, Package, FileText, TrendingUp, Truck } from 'lucide-react';
 import { formatSaleId } from '@/lib/budgetFormatter';
 
+interface StatusLog {
+  id: string;
+  previous_status: string | null;
+  new_status: string;
+  reason: string | null;
+  created_at: string;
+  user_id: string;
+  user_profile: { name: string } | null;
+}
+
 interface SaleHistoryData {
   id: string;
   status: string;
@@ -39,6 +49,7 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
   saleId
 }) => {
   const [historyData, setHistoryData] = useState<SaleHistoryData | null>(null);
+  const [statusLogs, setStatusLogs] = useState<StatusLog[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -61,8 +72,17 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
 
       if (saleError) throw saleError;
 
-      // Buscar perfis dos usuários envolvidos
-      const userIds = [
+      // Buscar logs de mudança de status
+      const { data: statusLogsData, error: logsError } = await supabase
+        .from('sale_status_logs')
+        .select('id, previous_status, new_status, reason, created_at, user_id')
+        .eq('sale_id', saleId)
+        .order('created_at', { ascending: true });
+
+      if (logsError) throw logsError;
+
+      // Buscar perfis dos usuários envolvidos (incluindo usuários dos logs)
+      const saleUserIds = [
         saleData.created_by,
         saleData.separation_user_id,
         saleData.conference_user_id,
@@ -70,10 +90,13 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
         saleData.delivery_user_id
       ].filter(Boolean);
 
+      const logUserIds = statusLogsData?.map(log => log.user_id) || [];
+      const allUserIds = [...new Set([...saleUserIds, ...logUserIds])];
+
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name')
-        .in('id', userIds);
+        .in('id', allUserIds);
 
       if (profilesError) throw profilesError;
 
@@ -87,7 +110,14 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
         delivery_user_profile: profilesData?.find(p => p.id === saleData.delivery_user_id) || null,
       };
 
+      // Montar logs com perfis
+      const enrichedLogs: StatusLog[] = statusLogsData?.map(log => ({
+        ...log,
+        user_profile: profilesData?.find(p => p.id === log.user_id) || null
+      })) || [];
+
       setHistoryData(enrichedData);
+      setStatusLogs(enrichedLogs);
     } catch (error) {
       console.error('Erro ao buscar histórico da venda:', error);
     } finally {
@@ -119,6 +149,10 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
       default:
         return <Clock className={`w-5 h-5 ${iconClass}`} />;
     }
+  };
+
+  const getStatusLogForStatus = (status: string) => {
+    return statusLogs.find(log => log.new_status === status);
   };
 
   if (!historyData) return null;
@@ -202,6 +236,16 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                           <span>{new Date(historyData.separation_completed_at).toLocaleString('pt-BR')}</span>
                         </div>
                       )}
+                      {(() => {
+                        const log = getStatusLogForStatus('separacao');
+                        return log?.reason && (
+                          <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                            <p className="text-sm text-gray-700">
+                              <span className="font-medium">Motivo:</span> {log.reason}
+                            </p>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -238,6 +282,16 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                           <span>{new Date(historyData.conference_completed_at).toLocaleString('pt-BR')}</span>
                         </div>
                       )}
+                      {(() => {
+                        const log = getStatusLogForStatus('conferencia');
+                        return log?.reason && (
+                          <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                            <p className="text-sm text-gray-700">
+                              <span className="font-medium">Motivo:</span> {log.reason}
+                            </p>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -274,6 +328,16 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                           <span>{new Date(historyData.invoice_completed_at).toLocaleString('pt-BR')}</span>
                         </div>
                       )}
+                      {(() => {
+                        const log = getStatusLogForStatus('nota_fiscal');
+                        return log?.reason && (
+                          <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                            <p className="text-sm text-gray-700">
+                              <span className="font-medium">Motivo:</span> {log.reason}
+                            </p>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -310,6 +374,16 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                           <span>{new Date(historyData.delivery_completed_at).toLocaleString('pt-BR')}</span>
                         </div>
                       )}
+                      {(() => {
+                        const log = getStatusLogForStatus('entrega_realizada') || getStatusLogForStatus('aguardando_entrega');
+                        return log?.reason && (
+                          <div className="mt-2 p-2 bg-gray-50 rounded-md">
+                            <p className="text-sm text-gray-700">
+                              <span className="font-medium">Motivo:</span> {log.reason}
+                            </p>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
