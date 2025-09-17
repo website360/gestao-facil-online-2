@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, FileText, Truck, Settings, Scale, PackageCheck } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import SaleAttachmentsDropdown from './SaleAttachmentsDropdown';
+import SalePDFGenerator from './SalePDFGenerator';
 
 interface Sale {
   id: string;
@@ -459,6 +460,9 @@ const SalesTableRow = ({
               <p>Histórico</p>
             </TooltipContent>
           </Tooltip>
+
+          {/* Botão para baixar PDF da venda */}
+          <SalePDFGenerator sale={sale} />
 
           {/* Ícone de rastreio - só aparece se o tracking_code estiver preenchido */}
           {sale.tracking_code && (
