@@ -76,6 +76,10 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
         updateData.delivery_user_id = null;
         updateData.delivery_completed_at = null;
       } else if (newStatus === 'conferencia') {
+        // Se pulou a separação, marcar como feita pelo admin
+        if (!sale.separation_user_id) {
+          updateData.separation_user_id = user.id;
+        }
         updateData.separation_completed_at = updateData.separation_completed_at || new Date().toISOString();
         updateData.conference_user_id = user.id;
         updateData.conference_completed_at = null;
@@ -84,6 +88,13 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
         updateData.delivery_user_id = null;
         updateData.delivery_completed_at = null;
       } else if (newStatus === 'nota_fiscal') {
+        // Se pulou etapas anteriores, marcar como feitas pelo admin
+        if (!sale.separation_user_id) {
+          updateData.separation_user_id = user.id;
+        }
+        if (!sale.conference_user_id) {
+          updateData.conference_user_id = user.id;
+        }
         updateData.separation_completed_at = updateData.separation_completed_at || new Date().toISOString();
         updateData.conference_completed_at = updateData.conference_completed_at || new Date().toISOString();
         updateData.invoice_user_id = user.id;
@@ -91,12 +102,35 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
         updateData.delivery_user_id = null;
         updateData.delivery_completed_at = null;
       } else if (newStatus === 'aguardando_entrega') {
+        // Se pulou etapas anteriores, marcar como feitas pelo admin
+        if (!sale.separation_user_id) {
+          updateData.separation_user_id = user.id;
+        }
+        if (!sale.conference_user_id) {
+          updateData.conference_user_id = user.id;
+        }
+        if (!sale.invoice_user_id) {
+          updateData.invoice_user_id = user.id;
+        }
         updateData.separation_completed_at = updateData.separation_completed_at || new Date().toISOString();
         updateData.conference_completed_at = updateData.conference_completed_at || new Date().toISOString();
         updateData.invoice_completed_at = updateData.invoice_completed_at || new Date().toISOString();
         updateData.delivery_user_id = user.id;
         updateData.delivery_completed_at = null;
       } else if (newStatus === 'entrega_realizada') {
+        // Se pulou etapas anteriores, marcar como feitas pelo admin
+        if (!sale.separation_user_id) {
+          updateData.separation_user_id = user.id;
+        }
+        if (!sale.conference_user_id) {
+          updateData.conference_user_id = user.id;
+        }
+        if (!sale.invoice_user_id) {
+          updateData.invoice_user_id = user.id;
+        }
+        if (!sale.delivery_user_id) {
+          updateData.delivery_user_id = user.id;
+        }
         updateData.separation_completed_at = updateData.separation_completed_at || new Date().toISOString();
         updateData.conference_completed_at = updateData.conference_completed_at || new Date().toISOString();
         updateData.invoice_completed_at = updateData.invoice_completed_at || new Date().toISOString();

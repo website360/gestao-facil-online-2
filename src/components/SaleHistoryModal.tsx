@@ -230,6 +230,8 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                       </div>
                       {(() => {
                         const log = getStatusLogForStatus('separacao');
+                        const isCurrentStatusChange = log && currentStatus === 'separacao';
+                        
                         if (log?.user_profile) {
                           return (
                             <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
@@ -253,10 +255,12 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                       })()}
                       {(() => {
                         const log = getStatusLogForStatus('separacao');
-                        return log?.reason && (
-                          <div className="mt-2 p-2 bg-gray-50 rounded-md">
-                            <p className="text-sm text-gray-700">
-                              <span className="font-medium">Motivo:</span> {log.reason}
+                        const isCurrentStatusChange = currentStatus === 'separacao';
+                        
+                        return log?.reason && isCurrentStatusChange && (
+                          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <p className="text-sm text-blue-800">
+                              <span className="font-semibold">Motivo:</span> {log.reason}
                             </p>
                           </div>
                         );
@@ -291,6 +295,7 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                       </div>
                       {(() => {
                         const log = getStatusLogForStatus('conferencia');
+                        
                         if (log?.user_profile) {
                           return (
                             <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
@@ -314,10 +319,12 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                       })()}
                       {(() => {
                         const log = getStatusLogForStatus('conferencia');
-                        return log?.reason && (
-                          <div className="mt-2 p-2 bg-gray-50 rounded-md">
-                            <p className="text-sm text-gray-700">
-                              <span className="font-medium">Motivo:</span> {log.reason}
+                        const isCurrentStatusChange = currentStatus === 'conferencia';
+                        
+                        return log?.reason && isCurrentStatusChange && (
+                          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <p className="text-sm text-blue-800">
+                              <span className="font-semibold">Motivo:</span> {log.reason}
                             </p>
                           </div>
                         );
@@ -352,6 +359,7 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                       </div>
                       {(() => {
                         const log = getStatusLogForStatus('nota_fiscal');
+                        
                         if (log?.user_profile) {
                           return (
                             <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
@@ -375,10 +383,12 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                       })()}
                       {(() => {
                         const log = getStatusLogForStatus('nota_fiscal');
-                        return log?.reason && (
-                          <div className="mt-2 p-2 bg-gray-50 rounded-md">
-                            <p className="text-sm text-gray-700">
-                              <span className="font-medium">Motivo:</span> {log.reason}
+                        const isCurrentStatusChange = currentStatus === 'nota_fiscal';
+                        
+                        return log?.reason && isCurrentStatusChange && (
+                          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <p className="text-sm text-blue-800">
+                              <span className="font-semibold">Motivo:</span> {log.reason}
                             </p>
                           </div>
                         );
@@ -413,6 +423,7 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                       </div>
                       {(() => {
                         const log = getStatusLogForStatus('entrega_realizada') || getStatusLogForStatus('aguardando_entrega');
+                        
                         if (log?.user_profile) {
                           return (
                             <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
@@ -436,10 +447,12 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                       })()}
                       {(() => {
                         const log = getStatusLogForStatus('entrega_realizada') || getStatusLogForStatus('aguardando_entrega');
-                        return log?.reason && (
-                          <div className="mt-2 p-2 bg-gray-50 rounded-md">
-                            <p className="text-sm text-gray-700">
-                              <span className="font-medium">Motivo:</span> {log.reason}
+                        const isCurrentStatusChange = currentStatus === 'entrega_realizada' || currentStatus === 'aguardando_entrega';
+                        
+                        return log?.reason && isCurrentStatusChange && (
+                          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <p className="text-sm text-blue-800">
+                              <span className="font-semibold">Motivo:</span> {log.reason}
                             </p>
                           </div>
                         );
