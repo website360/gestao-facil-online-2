@@ -59,6 +59,7 @@ interface SalesTableProps {
   onDeliveryStart: (saleId: string) => void;
   onStatusChange: (saleId: string) => void;
   onViewVolumes: (saleId: string) => void;
+  onConfirmDelivery: (saleId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -90,6 +91,7 @@ const SalesTable = ({
   onDeliveryStart,
   onStatusChange,
   onViewVolumes,
+  onConfirmDelivery,
   getStatusColor,
   getStatusLabel,
   formatSaleId,
@@ -341,10 +343,11 @@ const SalesTable = ({
                 onEdit={onEdit}
                 onHistory={onHistory}
                 onReturnToSales={onReturnToSales}
-              onConfirmInvoice={onConfirmInvoice}
-              onDeliveryStart={onDeliveryStart}
-              onStatusChange={onStatusChange}
-              onViewVolumes={onViewVolumes}
+                onConfirmInvoice={onConfirmInvoice}
+                onDeliveryStart={onDeliveryStart}
+                onStatusChange={onStatusChange}
+                onViewVolumes={onViewVolumes}
+                onConfirmDelivery={onConfirmDelivery}
                 getStatusColor={getStatusColor}
                 getStatusLabel={getStatusLabel}
                 formatSaleId={formatSaleId}

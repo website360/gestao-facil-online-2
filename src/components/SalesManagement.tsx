@@ -50,6 +50,8 @@ const SalesManagement = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+  const [adminDeliveryModalOpen, setAdminDeliveryModalOpen] = useState(false);
+  const [selectedSaleForAdminDelivery, setSelectedSaleForAdminDelivery] = useState<string | null>(null);
   const [statusChangeModalOpen, setStatusChangeModalOpen] = useState(false);
   const [volumeViewModalOpen, setVolumeViewModalOpen] = useState(false);
   const [selectedSaleForDelivery, setSelectedSaleForDelivery] = useState<string | null>(null);
@@ -238,6 +240,11 @@ const SalesManagement = () => {
     setSelectedSaleId(saleId);
     setStatusChangeModalOpen(true);
   };
+  
+  const handleConfirmDelivery = (saleId: string) => {
+    setSelectedSaleForAdminDelivery(saleId);
+    setAdminDeliveryModalOpen(true);
+  };
 
   const handleViewVolumes = (saleId: string) => {
     setSelectedSaleId(saleId);
@@ -298,6 +305,7 @@ const SalesManagement = () => {
         onDeliveryStart={handleDeliveryStart}
         onStatusChange={handleStatusChange}
         onViewVolumes={handleViewVolumes}
+        onConfirmDelivery={handleConfirmDelivery}
         getStatusColor={getStatusColor}
         getStatusLabel={getStatusLabel}
         formatSaleId={formatSaleIdWithData}
@@ -368,6 +376,14 @@ const SalesManagement = () => {
         onOpenChange={setDeliveryModalOpen}
         onConfirm={handleDeliveryConfirmation}
         saleId={selectedDeliverySale ? formatSaleIdWithData(selectedDeliverySale) : ''}
+      />
+
+      {/* Modal de Confirmação de Entrega para Admin */}
+      <DeliveryConfirmModal
+        isOpen={adminDeliveryModalOpen}
+        onClose={() => setAdminDeliveryModalOpen(false)}
+        sale={selectedSaleForAdminDelivery ? sales.find(s => s.id === selectedSaleForAdminDelivery) : null}
+        onDeliveryConfirmed={fetchSales}
       />
 
       {/* Modal de Alteração de Status */}

@@ -57,6 +57,7 @@ interface SalesManagementContentProps {
   onDeliveryStart: (saleId: string) => void;
   onStatusChange: (saleId: string) => void;
   onViewVolumes: (saleId: string) => void;
+  onConfirmDelivery: (saleId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -87,6 +88,7 @@ const SalesManagementContent = ({
   onDeliveryStart,
   onStatusChange,
   onViewVolumes,
+  onConfirmDelivery,
   getStatusColor,
   getStatusLabel,
   formatSaleId,
@@ -131,6 +133,7 @@ const SalesManagementContent = ({
             onDeliveryStart={onDeliveryStart}
             onStatusChange={onStatusChange}
             onViewVolumes={onViewVolumes}
+            onConfirmDelivery={onConfirmDelivery}
             getStatusColor={getStatusColor}
             getStatusLabel={getStatusLabel}
             formatSaleId={formatSaleId}

@@ -36,6 +36,7 @@ interface Sale {
   total_volumes?: number;
   total_weight_kg?: number;
   shipping_option_name?: string | null;
+  shipping_option_visible?: boolean;
 }
 
 interface SalesTableRowProps {
@@ -54,6 +55,7 @@ interface SalesTableRowProps {
   onDeliveryStart: (saleId: string) => void;
   onStatusChange: (saleId: string) => void;
   onViewVolumes: (saleId: string) => void;
+  onConfirmDelivery: (saleId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -79,6 +81,7 @@ const SalesTableRow = ({
   onDeliveryStart,
   onStatusChange,
   onViewVolumes,
+  onConfirmDelivery,
   getStatusColor,
   getStatusLabel,
   formatSaleId,
@@ -489,6 +492,27 @@ const SalesTableRow = ({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Confirmar Geração de Nota Fiscal</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Botão de confirmar entrega para admin/gerente quando frete não vai para entregador */}
+          {(userRole === 'admin' || userRole === 'gerente') && 
+           sale.status === 'aguardando_entrega' && 
+           sale.shipping_option_visible === false && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onConfirmDelivery(sale.id)}
+                  className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Confirmar Entrega</p>
               </TooltipContent>
             </Tooltip>
           )}
