@@ -16,29 +16,47 @@ export const useProductOperations = (
   const [loading, setLoading] = useState(false);
 
   const parsePrice = (priceString: string): number => {
+    console.log('=== PARSING PRICE ===');
+    console.log('Input:', priceString, 'Type:', typeof priceString);
+    
     // Remove formatação de moeda brasileira e converte para número
-    if (!priceString) return 0;
+    if (!priceString) {
+      console.log('Empty price, returning 0');
+      return 0;
+    }
     
     // Se já é um número, retorna ele
-    if (typeof priceString === 'number') return priceString;
+    if (typeof priceString === 'number') {
+      console.log('Already a number, returning:', priceString);
+      return priceString;
+    }
     
     const cleanPrice = priceString
       .replace('R$', '')
       .trim();
     
+    console.log('After removing R$ and trim:', cleanPrice);
+    
     // Se contém vírgula, assume formato brasileiro (ex: 1.234,56 ou 63,16)
     if (cleanPrice.includes(',')) {
       const parts = cleanPrice.split(',');
+      console.log('Parts split by comma:', parts);
+      
       if (parts.length === 2) {
         // Remove pontos de milhares da parte inteira
         const integerPart = parts[0].replace(/\./g, '');
         const decimalPart = parts[1];
-        return parseFloat(`${integerPart}.${decimalPart}`) || 0;
+        const result = parseFloat(`${integerPart}.${decimalPart}`) || 0;
+        console.log('Brazilian format result:', result);
+        return result;
       }
     }
     
     // Se não tem vírgula, pode ser formato americano ou número sem decimal
-    return parseFloat(cleanPrice.replace(/\./g, '')) || 0;
+    const result = parseFloat(cleanPrice.replace(/\./g, '')) || 0;
+    console.log('Non-comma format result:', result);
+    console.log('=== END PARSING PRICE ===');
+    return result;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
