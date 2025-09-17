@@ -228,14 +228,29 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                             : "Pendente"}
                         </Badge>
                       </div>
-                      {historyData.separation_user_profile && historyData.separation_completed_at && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                          <User className="w-4 h-4" />
-                          <span>Por: {historyData.separation_user_profile.name}</span>
-                          <Clock className="w-4 h-4 ml-2" />
-                          <span>{new Date(historyData.separation_completed_at).toLocaleString('pt-BR')}</span>
-                        </div>
-                      )}
+                      {(() => {
+                        const log = getStatusLogForStatus('separacao');
+                        if (log?.user_profile) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                              <User className="w-4 h-4" />
+                              <span>Alterado por: {log.user_profile.name}</span>
+                              <Clock className="w-4 h-4 ml-2" />
+                              <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
+                            </div>
+                          );
+                        } else if (historyData.separation_user_profile && historyData.separation_completed_at) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                              <User className="w-4 h-4" />
+                              <span>Por: {historyData.separation_user_profile.name}</span>
+                              <Clock className="w-4 h-4 ml-2" />
+                              <span>{new Date(historyData.separation_completed_at).toLocaleString('pt-BR')}</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                       {(() => {
                         const log = getStatusLogForStatus('separacao');
                         return log?.reason && (
@@ -274,14 +289,29 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                             : "Pendente"}
                         </Badge>
                       </div>
-                      {historyData.conference_user_profile && historyData.conference_completed_at && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                          <User className="w-4 h-4" />
-                          <span>Por: {historyData.conference_user_profile.name}</span>
-                          <Clock className="w-4 h-4 ml-2" />
-                          <span>{new Date(historyData.conference_completed_at).toLocaleString('pt-BR')}</span>
-                        </div>
-                      )}
+                      {(() => {
+                        const log = getStatusLogForStatus('conferencia');
+                        if (log?.user_profile) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                              <User className="w-4 h-4" />
+                              <span>Alterado por: {log.user_profile.name}</span>
+                              <Clock className="w-4 h-4 ml-2" />
+                              <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
+                            </div>
+                          );
+                        } else if (historyData.conference_user_profile && historyData.conference_completed_at) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                              <User className="w-4 h-4" />
+                              <span>Por: {historyData.conference_user_profile.name}</span>
+                              <Clock className="w-4 h-4 ml-2" />
+                              <span>{new Date(historyData.conference_completed_at).toLocaleString('pt-BR')}</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                       {(() => {
                         const log = getStatusLogForStatus('conferencia');
                         return log?.reason && (
@@ -320,14 +350,29 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                             : "Pendente"}
                         </Badge>
                       </div>
-                      {historyData.invoice_user_profile && historyData.invoice_completed_at && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                          <User className="w-4 h-4" />
-                          <span>Por: {historyData.invoice_user_profile.name}</span>
-                          <Clock className="w-4 h-4 ml-2" />
-                          <span>{new Date(historyData.invoice_completed_at).toLocaleString('pt-BR')}</span>
-                        </div>
-                      )}
+                      {(() => {
+                        const log = getStatusLogForStatus('nota_fiscal');
+                        if (log?.user_profile) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                              <User className="w-4 h-4" />
+                              <span>Alterado por: {log.user_profile.name}</span>
+                              <Clock className="w-4 h-4 ml-2" />
+                              <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
+                            </div>
+                          );
+                        } else if (historyData.invoice_user_profile && historyData.invoice_completed_at) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                              <User className="w-4 h-4" />
+                              <span>Por: {historyData.invoice_user_profile.name}</span>
+                              <Clock className="w-4 h-4 ml-2" />
+                              <span>{new Date(historyData.invoice_completed_at).toLocaleString('pt-BR')}</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                       {(() => {
                         const log = getStatusLogForStatus('nota_fiscal');
                         return log?.reason && (
@@ -366,14 +411,29 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                             : "Pendente"}
                         </Badge>
                       </div>
-                      {historyData.delivery_user_profile && historyData.delivery_completed_at && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                          <User className="w-4 h-4" />
-                          <span>Por: {historyData.delivery_user_profile.name}</span>
-                          <Clock className="w-4 h-4 ml-2" />
-                          <span>{new Date(historyData.delivery_completed_at).toLocaleString('pt-BR')}</span>
-                        </div>
-                      )}
+                      {(() => {
+                        const log = getStatusLogForStatus('entrega_realizada') || getStatusLogForStatus('aguardando_entrega');
+                        if (log?.user_profile) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                              <User className="w-4 h-4" />
+                              <span>Alterado por: {log.user_profile.name}</span>
+                              <Clock className="w-4 h-4 ml-2" />
+                              <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
+                            </div>
+                          );
+                        } else if (historyData.delivery_user_profile && historyData.delivery_completed_at) {
+                          return (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                              <User className="w-4 h-4" />
+                              <span>Por: {historyData.delivery_user_profile.name}</span>
+                              <Clock className="w-4 h-4 ml-2" />
+                              <span>{new Date(historyData.delivery_completed_at).toLocaleString('pt-BR')}</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                       {(() => {
                         const log = getStatusLogForStatus('entrega_realizada') || getStatusLogForStatus('aguardando_entrega');
                         return log?.reason && (

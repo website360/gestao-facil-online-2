@@ -119,7 +119,7 @@ const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
           previous_status: sale.status as any,
           new_status: newStatus as any,
           user_id: user.id,
-          reason: `Alteração manual por administrador/gerente: ${notes}`
+          reason: notes
         });
 
       toast.success(`Status alterado para "${getCurrentStatusLabel(newStatus)}" com sucesso!`);
