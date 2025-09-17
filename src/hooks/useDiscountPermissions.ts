@@ -20,7 +20,8 @@ export const useDiscountPermissions = () => {
 
   const fetchDiscountConfig = async () => {
     try {
-      console.log('Fetching discount config...');
+      console.log('=== FETCHING DISCOUNT CONFIG ===');
+      console.log('User profile:', userProfile);
       const { data, error } = await supabase
         .from('system_configurations')
         .select('key, value')
@@ -41,6 +42,7 @@ export const useDiscountPermissions = () => {
         const newValue = Number(rawValue);
         
         console.log('Processed value:', newValue);
+        console.log('Setting maxDiscount to:', newValue);
         
         if (isNaN(newValue)) {
           console.error('Could not parse discount value:', rawValue);
@@ -52,6 +54,7 @@ export const useDiscountPermissions = () => {
         console.log('No discount config found, using default');
         setMaxDiscount(10);
       }
+      console.log('=== END FETCHING DISCOUNT CONFIG ===');
     } catch (error) {
       console.error('Error fetching discount config:', error);
       setMaxDiscount(10);
@@ -67,16 +70,48 @@ export const useDiscountPermissions = () => {
 
   // Verificar se um valor de desconto é válido
   const isValidGeneralDiscount = (value: number): boolean => {
-    if (isClient) return false; // Clientes não podem aplicar desconto
-    if (isAdminOrManager) return value >= 0 && value <= 100; // Admin/gerente sem limite específico
-    if (isSales) return value >= 0 && value <= maxDiscount; // Vendedor com limite único
+    console.log('=== VALIDATING GENERAL DISCOUNT ===');
+    console.log('Value:', value, 'MaxDiscount:', maxDiscount, 'UserProfile:', userProfile);
+    console.log('isClient:', isClient, 'isAdminOrManager:', isAdminOrManager, 'isSales:', isSales);
+    
+    if (isClient) {
+      console.log('Blocked: User is client');
+      return false; // Clientes não podem aplicar desconto
+    }
+    if (isAdminOrManager) {
+      const result = value >= 0 && value <= 100;
+      console.log('Admin/Manager validation result:', result);
+      return result; // Admin/gerente sem limite específico
+    }
+    if (isSales) {
+      const result = value >= 0 && value <= maxDiscount;
+      console.log('Sales validation result:', result, '(0 <=', value, '<=', maxDiscount, ')');
+      return result; // Vendedor com limite único
+    }
+    console.log('No role matched, returning false');
     return false;
   };
 
   const isValidIndividualDiscount = (value: number): boolean => {
-    if (isClient) return false; // Clientes não podem aplicar desconto
-    if (isAdminOrManager) return value >= 0 && value <= 100; // Admin/gerente sem limite específico
-    if (isSales) return value >= 0 && value <= maxDiscount; // Vendedor com o mesmo limite
+    console.log('=== VALIDATING INDIVIDUAL DISCOUNT ===');
+    console.log('Value:', value, 'MaxDiscount:', maxDiscount, 'UserProfile:', userProfile);
+    console.log('isClient:', isClient, 'isAdminOrManager:', isAdminOrManager, 'isSales:', isSales);
+    
+    if (isClient) {
+      console.log('Blocked: User is client');
+      return false; // Clientes não podem aplicar desconto
+    }
+    if (isAdminOrManager) {
+      const result = value >= 0 && value <= 100;
+      console.log('Admin/Manager validation result:', result);
+      return result; // Admin/gerente sem limite específico
+    }
+    if (isSales) {
+      const result = value >= 0 && value <= maxDiscount;
+      console.log('Sales validation result:', result, '(0 <=', value, '<=', maxDiscount, ')');
+      return result; // Vendedor com o mesmo limite
+    }
+    console.log('No role matched, returning false');
     return false;
   };
 
