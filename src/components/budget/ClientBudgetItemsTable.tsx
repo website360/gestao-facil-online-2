@@ -85,7 +85,7 @@ const ClientBudgetItemsTable = ({
       </div>
 
       {!readonly && (
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-end pt-2">
           <Button type="button" onClick={onAddItem} variant="outline" size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Adicionar Item

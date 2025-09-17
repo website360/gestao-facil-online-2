@@ -668,7 +668,7 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
               </div>
               
               {isEditing && (
-                <div className="flex justify-center pt-2">
+                <div className="flex justify-end pt-2">
                   <Button onClick={handleAddItem} variant="outline" size="sm">
                     <Plus className="h-4 w-4 mr-2" />
                     Adicionar Item
