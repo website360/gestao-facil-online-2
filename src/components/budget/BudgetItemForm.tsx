@@ -144,7 +144,7 @@ const BudgetItemForm = ({
         <Input
           type="text"
           inputMode="decimal"
-          value={formatNumber(item.unit_price)}
+          value={Number.isFinite(item.unit_price) ? String(item.unit_price).replace('.', ',') : ''}
           onChange={(e) => {
             const input = e.target.value;
             

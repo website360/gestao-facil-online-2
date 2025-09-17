@@ -622,7 +622,7 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
                               type="text"
                               inputMode="decimal"
                               min="0"
-                              value={formatNumber(item.unit_price)}
+                              value={Number.isFinite(item.unit_price) ? String(item.unit_price).replace('.', ',') : ''}
                               onChange={(e) => {
                                 const input = e.target.value;
                                 
