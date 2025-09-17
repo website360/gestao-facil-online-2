@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { Send, Edit3, Eye, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 import { useBudgetCalculations } from '@/hooks/useBudgetCalculations';
 import { useAuth } from '@/hooks/useAuth';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
@@ -619,12 +619,34 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
                         <TableCell className="text-center">
                           {isEditing ? (
                             <Input
-                              type="number"
+                              type="text"
+                              inputMode="decimal"
                               min="0"
-                              step="0.01"
-                              value={item.unit_price}
-                              onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                              value={formatNumber(item.unit_price)}
+                              onChange={(e) => {
+                                const input = e.target.value;
+                                
+                                // Parse formato brasileiro
+                                let cleanValue = input.replace(/[^\d,]/g, '');
+                                
+                                if (cleanValue.includes(',')) {
+                                  const parts = cleanValue.split(',');
+                                  if (parts.length === 2) {
+                                    const integerPart = parts[0];
+                                    const decimalPart = parts[1].slice(0, 2);
+                                    const parsed = parseFloat(`${integerPart}.${decimalPart}`);
+                                    handleItemChange(index, 'unit_price', isNaN(parsed) ? 0 : parsed);
+                                  } else {
+                                    const parsed = parseFloat(parts[0]) || 0;
+                                    handleItemChange(index, 'unit_price', parsed);
+                                  }
+                                } else {
+                                  const parsed = parseFloat(cleanValue) || 0;
+                                  handleItemChange(index, 'unit_price', parsed);
+                                }
+                              }}
                               className="w-24"
+                              placeholder="0,00"
                             />
                           ) : (
                             formatCurrency(item.unit_price)

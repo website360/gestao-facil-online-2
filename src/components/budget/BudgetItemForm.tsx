@@ -146,10 +146,29 @@ const BudgetItemForm = ({
           inputMode="decimal"
           value={formatNumber(item.unit_price)}
           onChange={(e) => {
-            const raw = e.target.value;
-            const sanitized = raw.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '');
-            const parsed = parseFloat(sanitized);
-            onItemUpdate(index, 'unit_price', isNaN(parsed) ? 0 : parsed);
+            const input = e.target.value;
+            
+            // Parse similar ao produto - formato brasileiro
+            let cleanValue = input.replace(/[^\d,]/g, ''); // Remove tudo exceto dígitos e vírgula
+            
+            if (cleanValue.includes(',')) {
+              // Se tem vírgula, trata como decimal brasileiro
+              const parts = cleanValue.split(',');
+              if (parts.length === 2) {
+                const integerPart = parts[0];
+                const decimalPart = parts[1].slice(0, 2); // Máximo 2 decimais
+                const parsed = parseFloat(`${integerPart}.${decimalPart}`);
+                onItemUpdate(index, 'unit_price', isNaN(parsed) ? 0 : parsed);
+              } else {
+                // Múltiplas vírgulas, usar só a parte antes da primeira
+                const parsed = parseFloat(parts[0]) || 0;
+                onItemUpdate(index, 'unit_price', parsed);
+              }
+            } else {
+              // Sem vírgula, tratar como número inteiro
+              const parsed = parseFloat(cleanValue) || 0;
+              onItemUpdate(index, 'unit_price', parsed);
+            }
           }}
           placeholder="0,00"
           className="h-8 text-xs text-right"

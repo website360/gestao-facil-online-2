@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { Trash2, Plus, Eye } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 import { registerStockMovement } from '@/services/stockMovementService';
 
 interface SaleItem {
@@ -714,12 +714,34 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
                         </TableCell>
                         <TableCell className="text-center">
                           <Input
-                            type="number"
-                            value={item.unit_price}
-                            onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                            step="0.01"
+                            type="text"
+                            inputMode="decimal"
+                            value={formatNumber(item.unit_price)}
+                            onChange={(e) => {
+                              const input = e.target.value;
+                              
+                              // Parse formato brasileiro
+                              let cleanValue = input.replace(/[^\d,]/g, '');
+                              
+                              if (cleanValue.includes(',')) {
+                                const parts = cleanValue.split(',');
+                                if (parts.length === 2) {
+                                  const integerPart = parts[0];
+                                  const decimalPart = parts[1].slice(0, 2);
+                                  const parsed = parseFloat(`${integerPart}.${decimalPart}`);
+                                  updateItem(index, 'unit_price', isNaN(parsed) ? 0 : parsed);
+                                } else {
+                                  const parsed = parseFloat(parts[0]) || 0;
+                                  updateItem(index, 'unit_price', parsed);
+                                }
+                              } else {
+                                const parsed = parseFloat(cleanValue) || 0;
+                                updateItem(index, 'unit_price', parsed);
+                              }
+                            }}
                             disabled={isFinalized}
                             className="w-24"
+                            placeholder="0,00"
                           />
                         </TableCell>
                         <TableCell className="text-center">0</TableCell>
