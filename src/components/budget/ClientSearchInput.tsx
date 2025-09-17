@@ -88,10 +88,9 @@ export const ClientSearchInput = ({
   };
 
   // Filtrar opções baseado no termo de busca (tolerante a acentos e variações como Matheus/Mateus)
+  const stripDiacritics = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const normalize = (s: string) =>
-    s
-      .normalize('NFD')
-      .replace(/\p{Diacritic}+/gu, '')
+    stripDiacritics(s)
       .toLowerCase()
       .replace(/\s+/g, ' ')
       .trim();
