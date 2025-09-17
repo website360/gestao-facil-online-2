@@ -87,18 +87,17 @@ export const ClientSearchInput = ({
     }
   };
 
-  // Filtrar opções baseado no termo de busca (tolerante a acentos e variações como Matheus/Mateus)
+  // Filtrar opções baseado no termo de busca (tolerante a acentos apenas)
   const stripDiacritics = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const normalize = (s: string) =>
     stripDiacritics(s)
       .toLowerCase()
       .replace(/\s+/g, ' ')
       .trim();
-  const normTerm = normalize(searchTerm).replace(/th/g, 't');
+  const normTerm = normalize(searchTerm);
   const filteredOptions = options.filter(option => {
     const normLabel = normalize(option.label);
-    const normLabelAlt = normLabel.replace(/th/g, 't');
-    return normLabel.includes(normTerm) || normLabelAlt.includes(normTerm);
+    return normLabel.includes(normTerm);
   });
 
   // Atualizar searchTerm quando value muda externamente

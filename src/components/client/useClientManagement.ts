@@ -40,7 +40,7 @@ export const useClientManagement = () => {
     let filtered = clients;
 
     if (searchTerm) {
-      const normTerm = normalize(searchTerm).replace(/th/g, 't');
+      const normTerm = normalize(searchTerm);
       filtered = filtered.filter(client => {
         const name = normalize(client.name || '');
         const razao = normalize(client.razao_social || '');
