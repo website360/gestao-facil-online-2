@@ -98,16 +98,32 @@ export const useBudgetFormData = () => {
             client_id: clientData.id
           }));
         } else {
-          // Se for funcionário, buscar todos os clientes
-          const { data: allClientsData, error: clientsError } = await supabase
-            .from('clients')
-            .select('*')
-            .order('name');
+          // Se for funcionário, buscar TODOS os clientes com paginação (evita limite de 1.000 itens do Supabase)
+          const pageSize = 1000;
+          let currentPage = 0;
+          let hasMore = true;
+          let allClientsData: any[] = [];
 
-          if (clientsError) {
-            console.error('Error fetching clients:', clientsError);
-            toast.error('Erro ao carregar clientes');
-            return;
+          while (hasMore) {
+            const { data, error } = await supabase
+              .from('clients')
+              .select('*')
+              .order('name', { ascending: true })
+              .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
+
+            if (error) {
+              console.error('Error fetching clients:', error);
+              toast.error('Erro ao carregar clientes');
+              return;
+            }
+
+            if (data && data.length > 0) {
+              allClientsData = [...allClientsData, ...data];
+              currentPage++;
+              hasMore = data.length === pageSize;
+            } else {
+              hasMore = false;
+            }
           }
           
           clientsData = allClientsData || [];
