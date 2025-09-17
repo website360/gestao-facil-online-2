@@ -88,9 +88,9 @@ const ClientBudgetItemForm = ({
         <Input
           placeholder="Código"
           value={item.product_code || ''}
-          onChange={(e) => onItemUpdate(index, 'product_code', e.target.value)}
-          className="h-8 text-xs"
-          disabled={readonly}
+          className="h-8 text-xs bg-gray-100"
+          readOnly
+          title="Clientes não podem alterar o código do produto"
         />
       </td>
 
@@ -110,15 +110,10 @@ const ClientBudgetItemForm = ({
           type="text"
           inputMode="decimal"
           value={formatNumber(item.unit_price)}
-          onChange={(e) => {
-            const raw = e.target.value;
-            const sanitized = raw.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '');
-            const parsed = parseFloat(sanitized);
-            onItemUpdate(index, 'unit_price', isNaN(parsed) ? 0 : parsed);
-          }}
           placeholder="0,00"
-          className="h-8 text-xs text-right"
-          disabled={readonly}
+          className="h-8 text-xs text-right bg-gray-100"
+          readOnly
+          title="Clientes não podem alterar o preço unitário"
         />
       </td>
 
