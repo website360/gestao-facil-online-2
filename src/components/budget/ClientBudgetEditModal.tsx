@@ -549,12 +549,6 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Itens do Orçamento</CardTitle>
-                {isEditing && (
-                  <Button onClick={handleAddItem} variant="outline" size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Item
-                  </Button>
-                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -672,6 +666,15 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
                   </TableBody>
                 </Table>
               </div>
+              
+              {isEditing && (
+                <div className="flex justify-center pt-2">
+                  <Button onClick={handleAddItem} variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Item
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 

@@ -623,12 +623,6 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Itens da Venda</h3>
-                {!isFinalized && (
-                  <Button type="button" onClick={addItem} size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Item
-                  </Button>
-                )}
               </div>
               
               <div className="overflow-x-auto">
@@ -765,6 +759,15 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
                   </TableBody>
                 </Table>
               </div>
+              
+              {!isFinalized && (
+                <div className="flex justify-center pt-2">
+                  <Button type="button" onClick={addItem} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Item
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Resumo da Venda */}
