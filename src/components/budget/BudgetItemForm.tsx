@@ -57,7 +57,16 @@ const BudgetItemForm = ({
     loading
   } = useDiscountPermissions();
 
-  // Log para debug
+  // Estado local para o campo de preço (preserva digitação como "1,")
+  const [priceInput, setPriceInput] = React.useState<string>(
+    Number.isFinite(item.unit_price) ? String(item.unit_price).replace('.', ',') : ''
+  );
+
+  React.useEffect(() => {
+    // Sincroniza quando o preço do item mudar externamente
+    setPriceInput(Number.isFinite(item.unit_price) ? String(item.unit_price).replace('.', ',') : '');
+  }, [item.unit_price]);
+
   console.log('BudgetItemForm - maxDiscount:', maxDiscount, 'loading:', loading);
 
   // Get current stock for the selected product
@@ -144,31 +153,38 @@ const BudgetItemForm = ({
         <Input
           type="text"
           inputMode="decimal"
-          value={Number.isFinite(item.unit_price) ? String(item.unit_price).replace('.', ',') : ''}
+          value={priceInput}
           onChange={(e) => {
-            const input = e.target.value;
-            
-            // Parse similar ao produto - formato brasileiro
-            let cleanValue = input.replace(/[^\d,]/g, ''); // Remove tudo exceto dígitos e vírgula
-            
-            if (cleanValue.includes(',')) {
-              // Se tem vírgula, trata como decimal brasileiro
-              const parts = cleanValue.split(',');
-              if (parts.length === 2) {
-                const integerPart = parts[0];
-                const decimalPart = parts[1].slice(0, 2); // Máximo 2 decimais
-                const parsed = parseFloat(`${integerPart}.${decimalPart}`);
-                onItemUpdate(index, 'unit_price', isNaN(parsed) ? 0 : parsed);
-              } else {
-                // Múltiplas vírgulas, usar só a parte antes da primeira
-                const parsed = parseFloat(parts[0]) || 0;
-                onItemUpdate(index, 'unit_price', parsed);
-              }
-            } else {
-              // Sem vírgula, tratar como número inteiro
-              const parsed = parseFloat(cleanValue) || 0;
-              onItemUpdate(index, 'unit_price', parsed);
+            const raw = e.target.value;
+            // Mantém apenas dígitos e UMA vírgula
+            const cleaned = raw.replace(/[^\d,]/g, '');
+            const parts = cleaned.split(',');
+
+            // Monta próximo valor permitido (máx. 2 casas)
+            let next = parts[0] || '';
+            if (parts.length > 1) {
+              next += ',' + (parts[1] || '').slice(0, 2);
             }
+            setPriceInput(next);
+
+            // Não atualizar número se usuário acabou de digitar a vírgula
+            if (parts.length > 1 && (parts[1] || '') === '') return;
+
+            const num = parseFloat(`${parts[0] || '0'}.${(parts[1] || '').slice(0, 2)}`);
+            if (!isNaN(num)) {
+              onItemUpdate(index, 'unit_price', num);
+            } else if (!next) {
+              onItemUpdate(index, 'unit_price', 0);
+            }
+          }}
+          onBlur={() => {
+            if (!priceInput) return;
+            const [i, d = ''] = priceInput.split(',');
+            const dec = (d + '00').slice(0, 2);
+            const normalized = `${i},${dec}`;
+            setPriceInput(normalized);
+            const num = parseFloat(`${i || '0'}.${dec}`);
+            if (!isNaN(num)) onItemUpdate(index, 'unit_price', num);
           }}
           placeholder="0,00"
           className="h-8 text-xs text-right"
