@@ -23,6 +23,9 @@ export const useClientManagement = () => {
   
   const { userProfile } = useUserProfile();
 
+  const stripDiacritics = (s: string) => s ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+  const normalize = (s: string) => stripDiacritics(s).toLowerCase().replace(/\s+/g, ' ').trim();
+
   useEffect(() => {
     if (userProfile) {
       fetchClients();
@@ -37,12 +40,21 @@ export const useClientManagement = () => {
     let filtered = clients;
 
     if (searchTerm) {
-      filtered = filtered.filter(client =>
-        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.cpf?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.cnpj?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const normTerm = normalize(searchTerm).replace(/th/g, 't');
+      filtered = filtered.filter(client => {
+        const name = normalize(client.name || '');
+        const razao = normalize(client.razao_social || '');
+        const email = normalize(client.email || '');
+        const cpf = normalize(client.cpf || '');
+        const cnpj = normalize(client.cnpj || '');
+        return (
+          name.includes(normTerm) ||
+          razao.includes(normTerm) ||
+          email.includes(normTerm) ||
+          cpf.includes(normTerm) ||
+          cnpj.includes(normTerm)
+        );
+      });
     }
 
     if (typeFilter !== 'all') {
