@@ -17,13 +17,28 @@ export const useProductOperations = (
 
   const parsePrice = (priceString: string): number => {
     // Remove formatação de moeda brasileira e converte para número
+    if (!priceString) return 0;
+    
+    // Se já é um número, retorna ele
+    if (typeof priceString === 'number') return priceString;
+    
     const cleanPrice = priceString
       .replace('R$', '')
-      .replace(/\./g, '') // Remove pontos de milhares
-      .replace(',', '.') // Substitui vírgula por ponto decimal
       .trim();
     
-    return parseFloat(cleanPrice) || 0;
+    // Se contém vírgula, assume formato brasileiro (ex: 1.234,56 ou 63,16)
+    if (cleanPrice.includes(',')) {
+      const parts = cleanPrice.split(',');
+      if (parts.length === 2) {
+        // Remove pontos de milhares da parte inteira
+        const integerPart = parts[0].replace(/\./g, '');
+        const decimalPart = parts[1];
+        return parseFloat(`${integerPart}.${decimalPart}`) || 0;
+      }
+    }
+    
+    // Se não tem vírgula, pode ser formato americano ou número sem decimal
+    return parseFloat(cleanPrice.replace(/\./g, '')) || 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
