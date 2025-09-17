@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Calendar, Download, FileSpreadsheet, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
@@ -33,6 +34,7 @@ interface SaleReportData {
 const SalesByDateClientReport = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [reportData, setReportData] = useState<SaleReportData[]>([]);
   const [totalSales, setTotalSales] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -61,7 +63,7 @@ const SalesByDateClientReport = () => {
     
     try {
       // Buscar vendas no período com informações de pagamento
-      const { data: sales, error } = await supabase
+      let query = supabase
         .from('sales')
         .select(`
           id,
@@ -89,8 +91,14 @@ const SalesByDateClientReport = () => {
           )
         `)
         .gte('created_at', startDate + 'T00:00:00')
-        .lte('created_at', endDate + 'T23:59:59')
-        .order('created_at', { ascending: false });
+        .lte('created_at', endDate + 'T23:59:59');
+
+      // Aplicar filtro de status se selecionado
+      if (statusFilter) {
+        query = query.eq('status', statusFilter as any);
+      }
+
+      const { data: sales, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('Erro ao buscar vendas:', error);
@@ -475,7 +483,7 @@ const SalesByDateClientReport = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-end">
             <div>
               <Label htmlFor="start-date">Data de Início</Label>
               <Input
@@ -493,6 +501,23 @@ const SalesByDateClientReport = () => {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
+            </div>
+            <div>
+              <Label htmlFor="status-filter">Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="separacao">Separação</SelectItem>
+                  <SelectItem value="conferencia">Conferência</SelectItem>
+                  <SelectItem value="nota_fiscal">Nota Fiscal</SelectItem>
+                  <SelectItem value="aguardando_entrega">Aguardando Entrega</SelectItem>
+                  <SelectItem value="entrega_realizada">Entrega Realizada</SelectItem>
+                  <SelectItem value="atencao">Atenção</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Button 
               onClick={generateReport} 
