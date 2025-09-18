@@ -284,6 +284,30 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
         }
 
         const currentMap = new Map((currentItems || []).map(ci => [ci.product_id, ci]));
+
+        // Remover duplicatas existentes (manter o primeiro registro por produto)
+        const duplicatesToZero: string[] = [];
+        const seen = new Set<string>();
+        (currentItems || []).forEach(ci => {
+          if (!ci.product_id) return;
+          const key = ci.product_id;
+          if (seen.has(key)) {
+            duplicatesToZero.push(ci.id);
+          } else {
+            seen.add(key);
+          }
+        });
+        if (duplicatesToZero.length > 0) {
+          console.log('Zerando duplicatas existentes:', duplicatesToZero);
+          const { error: dupZeroErr } = await supabase
+            .from('budget_items')
+            .update({ quantity: 0, total_price: 0, discount_percentage: 0 })
+            .in('id', duplicatesToZero);
+          if (dupZeroErr) {
+            console.error('Erro ao zerar duplicatas:', dupZeroErr);
+          }
+        }
+
         const validProductIds = new Set(validItems.map(v => v.product_id));
 
         // 1) Zerar itens removidos (quantidade 0)
