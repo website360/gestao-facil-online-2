@@ -192,7 +192,6 @@ const Index = () => {
         { id: 'categories', label: 'Categorias', icon: Tag },
         { id: 'budgets', label: 'Orçamentos', icon: FileText },
         { id: 'sales', label: 'Vendas', icon: ShoppingCart },
-        { id: 'reports', label: 'Relatórios', icon: BarChart3 },
         { id: 'catalog', label: 'Catálogo', icon: ShoppingBag },
       ];
     }

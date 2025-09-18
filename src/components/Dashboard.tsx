@@ -167,7 +167,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
         ) : (
           <>
             {/* KPI Cards - Primeira linha - Dashboard completo para admin/gerente */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${userProfile?.role !== 'gerente' ? 'lg:grid-cols-3' : ''} gap-4 md:gap-6 mb-4 md:mb-6`}>
               <KPICard
                 title="Total de Vendas"
                 value={kpis.totalSales}
@@ -182,13 +182,15 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
                 icon={TrendingUp}
                 color="green"
               />
-              <KPICard
-                title="Receita do Período"
-                value={formatCurrency(kpis.monthlyRevenue)}
-                subtitle={appliedDateRange.startDate || appliedDateRange.endDate ? "Faturamento no período" : "Faturamento do mês"}
-                icon={DollarSign}
-                color="purple"
-              />
+              {userProfile?.role !== 'gerente' && (
+                <KPICard
+                  title="Receita do Período"
+                  value={formatCurrency(kpis.monthlyRevenue)}
+                  subtitle={appliedDateRange.startDate || appliedDateRange.endDate ? "Faturamento no período" : "Faturamento do mês"}
+                  icon={DollarSign}
+                  color="purple"
+                />
+              )}
             </div>
 
             {/* KPI Cards - Segunda linha - Orçamentos */}
