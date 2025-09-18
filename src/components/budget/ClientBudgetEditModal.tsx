@@ -94,7 +94,7 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
       fetchBudgetData();
       fetchMasterData();
     }
-  }, [isOpen, budget?.id, budget?.updated_at]); // Incluir updated_at para detectar mudanças
+  }, [isOpen, budget?.id]); // Remover updated_at para evitar recarregamento desnecessário
 
   const fetchMasterData = async () => {
     try {
@@ -124,7 +124,10 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
     if (!budget) return;
 
     try {
-      // Buscar dados atualizados com cache-busting
+      console.log('=== CARREGANDO DADOS DO ORÇAMENTO ===');
+      console.log('Budget ID:', budget.id);
+      
+      // Buscar dados atualizados
       const { data: items, error } = await supabase
         .from('budget_items')
         .select(`
@@ -132,12 +135,19 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
           products(id, name, internal_code, price)
         `)
         .eq('budget_id', budget.id)
-        .order('created_at', { ascending: true }); // Garantir ordem consistente
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
 
       console.log('Itens carregados do banco:', items);
+      console.log('Quantidade de itens:', items?.length || 0);
 
+      // Limpar estado atual antes de definir novos dados
+      setBudgetItems([]);
+      
+      // Aguardar um tick para garantir que o estado foi limpo
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
       setBudgetItems(items?.map(item => ({
         ...item,
         products: item.products ? {
@@ -156,6 +166,8 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
       setShippingCost(budget.shipping_cost || 0);
       setLocalDeliveryInfo(budget.local_delivery_info || '');
       setInstallments(budget.installments || 1);
+      
+      console.log('=== DADOS CARREGADOS COM SUCESSO ===');
     } catch (error) {
       console.error('Erro ao carregar itens do orçamento:', error);
       toast.error('Erro ao carregar dados do orçamento');
@@ -341,6 +353,10 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
 
       toast.success('Orçamento atualizado com sucesso!');
       setIsEditing(false);
+      
+      // Aguardar um pouco para garantir que a transação foi commitada
+      console.log('Aguardando commit da transação...');
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Recarregar os dados atualizados do orçamento
       console.log('Recarregando dados do orçamento...');
