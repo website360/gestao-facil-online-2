@@ -48,7 +48,10 @@ const SalesByDateClientReport = () => {
       'separacao': 'Separação',
       'conferencia': 'Conferência',
       'nota_fiscal': 'Nota Fiscal',
-      'entrega_realizada': 'Entrega Realizada'
+      'aguardando_entrega': 'Aguardando Entrega',
+      'entrega_realizada': 'Entrega Realizada',
+      'atencao': 'Atenção',
+      'finalizada': 'Finalizada'
     };
     return statusMap[status] || status;
   };
@@ -516,6 +519,7 @@ const SalesByDateClientReport = () => {
                   <SelectItem value="aguardando_entrega">Aguardando Entrega</SelectItem>
                   <SelectItem value="entrega_realizada">Entrega Realizada</SelectItem>
                   <SelectItem value="atencao">Atenção</SelectItem>
+                  <SelectItem value="finalizada">Finalizada</SelectItem>
                 </SelectContent>
               </Select>
             </div>

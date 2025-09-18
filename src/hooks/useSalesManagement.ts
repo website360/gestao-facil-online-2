@@ -125,19 +125,19 @@ export const useSalesManagement = () => {
       
       const updateData: any = {};
 
-      if (['conferencia', 'nota_fiscal', 'aguardando_entrega', 'entrega_realizada'].includes(sale.status) && !sale.separation_user_id) {
+      if (['conferencia', 'nota_fiscal', 'aguardando_entrega', 'entrega_realizada', 'finalizada'].includes(sale.status) && !sale.separation_user_id) {
         updateData.separation_user_id = sale.created_by;
         updateData.separation_completed_at = sale.created_at;
         console.log('Definindo separation_user_id:', sale.created_by);
       }
 
-      if (['nota_fiscal', 'aguardando_entrega', 'entrega_realizada'].includes(sale.status) && !sale.conference_user_id) {
+      if (['nota_fiscal', 'aguardando_entrega', 'entrega_realizada', 'finalizada'].includes(sale.status) && !sale.conference_user_id) {
         updateData.conference_user_id = sale.created_by;
         updateData.conference_completed_at = sale.created_at;
         console.log('Definindo conference_user_id:', sale.created_by);
       }
 
-      if (['aguardando_entrega', 'entrega_realizada'].includes(sale.status) && !sale.invoice_user_id) {
+      if (['aguardando_entrega', 'entrega_realizada', 'finalizada'].includes(sale.status) && !sale.invoice_user_id) {
         updateData.invoice_user_id = sale.created_by;
         updateData.invoice_completed_at = sale.created_at;
         console.log('Definindo invoice_user_id:', sale.created_by);
@@ -244,7 +244,7 @@ export const useSalesManagement = () => {
           conference_percentage = conferenceStatus.percentage;
         }
 
-        if (sale.status === 'separacao' || sale.status === 'conferencia' || sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega' || sale.status === 'entrega_realizada') {
+        if (sale.status === 'separacao' || sale.status === 'conferencia' || sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega' || sale.status === 'entrega_realizada' || sale.status === 'finalizada') {
           const separationStatus = await checkSeparationStatus(sale.id);
           separation_complete = separationStatus.complete;
           separation_percentage = separationStatus.percentage;

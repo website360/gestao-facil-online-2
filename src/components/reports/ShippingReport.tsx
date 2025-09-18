@@ -158,7 +158,7 @@ const ShippingReport = () => {
           `)
           .not('shipping_option_id', 'is', null)
           .gt('shipping_cost', 0)
-          .in('status', ['nota_fiscal', 'aguardando_entrega', 'entrega_realizada'])
+          .in('status', ['nota_fiscal', 'aguardando_entrega', 'entrega_realizada', 'finalizada'])
           .order('created_at', { ascending: false });
 
         // Filtros

@@ -24,7 +24,7 @@ interface DateRange {
   endDate?: Date;
 }
 
-type SaleStatus = 'separacao' | 'conferencia' | 'nota_fiscal' | 'aguardando_entrega' | 'entrega_realizada' | 'atencao';
+type SaleStatus = 'separacao' | 'conferencia' | 'nota_fiscal' | 'aguardando_entrega' | 'entrega_realizada' | 'atencao' | 'finalizada';
 
 export const useDashboardKPIs = (dateRange?: DateRange) => {
   const { user } = useAuth();
