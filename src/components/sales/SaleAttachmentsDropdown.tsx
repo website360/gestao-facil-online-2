@@ -205,6 +205,11 @@ const SaleAttachmentsDropdown = ({ saleId, className, saleStatus }: SaleAttachme
     );
   }
 
+  // Se não há anexos e não permite upload (venda finalizada), não renderizar nada
+  if (attachments.length === 0 && saleStatus === 'finalizada') {
+    return null;
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
