@@ -220,6 +220,9 @@ const SalesByDateClientReport = () => {
       // Verificar quais vendas têm comprovantes anexados e obter nomes dos comprovantes
       if (sales && sales.length > 0) {
         const saleIds = sales.map(sale => sale.id);
+        console.log('IDs das vendas filtradas:', saleIds);
+        console.log('Filtros aplicados - Data:', startDate, 'até', endDate, 'Status:', statusFilter || 'todos');
+        
         const { data: attachments } = await supabase
           .from('sale_attachments')
           .select('sale_id, stored_filename')
@@ -227,6 +230,8 @@ const SalesByDateClientReport = () => {
         
         const salesWithAttachmentsIds = [...new Set(attachments?.map(att => att.sale_id) || [])];
         setSalesWithAttachments(salesWithAttachmentsIds);
+        
+        console.log('Vendas com anexos após filtro:', salesWithAttachmentsIds.length);
 
         // Agrupar nomes dos comprovantes por venda e adicionar ao relatório
         const attachmentsBySale: { [key: string]: string[] } = {};
@@ -435,11 +440,30 @@ const SalesByDateClientReport = () => {
     setShowDeleteConfirmation(false);
     await handleExportAttachments();
     
-    // Após o download, excluir os comprovantes
+    // Após o download, excluir os comprovantes (apenas os filtrados)
     if (attachmentsData.length > 0) {
       try {
+        console.log('Filtros aplicados:');
+        console.log('- Data inicial:', startDate);
+        console.log('- Data final:', endDate);
+        console.log('- Status filtro:', statusFilter);
+        console.log('- Vendas com anexos (filtradas):', salesWithAttachments);
+        console.log('- Total de anexos a excluir:', attachmentsData.length);
+        
+        // Verificar se os anexos pertencem realmente às vendas filtradas
+        const validAttachments = attachmentsData.filter(att => 
+          salesWithAttachments.includes(att.sale_id)
+        );
+        
+        console.log('- Anexos válidos para exclusão:', validAttachments.length);
+        
+        if (validAttachments.length === 0) {
+          toast.error('Nenhum comprovante encontrado para exclusão com os filtros aplicados');
+          return;
+        }
+        
         // Excluir arquivos do storage
-        const filesToDelete = attachmentsData.map(att => att.file_path);
+        const filesToDelete = validAttachments.map(att => att.file_path);
         const { error: storageError } = await supabase.storage
           .from('payment-receipts')
           .remove(filesToDelete);
@@ -449,7 +473,7 @@ const SalesByDateClientReport = () => {
         }
 
         // Excluir registros da tabela
-        const attachmentIds = attachmentsData.map(att => att.id);
+        const attachmentIds = validAttachments.map(att => att.id);
         const { error: dbError } = await supabase
           .from('sale_attachments')
           .delete()
@@ -459,15 +483,20 @@ const SalesByDateClientReport = () => {
           console.error('Erro ao deletar registros do banco:', dbError);
           toast.error('Erro ao excluir comprovantes do banco de dados');
         } else {
-          toast.success(`${attachmentsData.length} comprovante(s) excluído(s) com sucesso!`);
+          toast.success(`${validAttachments.length} comprovante(s) excluído(s) com sucesso! (Filtros: ${startDate} a ${endDate}${statusFilter && statusFilter !== 'all' ? `, Status: ${statusFilter}` : ''})`);
           // Limpar os dados de anexos
           setSalesWithAttachments([]);
           setAttachmentsData([]);
+          
+          // Regenerar o relatório para atualizar os dados
+          await generateReport();
         }
       } catch (error) {
         console.error('Erro ao excluir comprovantes:', error);
         toast.error('Erro ao excluir comprovantes');
       }
+    } else {
+      toast.error('Nenhum comprovante encontrado para exclusão');
     }
   };
 
@@ -672,6 +701,14 @@ const SalesByDateClientReport = () => {
             <AlertDialogTitle>Exportar Comprovantes</AlertDialogTitle>
             <AlertDialogDescription>
               O que você deseja fazer com os comprovantes do período selecionado?
+              <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-800">
+                <strong>Filtros aplicados:</strong><br/>
+                📅 Período: {startDate} até {endDate}<br/>
+                {statusFilter && statusFilter !== 'all' && (
+                  <>📊 Status: {statusFilter}<br/></>
+                )}
+                📎 Comprovantes encontrados: {salesWithAttachments.length}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
