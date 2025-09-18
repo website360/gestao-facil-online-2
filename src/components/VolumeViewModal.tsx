@@ -17,6 +17,9 @@ interface VolumeWeight {
   id: string;
   volume_number: number;
   weight_kg: number;
+  width_cm: number | null;
+  height_cm: number | null;
+  length_cm: number | null;
 }
 
 const VolumeViewModal = ({ isOpen, onClose, saleId }: VolumeViewModalProps) => {
@@ -30,7 +33,7 @@ const VolumeViewModal = ({ isOpen, onClose, saleId }: VolumeViewModalProps) => {
     try {
       const { data, error } = await supabase
         .from('sale_volumes')
-        .select('id, volume_number, weight_kg')
+        .select('id, volume_number, weight_kg, width_cm, height_cm, length_cm')
         .eq('sale_id', saleId)
         .order('volume_number');
 
@@ -105,21 +108,47 @@ const VolumeViewModal = ({ isOpen, onClose, saleId }: VolumeViewModalProps) => {
                 <h4 className="font-medium text-gray-900">Detalhamento por Volume:</h4>
                 <div className="max-h-64 overflow-y-auto space-y-2">
                   {volumes.map((volume) => (
-                    <div key={volume.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-blue-600">
-                            {volume.volume_number}
+                    <div key={volume.id} className="p-4 bg-gray-50 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-blue-600">
+                              {volume.volume_number}
+                            </span>
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">Volume {volume.volume_number}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Weight className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium text-gray-900">
+                            {formatNumber(Number(volume.weight_kg), 3)} kg
                           </span>
                         </div>
-                        <span className="text-sm text-gray-600">Volume {volume.volume_number}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Weight className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-900">
-                          {formatNumber(Number(volume.weight_kg), 2)} kg
-                        </span>
-                      </div>
+                      
+                      {/* Dimensões */}
+                      {(volume.width_cm || volume.height_cm || volume.length_cm) && (
+                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200">
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500">Largura</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {volume.width_cm ? `${formatNumber(Number(volume.width_cm), 1)} cm` : '-'}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500">Altura</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {volume.height_cm ? `${formatNumber(Number(volume.height_cm), 1)} cm` : '-'}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500">Comprimento</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {volume.length_cm ? `${formatNumber(Number(volume.length_cm), 1)} cm` : '-'}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
