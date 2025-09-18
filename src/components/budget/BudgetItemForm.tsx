@@ -58,14 +58,22 @@ const BudgetItemForm = ({
   } = useDiscountPermissions();
 
   // Estado local para o campo de preço com desconto (preserva digitação como "15,50")
-  const [discountedPriceInput, setDiscountedPriceInput] = React.useState<string>(
-    formatNumber(item.unit_price * (1 - item.discount_percentage / 100))
-  );
+  const [discountedPriceInput, setDiscountedPriceInput] = React.useState<string>('');
 
   React.useEffect(() => {
-    // Sincroniza quando o preço ou desconto mudarem externamente
-    setDiscountedPriceInput(formatNumber(item.unit_price * (1 - item.discount_percentage / 100)));
+    // Sincroniza quando o preço ou desconto mudarem externamente, mas só se o input estiver vazio
+    const currentValue = formatNumber(item.unit_price * (1 - item.discount_percentage / 100));
+    if (!discountedPriceInput) {
+      setDiscountedPriceInput(currentValue);
+    }
   }, [item.unit_price, item.discount_percentage]);
+
+  // Inicializar o valor uma vez
+  React.useEffect(() => {
+    if (!discountedPriceInput) {
+      setDiscountedPriceInput(formatNumber(item.unit_price * (1 - item.discount_percentage / 100)));
+    }
+  }, []);
 
   console.log('BudgetItemForm - maxDiscount:', maxDiscount, 'loading:', loading);
 
@@ -188,32 +196,38 @@ const BudgetItemForm = ({
             }
 
             const raw = e.target.value;
-            // Mantém apenas dígitos e UMA vírgula
+            
+            // Permitir apenas dígitos e vírgula
             const cleaned = raw.replace(/[^\d,]/g, '');
+            
+            // Controlar apenas uma vírgula
             const parts = cleaned.split(',');
-
-            // Monta próximo valor permitido (máx. 2 casas decimais)
-            let next = parts[0] || '';
+            let formattedValue = parts[0] || '';
+            
             if (parts.length > 1) {
-              next += ',' + (parts[1] || '').slice(0, 2);
+              // Limitar a 2 casas decimais
+              formattedValue += ',' + parts[1].slice(0, 2);
             }
             
-            setDiscountedPriceInput(next);
+            // Atualizar o estado local sem interferir no cursor
+            setDiscountedPriceInput(formattedValue);
 
-            // Não atualizar se usuário acabou de digitar a vírgula
-            if (parts.length > 1 && (parts[1] || '') === '') return;
+            // Se termina com vírgula, não processa ainda
+            if (formattedValue.endsWith(',')) {
+              return;
+            }
 
-            // Converter para número e calcular desconto
-            const discountedPrice = parseFloat(`${parts[0] || '0'}.${(parts[1] || '').slice(0, 2)}`) || 0;
+            // Processar o valor para cálculo
+            const numericValue = parseFloat(formattedValue.replace(',', '.')) || 0;
             
-            if (discountedPrice > item.unit_price) {
+            if (numericValue > item.unit_price) {
               toast.error('Preço com desconto não pode ser maior que o preço original');
               return;
             }
             
             // Calcular nova porcentagem de desconto
             const newDiscountPercentage = item.unit_price > 0 
-              ? ((item.unit_price - discountedPrice) / item.unit_price) * 100 
+              ? ((item.unit_price - numericValue) / item.unit_price) * 100 
               : 0;
             
             if (!isValidIndividualDiscount(newDiscountPercentage)) {
@@ -226,11 +240,11 @@ const BudgetItemForm = ({
           onBlur={() => {
             if (!discountedPriceInput || !canEditDiscount || readonly) return;
             
-            // Normalizar formato no blur
-            const [i, d = ''] = discountedPriceInput.split(',');
-            const dec = (d + '00').slice(0, 2);
-            const normalized = `${i},${dec}`;
-            setDiscountedPriceInput(normalized);
+            // Normalizar formato no blur apenas se necessário
+            const parts = discountedPriceInput.split(',');
+            if (parts.length === 2 && parts[1].length === 1) {
+              setDiscountedPriceInput(parts[0] + ',' + parts[1] + '0');
+            }
           }}
           className={`h-8 text-xs text-right ${!canEditDiscount || readonly ? 'bg-gray-100' : ''}`}
           placeholder="0,00"
