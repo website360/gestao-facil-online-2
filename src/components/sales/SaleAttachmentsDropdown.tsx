@@ -19,9 +19,10 @@ interface SaleAttachment {
 interface SaleAttachmentsDropdownProps {
   saleId: string;
   className?: string;
+  saleStatus?: string;
 }
 
-const SaleAttachmentsDropdown = ({ saleId, className }: SaleAttachmentsDropdownProps) => {
+const SaleAttachmentsDropdown = ({ saleId, className, saleStatus }: SaleAttachmentsDropdownProps) => {
   const [attachments, setAttachments] = useState<SaleAttachment[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -268,7 +269,7 @@ const SaleAttachmentsDropdown = ({ saleId, className }: SaleAttachmentsDropdownP
                 )}
               </Button>
               
-              {isAdmin && (
+              {isAdmin && saleStatus !== 'finalizada' && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -291,24 +292,28 @@ const SaleAttachmentsDropdown = ({ saleId, className }: SaleAttachmentsDropdownP
           </DropdownMenuItem>
         ))}
         
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem
-          onClick={(e) => {
-            e.preventDefault();
-            fileInputRef.current?.click();
-          }}
-          disabled={uploading}
-          className="flex items-center gap-2 p-3 cursor-pointer"
-        >
-          <Upload className="w-4 h-4 text-primary" />
-          <span className="font-medium text-primary">
-            {uploading ? 'Fazendo upload...' : 'Adicionar Comprovante'}
-          </span>
-          {uploading && (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary ml-auto"></div>
-          )}
-        </DropdownMenuItem>
+        {saleStatus !== 'finalizada' && (
+          <>
+            <DropdownMenuSeparator />
+            
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }}
+              disabled={uploading}
+              className="flex items-center gap-2 p-3 cursor-pointer"
+            >
+              <Upload className="w-4 h-4 text-primary" />
+              <span className="font-medium text-primary">
+                {uploading ? 'Fazendo upload...' : 'Adicionar Comprovante'}
+              </span>
+              {uploading && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary ml-auto"></div>
+              )}
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

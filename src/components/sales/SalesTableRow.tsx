@@ -341,21 +341,24 @@ const SalesTableRow = ({
         <TableCell className="text-gray-600 py-4 px-6">{getCurrentResponsible(sale)}</TableCell>
         <TableCell className="py-4 px-6">
            <div className="flex gap-1 justify-end">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onView(sale.id)}
-                  className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Visualizar</p>
-              </TooltipContent>
-            </Tooltip>
+            {/* Botão de visualizar - sempre disponível exceto para vendas finalizadas */}
+            {sale.status !== 'finalizada' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onView(sale.id)}
+                    className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Visualizar</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
 
           {sale.status === 'nota_fiscal' && (
             <Tooltip>
@@ -376,7 +379,7 @@ const SalesTableRow = ({
           )}
 
           {/* Ícone de anexos - disponível para nota fiscal */}
-          <SaleAttachmentsDropdown saleId={sale.id} className="h-8 w-8 p-0" />
+          <SaleAttachmentsDropdown saleId={sale.id} className="h-8 w-8 p-0" saleStatus={sale.status} />
         </div>
         </TableCell>
       </TableRow>
@@ -411,22 +414,24 @@ const SalesTableRow = ({
       <TableCell className="text-gray-600 py-4 px-6">{getCurrentResponsible(sale)}</TableCell>
       <TableCell className="py-4 px-6">
         <div className="flex gap-1 justify-end">
-          {/* Botão de visualizar - sempre disponível */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onView(sale.id)}
-                className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Visualizar</p>
-            </TooltipContent>
-          </Tooltip>
+          {/* Botão de visualizar - sempre disponível exceto para vendas finalizadas */}
+          {sale.status !== 'finalizada' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onView(sale.id)}
+                  className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Visualizar</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           {/* Botão de editar - não disponível para vendas finalizadas e gerente não pode editar */}
           {sale.status !== 'entrega_realizada' && sale.status !== 'finalizada' && userRole !== 'gerente' && (
@@ -565,8 +570,8 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
-          {/* Botão para visualizar volumes - não aparece se entrega realizada ou finalizada */}
-          {sale.total_volumes && sale.total_volumes > 0 && sale.status !== 'entrega_realizada' && sale.status !== 'finalizada' && (
+          {/* Botão para visualizar volumes - aparece se houver volumes (inclui finalizada) */}
+          {sale.total_volumes && sale.total_volumes > 0 && sale.status !== 'entrega_realizada' && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -605,7 +610,7 @@ const SalesTableRow = ({
 
           {/* Comprovantes de pagamento - apenas para admin e gerente */}
           {(userRole === 'admin' || userRole === 'gerente') && sale.budget_id && (
-            <SaleAttachmentsDropdown saleId={sale.id} />
+            <SaleAttachmentsDropdown saleId={sale.id} saleStatus={sale.status} />
           )}
 
           {/* Botão de excluir - não aparece se entrega realizada, finalizada ou se é gerente */}
