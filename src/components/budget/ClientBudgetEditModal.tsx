@@ -629,30 +629,10 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
                               inputMode="decimal"
                               min="0"
                               value={Number.isFinite(item.unit_price) ? String(item.unit_price).replace('.', ',') : ''}
-                              onChange={(e) => {
-                                const input = e.target.value;
-                                
-                                // Parse formato brasileiro
-                                let cleanValue = input.replace(/[^\d,]/g, '');
-                                
-                                if (cleanValue.includes(',')) {
-                                  const parts = cleanValue.split(',');
-                                  if (parts.length === 2) {
-                                    const integerPart = parts[0];
-                                    const decimalPart = parts[1].slice(0, 2);
-                                    const parsed = parseFloat(`${integerPart}.${decimalPart}`);
-                                    handleItemChange(index, 'unit_price', isNaN(parsed) ? 0 : parsed);
-                                  } else {
-                                    const parsed = parseFloat(parts[0]) || 0;
-                                    handleItemChange(index, 'unit_price', parsed);
-                                  }
-                                } else {
-                                  const parsed = parseFloat(cleanValue) || 0;
-                                  handleItemChange(index, 'unit_price', parsed);
-                                }
-                              }}
-                              className="w-24"
+                              className="w-24 bg-gray-100"
                               placeholder="0,00"
+                              readOnly
+                              title="Preço fixo do produto - não pode ser alterado"
                             />
                           ) : (
                             formatCurrency(item.unit_price)

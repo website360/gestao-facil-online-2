@@ -648,6 +648,7 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
                       <TableHead className="text-center">Qtd</TableHead>
                       <TableHead className="text-center">Preço Unit.</TableHead>
                       <TableHead className="text-center">Desc. %</TableHead>
+                      <TableHead className="text-center">Preço Un Desc</TableHead>
                       <TableHead className="text-center">Total</TableHead>
                       {!isFinalized && <TableHead className="text-center">Ações</TableHead>}
                     </TableRow>
@@ -723,34 +724,36 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
                             type="text"
                             inputMode="decimal"
                             value={Number.isFinite(item.unit_price) ? String(item.unit_price).replace('.', ',') : ''}
-                            onChange={(e) => {
-                              const input = e.target.value;
-                              
-                              // Parse formato brasileiro
-                              let cleanValue = input.replace(/[^\d,]/g, '');
-                              
-                              if (cleanValue.includes(',')) {
-                                const parts = cleanValue.split(',');
-                                if (parts.length === 2) {
-                                  const integerPart = parts[0];
-                                  const decimalPart = parts[1].slice(0, 2);
-                                  const parsed = parseFloat(`${integerPart}.${decimalPart}`);
-                                  updateItem(index, 'unit_price', isNaN(parsed) ? 0 : parsed);
-                                } else {
-                                  const parsed = parseFloat(parts[0]) || 0;
-                                  updateItem(index, 'unit_price', parsed);
-                                }
-                              } else {
-                                const parsed = parseFloat(cleanValue) || 0;
-                                updateItem(index, 'unit_price', parsed);
-                              }
-                            }}
-                            disabled={isFinalized}
-                            className="w-24"
+                            className="w-24 bg-gray-100"
                             placeholder="0,00"
+                            readOnly
+                            title="Preço fixo do produto - não pode ser alterado"
                           />
                         </TableCell>
-                        <TableCell className="text-center">0</TableCell>
+                        <TableCell className="text-center">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            value={0}
+                            className="w-20 bg-gray-100"
+                            placeholder="0"
+                            readOnly
+                            title="Desconto não implementado para vendas"
+                          />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={Number.isFinite(item.unit_price) ? String(item.unit_price).replace('.', ',') : ''}
+                            className="w-24 bg-gray-100"
+                            placeholder="0,00"
+                            readOnly
+                            title="Sem desconto aplicado"
+                          />
+                        </TableCell>
                         <TableCell className="text-center font-semibold">
                           {formatCurrency(item.total_price)}
                         </TableCell>

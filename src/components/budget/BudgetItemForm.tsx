@@ -57,16 +57,6 @@ const BudgetItemForm = ({
     loading
   } = useDiscountPermissions();
 
-  // Estado local para o campo de preço (preserva digitação como "1,")
-  const [priceInput, setPriceInput] = React.useState<string>(
-    Number.isFinite(item.unit_price) ? String(item.unit_price).replace('.', ',') : ''
-  );
-
-  React.useEffect(() => {
-    // Sincroniza quando o preço do item mudar externamente
-    setPriceInput(Number.isFinite(item.unit_price) ? String(item.unit_price).replace('.', ',') : '');
-  }, [item.unit_price]);
-
   console.log('BudgetItemForm - maxDiscount:', maxDiscount, 'loading:', loading);
 
   // Get current stock for the selected product
@@ -153,42 +143,11 @@ const BudgetItemForm = ({
         <Input
           type="text"
           inputMode="decimal"
-          value={priceInput}
-          onChange={(e) => {
-            const raw = e.target.value;
-            // Mantém apenas dígitos e UMA vírgula
-            const cleaned = raw.replace(/[^\d,]/g, '');
-            const parts = cleaned.split(',');
-
-            // Monta próximo valor permitido (máx. 2 casas)
-            let next = parts[0] || '';
-            if (parts.length > 1) {
-              next += ',' + (parts[1] || '').slice(0, 2);
-            }
-            setPriceInput(next);
-
-            // Não atualizar número se usuário acabou de digitar a vírgula
-            if (parts.length > 1 && (parts[1] || '') === '') return;
-
-            const num = parseFloat(`${parts[0] || '0'}.${(parts[1] || '').slice(0, 2)}`);
-            if (!isNaN(num)) {
-              onItemUpdate(index, 'unit_price', num);
-            } else if (!next) {
-              onItemUpdate(index, 'unit_price', 0);
-            }
-          }}
-          onBlur={() => {
-            if (!priceInput) return;
-            const [i, d = ''] = priceInput.split(',');
-            const dec = (d + '00').slice(0, 2);
-            const normalized = `${i},${dec}`;
-            setPriceInput(normalized);
-            const num = parseFloat(`${i || '0'}.${dec}`);
-            if (!isNaN(num)) onItemUpdate(index, 'unit_price', num);
-          }}
+          value={formatNumber(item.unit_price)}
+          className="h-8 text-xs text-right bg-gray-100"
           placeholder="0,00"
-          className="h-8 text-xs text-right"
-          disabled={readonly}
+          readOnly
+          title="Preço fixo do produto - não pode ser alterado"
         />
       </td>
 
@@ -212,8 +171,36 @@ const BudgetItemForm = ({
           type="text"
           inputMode="decimal"
           value={formatNumber(item.unit_price * (1 - item.discount_percentage / 100))}
-          className="h-8 text-xs text-right bg-gray-50"
-          readOnly
+          onChange={(e) => {
+            if (!canEditDiscount || readonly) {
+              toast.error('Você não tem permissão para alterar desconto');
+              return;
+            }
+
+            const input = e.target.value.replace(',', '.');
+            const discountedPrice = parseFloat(input) || 0;
+            
+            if (discountedPrice > item.unit_price) {
+              toast.error('Preço com desconto não pode ser maior que o preço original');
+              return;
+            }
+            
+            // Calcular nova porcentagem de desconto
+            const newDiscountPercentage = item.unit_price > 0 
+              ? ((item.unit_price - discountedPrice) / item.unit_price) * 100 
+              : 0;
+            
+            if (!isValidIndividualDiscount(newDiscountPercentage)) {
+              toast.error(getDiscountErrorMessage('individual', newDiscountPercentage));
+              return;
+            }
+            
+            onItemUpdate(index, 'discount_percentage', newDiscountPercentage);
+          }}
+          className={`h-8 text-xs text-right ${!canEditDiscount || readonly ? 'bg-gray-100' : ''}`}
+          placeholder="0,00"
+          disabled={!canEditDiscount || readonly}
+          title={!canEditDiscount ? 'Você não tem permissão para alterar desconto' : 'Digite o preço final após desconto'}
         />
       </td>
 
