@@ -57,6 +57,16 @@ const BudgetItemForm = ({
     loading
   } = useDiscountPermissions();
 
+  // Estado local para o campo de preço com desconto (preserva digitação como "15,50")
+  const [discountedPriceInput, setDiscountedPriceInput] = React.useState<string>(
+    formatNumber(item.unit_price * (1 - item.discount_percentage / 100))
+  );
+
+  React.useEffect(() => {
+    // Sincroniza quando o preço ou desconto mudarem externamente
+    setDiscountedPriceInput(formatNumber(item.unit_price * (1 - item.discount_percentage / 100)));
+  }, [item.unit_price, item.discount_percentage]);
+
   console.log('BudgetItemForm - maxDiscount:', maxDiscount, 'loading:', loading);
 
   // Get current stock for the selected product
@@ -170,15 +180,31 @@ const BudgetItemForm = ({
         <Input
           type="text"
           inputMode="decimal"
-          value={formatNumber(item.unit_price * (1 - item.discount_percentage / 100))}
+          value={discountedPriceInput}
           onChange={(e) => {
             if (!canEditDiscount || readonly) {
               toast.error('Você não tem permissão para alterar desconto');
               return;
             }
 
-            const input = e.target.value.replace(',', '.');
-            const discountedPrice = parseFloat(input) || 0;
+            const raw = e.target.value;
+            // Mantém apenas dígitos e UMA vírgula
+            const cleaned = raw.replace(/[^\d,]/g, '');
+            const parts = cleaned.split(',');
+
+            // Monta próximo valor permitido (máx. 2 casas decimais)
+            let next = parts[0] || '';
+            if (parts.length > 1) {
+              next += ',' + (parts[1] || '').slice(0, 2);
+            }
+            
+            setDiscountedPriceInput(next);
+
+            // Não atualizar se usuário acabou de digitar a vírgula
+            if (parts.length > 1 && (parts[1] || '') === '') return;
+
+            // Converter para número e calcular desconto
+            const discountedPrice = parseFloat(`${parts[0] || '0'}.${(parts[1] || '').slice(0, 2)}`) || 0;
             
             if (discountedPrice > item.unit_price) {
               toast.error('Preço com desconto não pode ser maior que o preço original');
@@ -196,6 +222,15 @@ const BudgetItemForm = ({
             }
             
             onItemUpdate(index, 'discount_percentage', newDiscountPercentage);
+          }}
+          onBlur={() => {
+            if (!discountedPriceInput || !canEditDiscount || readonly) return;
+            
+            // Normalizar formato no blur
+            const [i, d = ''] = discountedPriceInput.split(',');
+            const dec = (d + '00').slice(0, 2);
+            const normalized = `${i},${dec}`;
+            setDiscountedPriceInput(normalized);
           }}
           className={`h-8 text-xs text-right ${!canEditDiscount || readonly ? 'bg-gray-100' : ''}`}
           placeholder="0,00"
