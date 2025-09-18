@@ -9,6 +9,7 @@ export interface Client {
   cnpj?: string;
   birth_date?: string;
   razao_social?: string;
+  inscricao_estadual?: string;
   cep?: string;
   street?: string;
   number?: string;

@@ -12,6 +12,7 @@ interface Client {
   cpf?: string;
   cnpj?: string;
   razao_social?: string;
+  inscricao_estadual?: string;
   birth_date?: string;
   cep?: string;
   street?: string;
@@ -39,6 +40,7 @@ interface ImportData {
   cpf?: string;
   cnpj?: string;
   razao_social?: string;
+  inscricao_estadual?: string;
   birth_date?: string;
   cep?: string;
   street?: string;
@@ -94,6 +96,7 @@ export const useClientExcel = () => {
           'CPF': client.cpf || '',
           'CNPJ': client.cnpj || '',
           'Razão Social': client.razao_social || '',
+          'Inscrição Estadual': client.inscricao_estadual || '',
           'Data de Nascimento': client.birth_date || '',
           'CEP': client.cep || '',
           'Rua': client.street || '',
@@ -121,6 +124,7 @@ export const useClientExcel = () => {
         { wch: 15 }, // CPF
         { wch: 18 }, // CNPJ
         { wch: 30 }, // Razão Social
+        { wch: 20 }, // Inscrição Estadual
         { wch: 12 }, // Data de Nascimento
         { wch: 10 }, // CEP
         { wch: 25 }, // Rua
@@ -227,6 +231,7 @@ export const useClientExcel = () => {
           cpf: row['CPF'] || row['cpf'] || '',
           cnpj: row['CNPJ'] || row['cnpj'] || '',
           razao_social: row['Razão Social'] || row['razao_social'] || '',
+          inscricao_estadual: row['Inscrição Estadual'] || row['inscricao_estadual'] || '',
           birth_date: row['Data de Nascimento'] || row['data_nascimento'] || '',
           cep: row['CEP'] || row['cep'] || '',
           street: row['Rua'] || row['endereco'] || row['rua'] || '',

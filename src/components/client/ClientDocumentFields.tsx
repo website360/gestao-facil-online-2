@@ -10,10 +10,12 @@ interface ClientDocumentFieldsProps {
   cnpj: string;
   birthDate: string;
   razaoSocial: string;
+  inscricaoEstadual: string;
   onCpfChange: (value: string) => void;
   onCnpjChange: (value: string) => void;
   onBirthDateChange: (value: string) => void;
   onRazaoSocialChange: (value: string) => void;
+  onInscricaoEstadualChange: (value: string) => void;
 }
 
 const ClientDocumentFields = ({
@@ -22,10 +24,12 @@ const ClientDocumentFields = ({
   cnpj,
   birthDate,
   razaoSocial,
+  inscricaoEstadual,
   onCpfChange,
   onCnpjChange,
   onBirthDateChange,
   onRazaoSocialChange,
+  onInscricaoEstadualChange,
 }: ClientDocumentFieldsProps) => {
   const [loadingCnpj, setLoadingCnpj] = useState(false);
 
@@ -120,6 +124,17 @@ const ClientDocumentFields = ({
           id="razao_social"
           value={razaoSocial}
           onChange={(e) => onRazaoSocialChange(e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="inscricao_estadual">
+          Inscrição Estadual <span className="text-muted-foreground">(opcional)</span>
+        </Label>
+        <Input
+          id="inscricao_estadual"
+          value={inscricaoEstadual}
+          onChange={(e) => onInscricaoEstadualChange(e.target.value)}
+          placeholder="Digite a inscrição estadual"
         />
       </div>
     </>

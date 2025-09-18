@@ -21,6 +21,7 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
   const [cnpj, setCnpj] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [razaoSocial, setRazaoSocial] = useState('');
+  const [inscricaoEstadual, setInscricaoEstadual] = useState('');
   const [cep, setCep] = useState('');
   const [street, setStreet] = useState('');
   const [number, setNumber] = useState('');
@@ -46,6 +47,7 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
       setCnpj(editingClient.cnpj || '');
       setBirthDate(editingClient.birth_date || '');
       setRazaoSocial(editingClient.razao_social || '');
+      setInscricaoEstadual(editingClient.inscricao_estadual || '');
       setCep(editingClient.cep || '');
       setStreet(editingClient.street || '');
       setNumber(editingClient.number || '');
@@ -65,6 +67,7 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
       setCnpj('');
       setBirthDate('');
       setRazaoSocial('');
+      setInscricaoEstadual('');
       setCep('');
       setStreet('');
       setNumber('');
@@ -123,6 +126,7 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
         cnpj: clientType === 'juridica' ? cnpj || null : null,
         birth_date: clientType === 'fisica' ? birthDate || null : null,
         razao_social: clientType === 'juridica' ? razaoSocial || null : null,
+        inscricao_estadual: clientType === 'juridica' ? inscricaoEstadual || null : null,
         cep: cep || null,
         street: street || null,
         number: number || null,
@@ -189,6 +193,7 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
         setCnpj('');
         setBirthDate('');
         setRazaoSocial('');
+        setInscricaoEstadual('');
         setCep('');
         setStreet('');
         setNumber('');
@@ -217,6 +222,7 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
     cnpj,
     birthDate,
     razaoSocial,
+    inscricaoEstadual,
     cep,
     street,
     number,
@@ -236,6 +242,7 @@ export const useClientForm = ({ editingClient, onSuccess }: UseClientFormProps) 
     setCnpj,
     setBirthDate,
     setRazaoSocial,
+    setInscricaoEstadual,
     setCep,
     setStreet,
     setNumber,

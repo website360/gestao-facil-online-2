@@ -28,6 +28,7 @@ const ClientFormDialog = ({ showForm, editingClient, onClose, onSuccess }: Clien
     cnpj,
     birthDate,
     razaoSocial,
+    inscricaoEstadual,
     cep,
     street,
     number,
@@ -47,6 +48,7 @@ const ClientFormDialog = ({ showForm, editingClient, onClose, onSuccess }: Clien
     setCnpj,
     setBirthDate,
     setRazaoSocial,
+    setInscricaoEstadual,
     setCep,
     setStreet,
     setNumber,
@@ -91,10 +93,12 @@ const ClientFormDialog = ({ showForm, editingClient, onClose, onSuccess }: Clien
                 cnpj={cnpj}
                 birthDate={birthDate}
                 razaoSocial={razaoSocial}
+                inscricaoEstadual={inscricaoEstadual}
                 onCpfChange={setCpf}
                 onCnpjChange={setCnpj}
                 onBirthDateChange={setBirthDate}
                 onRazaoSocialChange={setRazaoSocial}
+                onInscricaoEstadualChange={setInscricaoEstadual}
               />
               
               <ClientAddressForm

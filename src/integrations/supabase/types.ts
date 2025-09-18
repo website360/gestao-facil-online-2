@@ -246,6 +246,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          inscricao_estadual: string | null
           name: string
           neighborhood: string | null
           number: string | null
@@ -269,6 +270,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          inscricao_estadual?: string | null
           name: string
           neighborhood?: string | null
           number?: string | null
@@ -292,6 +294,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          inscricao_estadual?: string | null
           name?: string
           neighborhood?: string | null
           number?: string | null
