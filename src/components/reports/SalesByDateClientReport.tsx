@@ -57,6 +57,11 @@ const SalesByDateClientReport = () => {
   };
 
   const generateReport = async () => {
+    console.log('=== INÍCIO GERAÇÃO DE RELATÓRIO ===');
+    console.log('Data inicial:', startDate);
+    console.log('Data final:', endDate);
+    console.log('Status filtro:', statusFilter);
+    
     if (!startDate || !endDate) {
       toast.error('Por favor, selecione as datas de início e fim');
       return;
@@ -223,15 +228,23 @@ const SalesByDateClientReport = () => {
         console.log('IDs das vendas filtradas:', saleIds);
         console.log('Filtros aplicados - Data:', startDate, 'até', endDate, 'Status:', statusFilter || 'todos');
         
-        const { data: attachments } = await supabase
+        const { data: attachments, error: attachmentsError } = await supabase
           .from('sale_attachments')
           .select('sale_id, stored_filename')
           .in('sale_id', saleIds);
+        
+        if (attachmentsError) {
+          console.error('Erro ao buscar anexos:', attachmentsError);
+        }
+        
+        console.log('Anexos encontrados na busca:', attachments?.length || 0);
+        console.log('Anexos por venda:', attachments?.map(a => ({ sale_id: a.sale_id, filename: a.stored_filename })));
         
         const salesWithAttachmentsIds = [...new Set(attachments?.map(att => att.sale_id) || [])];
         setSalesWithAttachments(salesWithAttachmentsIds);
         
         console.log('Vendas com anexos após filtro:', salesWithAttachmentsIds.length);
+        console.log('IDs das vendas com anexos:', salesWithAttachmentsIds);
 
         // Agrupar nomes dos comprovantes por venda e adicionar ao relatório
         const attachmentsBySale: { [key: string]: string[] } = {};
@@ -330,6 +343,9 @@ const SalesByDateClientReport = () => {
     setIsExportingAttachments(true);
 
     try {
+      console.log('=== INÍCIO EXPORT ATTACHMENTS ===');
+      console.log('Vendas com anexos para exportar:', salesWithAttachments);
+      
       // Buscar todos os anexos das vendas do período
       const { data: attachments, error } = await supabase
         .from('sale_attachments')
@@ -342,6 +358,9 @@ const SalesByDateClientReport = () => {
         return;
       }
 
+      console.log('Anexos encontrados para exportar:', attachments?.length || 0);
+      console.log('Detalhes dos anexos:', attachments?.map(a => ({ id: a.id, sale_id: a.sale_id, filename: a.stored_filename })));
+
       if (!attachments || attachments.length === 0) {
         toast.error('Nenhum comprovante encontrado');
         return;
@@ -349,6 +368,7 @@ const SalesByDateClientReport = () => {
 
       // Armazenar dados dos anexos para possível exclusão posterior
       setAttachmentsData(attachments);
+      console.log('Anexos armazenados para possível exclusão:', attachments.length);
 
       // Buscar informações das vendas e clientes
       const { data: salesInfo, error: salesError } = await supabase
@@ -474,6 +494,17 @@ const SalesByDateClientReport = () => {
 
         // Excluir registros da tabela
         const attachmentIds = validAttachments.map(att => att.id);
+        console.log('Tentando excluir anexos com IDs:', attachmentIds);
+        
+        // Verificar se os registros existem antes da exclusão
+        const { data: beforeDelete, error: beforeError } = await supabase
+          .from('sale_attachments')
+          .select('id, sale_id, stored_filename')
+          .in('id', attachmentIds);
+          
+        console.log('Registros encontrados antes da exclusão:', beforeDelete?.length || 0);
+        console.log('Detalhes antes da exclusão:', beforeDelete);
+        
         const { error: dbError } = await supabase
           .from('sale_attachments')
           .delete()
@@ -483,13 +514,37 @@ const SalesByDateClientReport = () => {
           console.error('Erro ao deletar registros do banco:', dbError);
           toast.error('Erro ao excluir comprovantes do banco de dados');
         } else {
+          console.log('Exclusão realizada com sucesso no banco de dados');
+          
+          // Verificar se os registros foram realmente excluídos
+          const { data: afterDelete, error: afterError } = await supabase
+            .from('sale_attachments')
+            .select('id, sale_id, stored_filename')
+            .in('id', attachmentIds);
+            
+          console.log('Registros encontrados após exclusão:', afterDelete?.length || 0);
+          console.log('Detalhes após exclusão:', afterDelete);
+          
+          if (afterDelete && afterDelete.length > 0) {
+            console.error('ERRO: Alguns registros não foram excluídos!', afterDelete);
+            toast.error('Alguns comprovantes não foram excluídos completamente');
+          } else {
+            console.log('✅ Todos os registros foram excluídos com sucesso');
+          }
+          
           toast.success(`${validAttachments.length} comprovante(s) excluído(s) com sucesso! (Filtros: ${startDate} a ${endDate}${statusFilter && statusFilter !== 'all' ? `, Status: ${statusFilter}` : ''})`);
-          // Limpar os dados de anexos
+          
+          // Limpar completamente os estados
           setSalesWithAttachments([]);
           setAttachmentsData([]);
+          setReportData([]);
+          setTotalSales(0);
           
-          // Regenerar o relatório para atualizar os dados
-          await generateReport();
+          // Aguardar um momento e regenerar o relatório
+          console.log('Regenerando relatório após exclusão...');
+          setTimeout(() => {
+            generateReport();
+          }, 500);
         }
       } catch (error) {
         console.error('Erro ao excluir comprovantes:', error);
@@ -558,6 +613,56 @@ const SalesByDateClientReport = () => {
               className="btn-gradient"
             >
               {isGenerating ? 'Gerando...' : 'Gerar Relatório'}
+            </Button>
+            
+            {/* Botão de Debug temporário */}
+            <Button 
+              onClick={async () => {
+                if (!startDate || !endDate) {
+                  toast.error('Selecione as datas primeiro');
+                  return;
+                }
+                
+                console.log('=== DEBUG: Verificando anexos no banco ===');
+                
+                // Buscar todas as vendas do período
+                let query = supabase
+                  .from('sales')
+                  .select('id, status, created_at')
+                  .gte('created_at', startDate + 'T00:00:00')
+                  .lte('created_at', endDate + 'T23:59:59');
+                  
+                if (statusFilter && statusFilter !== 'all') {
+                  query = query.eq('status', statusFilter as any);
+                }
+                
+                const { data: sales } = await query;
+                const saleIds = sales?.map(s => s.id) || [];
+                
+                console.log('Vendas encontradas:', sales?.length);
+                console.log('IDs das vendas:', saleIds);
+                
+                // Buscar todos os anexos dessas vendas
+                const { data: allAttachments } = await supabase
+                  .from('sale_attachments')
+                  .select('*')
+                  .in('sale_id', saleIds);
+                  
+                console.log('Total de anexos encontrados:', allAttachments?.length);
+                console.log('Detalhes dos anexos:', allAttachments?.map(a => ({
+                  id: a.id,
+                  sale_id: a.sale_id,
+                  filename: a.stored_filename,
+                  created_at: a.created_at
+                })));
+                
+                toast.info(`Debug: ${sales?.length} vendas, ${allAttachments?.length} anexos - ver console`);
+              }}
+              variant="outline"
+              size="sm"
+              className="text-xs"
+            >
+              🔍 Debug DB
             </Button>
           </div>
         </CardContent>
