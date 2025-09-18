@@ -183,6 +183,18 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
   };
 
   const handleItemChange = (index: number, field: string, value: any) => {
+    // Verificar se o produto já existe quando for alteração de produto_id
+    if (field === 'product_id' && value !== '') {
+      const existingItemIndex = budgetItems.findIndex((item, i) => 
+        i !== index && item.product_id === value
+      );
+      
+      if (existingItemIndex !== -1) {
+        toast.error('Este produto já foi adicionado ao orçamento!');
+        return;
+      }
+    }
+    
     const updatedItems = [...budgetItems];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
 

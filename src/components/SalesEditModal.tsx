@@ -340,6 +340,18 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
   const updateItem = (index: number, field: string, value: any) => {
     if (isFinalized) return;
     
+    // Verificar se o produto já existe quando for alteração de product_id
+    if (field === 'product_id' && value !== '') {
+      const existingItemIndex = saleItems.findIndex((item, i) => 
+        i !== index && item.product_id === value
+      );
+      
+      if (existingItemIndex !== -1) {
+        toast.error('Este produto já foi adicionado à venda!');
+        return;
+      }
+    }
+    
     const updatedItems = [...saleItems];
     const currentItem = updatedItems[index];
 

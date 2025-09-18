@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { toast } from 'sonner';
 
 interface BudgetItem {
   product_id: string;
@@ -99,6 +99,16 @@ export const useBudgetFormOperations = (
   };
 
   const handleProductChange = (index: number, productId: string) => {
+    // Verificar se o produto já existe em outro item
+    const existingItemIndex = formData.items.findIndex((item, i) => 
+      i !== index && item.product_id === productId && productId !== ''
+    );
+    
+    if (existingItemIndex !== -1) {
+      toast.error('Este produto já foi adicionado ao orçamento!');
+      return;
+    }
+
     const price = getProductPrice(productId);
     const code = getProductCode(productId);
     updateItem(index, 'product_id', productId);
