@@ -15,6 +15,7 @@ interface BudgetSummaryProps {
   realDiscountPercentage: number;
   totalDiscountAmount: number;
   invoicePercentage: number;
+  taxesAmount: number;
   notes: string;
   subtotal: number;
   total: number;
@@ -26,6 +27,7 @@ interface BudgetSummaryProps {
   boletoDueDates?: number[];
   onDiscountChange: (value: number) => void;
   onInvoicePercentageChange: (value: number) => void;
+  onTaxesAmountChange: (value: number) => void;
   onNotesChange: (value: string) => void;
   readonly?: boolean;
 }
@@ -35,6 +37,7 @@ const BudgetSummary = ({
   realDiscountPercentage,
   totalDiscountAmount,
   invoicePercentage,
+  taxesAmount,
   notes,
   subtotal,
   total,
@@ -46,6 +49,7 @@ const BudgetSummary = ({
   boletoDueDates = [],
   onDiscountChange,
   onInvoicePercentageChange,
+  onTaxesAmountChange,
   onNotesChange,
   readonly = false
 }: BudgetSummaryProps) => {
@@ -152,6 +156,22 @@ const BudgetSummary = ({
                 required
               />
             </div>
+
+            <div>
+              <Label htmlFor="taxes">
+                Impostos (R$)
+              </Label>
+              <Input
+                id="taxes"
+                type="number"
+                min="0"
+                step="0.01"
+                value={taxesAmount}
+                onChange={(e) => onTaxesAmountChange(Number(e.target.value))}
+                placeholder="0.00"
+                disabled={readonly}
+              />
+            </div>
           </div>
         )}
 
@@ -189,11 +209,18 @@ const BudgetSummary = ({
             <span>R$ {shippingCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           
+          {taxesAmount > 0 && (
+            <div className="flex justify-between">
+              <span>Impostos:</span>
+              <span>R$ {taxesAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          )}
+          
           <hr className="my-2" />
           
           <div className="flex justify-between font-bold text-lg">
             <span>Total Final:</span>
-            <span>R$ {totalWithShipping.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span>R$ {(totalWithShipping + taxesAmount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
       </CardContent>

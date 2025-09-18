@@ -87,6 +87,7 @@ export type Database = {
           shipping_option_id: string | null
           status: Database["public"]["Enums"]["budget_status"]
           stock_warnings: Json | null
+          taxes_amount: number | null
           total_amount: number
           updated_at: string
         }
@@ -114,6 +115,7 @@ export type Database = {
           shipping_option_id?: string | null
           status?: Database["public"]["Enums"]["budget_status"]
           stock_warnings?: Json | null
+          taxes_amount?: number | null
           total_amount?: number
           updated_at?: string
         }
@@ -141,6 +143,7 @@ export type Database = {
           shipping_option_id?: string | null
           status?: Database["public"]["Enums"]["budget_status"]
           stock_warnings?: Json | null
+          taxes_amount?: number | null
           total_amount?: number
           updated_at?: string
         }
@@ -791,6 +794,7 @@ export type Database = {
           shipping_cost: number | null
           shipping_option_id: string | null
           status: Database["public"]["Enums"]["sale_status"]
+          taxes_amount: number | null
           total_amount: number
           total_volumes: number | null
           total_weight_kg: number | null
@@ -830,6 +834,7 @@ export type Database = {
           shipping_cost?: number | null
           shipping_option_id?: string | null
           status?: Database["public"]["Enums"]["sale_status"]
+          taxes_amount?: number | null
           total_amount?: number
           total_volumes?: number | null
           total_weight_kg?: number | null
@@ -869,6 +874,7 @@ export type Database = {
           shipping_cost?: number | null
           shipping_option_id?: string | null
           status?: Database["public"]["Enums"]["sale_status"]
+          taxes_amount?: number | null
           total_amount?: number
           total_volumes?: number | null
           total_weight_kg?: number | null

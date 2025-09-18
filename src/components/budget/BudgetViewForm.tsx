@@ -17,6 +17,7 @@ interface BudgetViewFormProps {
     notes: string;
     discount_percentage: number;
     invoice_percentage: number;
+    taxes_amount: number;
     payment_method_id: string;
     payment_type_id: string;
     shipping_option_id: string;
@@ -205,6 +206,7 @@ const BudgetViewForm = ({
         realDiscountPercentage={calculateRealDiscountPercentage(formData.items)}
         totalDiscountAmount={calculateTotalDiscountAmount(formData.items)}
         invoicePercentage={formData.invoice_percentage}
+        taxesAmount={formData.taxes_amount}
         notes={formData.notes}
         subtotal={calculateSubtotal(formData.items)}
         total={calculateTotalWithDiscount(formData.items)}
@@ -216,6 +218,7 @@ const BudgetViewForm = ({
         boletoDueDates={formData.boleto_due_dates}
         onDiscountChange={noopValueHandler}
         onInvoicePercentageChange={noopValueHandler}
+        onTaxesAmountChange={noopValueHandler}
         onNotesChange={noopValueHandler}
         readonly={true}
       />

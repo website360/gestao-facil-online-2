@@ -8,6 +8,7 @@ interface BudgetFormData {
   notes: string;
   discount_percentage: number;
   invoice_percentage: number;
+  taxes_amount: number;
   payment_method_id: string;
   payment_type_id: string;
   shipping_option_id: string;

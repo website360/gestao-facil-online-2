@@ -19,6 +19,7 @@ interface BudgetFormProps {
     notes: string;
     discount_percentage: number;
     invoice_percentage: number;
+    taxes_amount: number;
     payment_method_id: string;
     payment_type_id: string;
     shipping_option_id: string;
@@ -231,6 +232,7 @@ const BudgetForm = ({
         realDiscountPercentage={calculateRealDiscountPercentage(formData.items)}
         totalDiscountAmount={calculateTotalDiscountAmount(formData.items)}
         invoicePercentage={formData.invoice_percentage}
+        taxesAmount={formData.taxes_amount}
         notes={formData.notes}
         subtotal={calculateSubtotal(formData.items)}
         total={calculateTotalWithDiscount(formData.items)}
@@ -242,6 +244,7 @@ const BudgetForm = ({
         boletoDueDates={formData.boleto_due_dates}
         onDiscountChange={updateGeneralDiscount}
         onInvoicePercentageChange={(value) => setFormData(prev => ({ ...prev, invoice_percentage: value }))}
+        onTaxesAmountChange={(value) => setFormData(prev => ({ ...prev, taxes_amount: value }))}
         onNotesChange={(value) => setFormData(prev => ({ ...prev, notes: value }))}
       />
 

@@ -17,6 +17,7 @@ interface BudgetFormData {
   notes: string;
   discount_percentage: number;
   invoice_percentage: number;
+  taxes_amount: number;
   payment_method_id: string;
   payment_type_id: string;
   shipping_option_id: string;
@@ -43,6 +44,7 @@ export const useBudgetFormData = () => {
     notes: '',
     discount_percentage: 0,
     invoice_percentage: 0,
+    taxes_amount: 0,
     payment_method_id: '',
     payment_type_id: '',
     shipping_option_id: '',
@@ -63,6 +65,7 @@ export const useBudgetFormData = () => {
       notes: '',
       discount_percentage: 0,
       invoice_percentage: 0,
+      taxes_amount: 0,
       payment_method_id: '',
       payment_type_id: '',
       shipping_option_id: '',
