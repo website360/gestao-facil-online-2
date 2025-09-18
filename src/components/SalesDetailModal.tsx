@@ -427,55 +427,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                     </div>
                   </CardContent>
                 </Card>
-              )}
-
-              {/* Volumes e Pesos individuais para nota fiscal */}
-              {(userRole === 'nota_fiscal' || userRole === 'admin' || userRole === 'gerente') && (
-                <Card style={{ backgroundColor: '#F9FAFB' }} className="border-gray-200">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-semibold">Informações de Volumes e Peso</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {saleVolumes.length > 0 ? (
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-4 text-sm font-medium text-gray-700 mb-2">
-                          <div>Pacote</div>
-                          <div>Peso (kg)</div>
-                        </div>
-                        {saleVolumes.map((volume, index) => (
-                          <div key={index} className="grid grid-cols-2 gap-4 p-2 bg-white border border-gray-200 rounded">
-                            <div className="text-sm">Pacote {volume.volume_number}</div>
-                            <div className="text-sm font-semibold">{formatNumber(Number(volume.weight_kg), 2)} kg</div>
-                          </div>
-                        ))}
-                        <div className="grid grid-cols-2 gap-4 p-2 bg-blue-100 border border-blue-300 rounded mt-4">
-                          <div className="text-sm font-bold">Total de Volumes:</div>
-                          <div className="text-sm font-bold">{saleVolumes.length}</div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 p-2 bg-blue-100 border border-blue-300 rounded">
-                          <div className="text-sm font-bold">Peso Total:</div>
-                          <div className="text-sm font-bold">{formatNumber(saleVolumes.reduce((total, vol) => total + Number(vol.weight_kg), 0), 2)} kg</div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Total de Volumes</label>
-                          <div className="p-3 bg-white border border-gray-200 rounded">
-                            {saleData.total_volumes || 'Não informado'}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Peso Total (kg)</label>
-                          <div className="p-3 bg-white border border-gray-200 rounded">
-                            {saleData.total_weight_kg ? `${formatNumber(Number(saleData.total_weight_kg), 2)} kg` : 'Não informado'}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+               )}
 
               {/* Informações de Pagamento e Frete */}
               <Card style={{ backgroundColor: '#F9FAFB' }} className="border-gray-200">
