@@ -59,20 +59,20 @@ const BudgetItemForm = ({
 
   // Estado local para o campo de preço com desconto (preserva digitação como "15,50")
   const [discountedPriceInput, setDiscountedPriceInput] = React.useState<string>('');
+  const [isUserTyping, setIsUserTyping] = React.useState(false);
 
   React.useEffect(() => {
-    // Sincroniza quando o preço ou desconto mudarem externamente, mas só se o input estiver vazio
-    const currentValue = formatNumber(item.unit_price * (1 - item.discount_percentage / 100));
-    if (!discountedPriceInput) {
+    // Sempre sincronizar quando o desconto muda externamente (desconto geral ou individual)
+    // mas apenas se o usuário não estiver digitando no campo
+    if (!isUserTyping) {
+      const currentValue = formatNumber(item.unit_price * (1 - item.discount_percentage / 100));
       setDiscountedPriceInput(currentValue);
     }
-  }, [item.unit_price, item.discount_percentage]);
+  }, [item.unit_price, item.discount_percentage, isUserTyping]);
 
   // Inicializar o valor uma vez
-  React.useEffect(() => {
-    if (!discountedPriceInput) {
-      setDiscountedPriceInput(formatNumber(item.unit_price * (1 - item.discount_percentage / 100)));
-    }
+  React.useEffect(() => {  
+    setDiscountedPriceInput(formatNumber(item.unit_price * (1 - item.discount_percentage / 100)));
   }, []);
 
   console.log('BudgetItemForm - maxDiscount:', maxDiscount, 'loading:', loading);
@@ -189,11 +189,14 @@ const BudgetItemForm = ({
           type="text"
           inputMode="decimal"
           value={discountedPriceInput}
+          onFocus={() => setIsUserTyping(true)}
           onChange={(e) => {
             if (!canEditDiscount || readonly) {
               toast.error('Você não tem permissão para alterar desconto');
               return;
             }
+
+            setIsUserTyping(true);
 
             const raw = e.target.value;
             
@@ -238,6 +241,8 @@ const BudgetItemForm = ({
             onItemUpdate(index, 'discount_percentage', newDiscountPercentage);
           }}
           onBlur={() => {
+            setIsUserTyping(false);
+            
             if (!discountedPriceInput || !canEditDiscount || readonly) return;
             
             // Normalizar formato no blur apenas se necessário
