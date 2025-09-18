@@ -139,6 +139,7 @@ const SalesManagementContent = ({
             onViewVolumes={onViewVolumes}
             onConfirmDelivery={onConfirmDelivery}
             onViewDeliveryNotes={onViewDeliveryNotes}
+            onFinalizeSale={onFinalizeSale}
             getStatusColor={getStatusColor}
             getStatusLabel={getStatusLabel}
             formatSaleId={formatSaleId}

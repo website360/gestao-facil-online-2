@@ -58,6 +58,7 @@ interface SalesTableRowProps {
   onViewVolumes: (saleId: string) => void;
   onConfirmDelivery: (saleId: string) => void;
   onViewDeliveryNotes: (saleId: string) => void;
+  onFinalizeSale: (saleId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -85,6 +86,7 @@ const SalesTableRow = ({
   onViewVolumes,
   onConfirmDelivery,
   onViewDeliveryNotes,
+  onFinalizeSale,
   getStatusColor,
   getStatusLabel,
   formatSaleId,
@@ -427,7 +429,7 @@ const SalesTableRow = ({
           </Tooltip>
 
           {/* Botão de editar - não disponível para vendas finalizadas e gerente não pode editar */}
-          {sale.status !== 'entrega_realizada' && userRole !== 'gerente' && (
+          {sale.status !== 'entrega_realizada' && sale.status !== 'finalizada' && userRole !== 'gerente' && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -544,8 +546,8 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
-          {/* Botão de alteração de status para admins - não aparece se entrega realizada ou se é gerente */}
-          {userRole === 'admin' && sale.status !== 'entrega_realizada' && (
+          {/* Botão de alteração de status para admins - não aparece se entrega realizada, finalizada ou se é gerente */}
+          {userRole === 'admin' && sale.status !== 'entrega_realizada' && sale.status !== 'finalizada' && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -563,8 +565,8 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
-          {/* Botão para visualizar volumes - não aparece se entrega realizada */}
-          {sale.total_volumes && sale.total_volumes > 0 && sale.status !== 'entrega_realizada' && (
+          {/* Botão para visualizar volumes - não aparece se entrega realizada ou finalizada */}
+          {sale.total_volumes && sale.total_volumes > 0 && sale.status !== 'entrega_realizada' && sale.status !== 'finalizada' && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -582,13 +584,32 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
+          {/* Botão de finalizar venda - apenas para admin nos status Nota Fiscal ou Entrega Realizada */}
+          {userRole === 'admin' && (sale.status === 'nota_fiscal' || sale.status === 'entrega_realizada') && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onFinalizeSale(sale.id)}
+                  className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Finalizar Venda</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
           {/* Comprovantes de pagamento - apenas para admin e gerente */}
           {(userRole === 'admin' || userRole === 'gerente') && sale.budget_id && (
             <SaleAttachmentsDropdown saleId={sale.id} />
           )}
 
-          {/* Botão de excluir - não aparece se entrega realizada ou se é gerente */}
-          {sale.status !== 'entrega_realizada' && userRole !== 'gerente' && (
+          {/* Botão de excluir - não aparece se entrega realizada, finalizada ou se é gerente */}
+          {sale.status !== 'entrega_realizada' && sale.status !== 'finalizada' && userRole !== 'gerente' && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
