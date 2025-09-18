@@ -717,26 +717,35 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          height_cm: number | null
           id: string
+          length_cm: number | null
           sale_id: string
           volume_number: number
           weight_kg: number
+          width_cm: number | null
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          height_cm?: number | null
           id?: string
+          length_cm?: number | null
           sale_id: string
           volume_number: number
           weight_kg: number
+          width_cm?: number | null
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          height_cm?: number | null
           id?: string
+          length_cm?: number | null
           sale_id?: string
           volume_number?: number
           weight_kg?: number
+          width_cm?: number | null
         }
         Relationships: [
           {
