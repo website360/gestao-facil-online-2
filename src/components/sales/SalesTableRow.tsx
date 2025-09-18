@@ -13,7 +13,7 @@ import SalePDFGenerator from './SalePDFGenerator';
 interface Sale {
   id: string;
   client_id: string;
-  status: 'separacao' | 'conferencia' | 'nota_fiscal' | 'aguardando_entrega' | 'entrega_realizada' | 'atencao';
+  status: 'separacao' | 'conferencia' | 'nota_fiscal' | 'aguardando_entrega' | 'entrega_realizada' | 'atencao' | 'finalizada';
   total_amount: number;
   notes: string;
   created_at: string;

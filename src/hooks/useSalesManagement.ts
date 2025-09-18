@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 interface Sale {
   id: string;
   client_id: string;
-  status: 'separacao' | 'conferencia' | 'nota_fiscal' | 'aguardando_entrega' | 'entrega_realizada' | 'atencao';
+  status: 'separacao' | 'conferencia' | 'nota_fiscal' | 'aguardando_entrega' | 'entrega_realizada' | 'atencao' | 'finalizada';
   total_amount: number;
   notes: string;
   created_at: string;
@@ -409,6 +409,8 @@ export const useSalesManagement = () => {
       case 'nota_fiscal': return 'Nota Fiscal';
       case 'aguardando_entrega': return 'Aguardando Entrega';
       case 'entrega_realizada': return 'Entrega Realizada';
+      case 'atencao': return 'Atenção';
+      case 'finalizada': return 'Finalizada';
       default: return status;
     }
   };

@@ -1158,6 +1158,7 @@ export type Database = {
         | "aguardando_entrega"
         | "entrega_realizada"
         | "atencao"
+        | "finalizada"
       user_role:
         | "admin"
         | "gerente"
@@ -1310,6 +1311,7 @@ export const Constants = {
         "aguardando_entrega",
         "entrega_realizada",
         "atencao",
+        "finalizada",
       ],
       user_role: [
         "admin",

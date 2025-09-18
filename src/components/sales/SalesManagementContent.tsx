@@ -8,7 +8,7 @@ import SalesPagination from './SalesPagination';
 interface Sale {
   id: string;
   client_id: string;
-  status: 'separacao' | 'conferencia' | 'nota_fiscal' | 'aguardando_entrega' | 'entrega_realizada' | 'atencao';
+  status: 'separacao' | 'conferencia' | 'nota_fiscal' | 'aguardando_entrega' | 'entrega_realizada' | 'atencao' | 'finalizada';
   total_amount: number;
   notes: string;
   created_at: string;
@@ -59,6 +59,7 @@ interface SalesManagementContentProps {
   onViewVolumes: (saleId: string) => void;
   onConfirmDelivery: (saleId: string) => void;
   onViewDeliveryNotes: (saleId: string) => void;
+  onFinalizeSale: (saleId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -91,6 +92,7 @@ const SalesManagementContent = ({
   onViewVolumes,
   onConfirmDelivery,
   onViewDeliveryNotes,
+  onFinalizeSale,
   getStatusColor,
   getStatusLabel,
   formatSaleId,

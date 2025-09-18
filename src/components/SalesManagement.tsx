@@ -14,6 +14,7 @@ import InvoiceNumberModal from './sales/InvoiceNumberModal';
 import DeliveryConfirmModal from './sales/DeliveryConfirmModal';
 import DeliveryNotesModal from './sales/DeliveryNotesModal';
 import StatusChangeModal from './sales/StatusChangeModal';
+import FinalizeSaleModal from './sales/FinalizeSaleModal';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { formatSaleId } from '@/lib/budgetFormatter';
@@ -63,6 +64,7 @@ const SalesManagement = () => {
   const [isConfirmingInvoice, setIsConfirmingInvoice] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [deletingBulk, setDeletingBulk] = useState(false);
+  const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
 
   // Bulk selection hook
   const {
@@ -82,6 +84,8 @@ const SalesManagement = () => {
       case 'nota_fiscal': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'aguardando_entrega': return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'entrega_realizada': return 'bg-green-100 text-green-800 border-green-200';
+      case 'atencao': return 'bg-red-100 text-red-800 border-red-200';
+      case 'finalizada': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -285,6 +289,40 @@ const SalesManagement = () => {
     fetchSales();
   };
 
+  const handleFinalizeSale = (saleId: string) => {
+    setSelectedSaleId(saleId);
+    setFinalizeModalOpen(true);
+  };
+
+  const handleFinalizeSaleConfirm = async () => {
+    if (!selectedSaleId) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Usuário não autenticado');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('sales')
+        .update({ 
+          status: 'finalizada'
+        })
+        .eq('id', selectedSaleId);
+
+      if (error) throw error;
+      
+      toast.success('Venda finalizada com sucesso!');
+      setFinalizeModalOpen(false);
+      setSelectedSaleId(null);
+      fetchSales();
+    } catch (error) {
+      console.error('Erro ao finalizar venda:', error);
+      toast.error('Erro ao finalizar venda');
+    }
+  };
+
   // Get selected sale data for modals
   const selectedSale = selectedSaleId ? sales.find(sale => sale.id === selectedSaleId) : null;
   const selectedDeliverySale = selectedSaleForDelivery ? sales.find(sale => sale.id === selectedSaleForDelivery) : null;
@@ -327,6 +365,7 @@ const SalesManagement = () => {
         onViewVolumes={handleViewVolumes}
         onConfirmDelivery={handleConfirmDelivery}
         onViewDeliveryNotes={handleViewDeliveryNotes}
+        onFinalizeSale={handleFinalizeSale}
         getStatusColor={getStatusColor}
         getStatusLabel={getStatusLabel}
         formatSaleId={formatSaleIdWithData}
@@ -428,6 +467,14 @@ const SalesManagement = () => {
         isOpen={volumeViewModalOpen}
         onClose={() => setVolumeViewModalOpen(false)}
         saleId={selectedSaleId || ''}
+      />
+
+      {/* Modal de Finalização da Venda */}
+      <FinalizeSaleModal
+        isOpen={finalizeModalOpen}
+        onClose={() => setFinalizeModalOpen(false)}
+        onConfirm={handleFinalizeSaleConfirm}
+        saleId={selectedSaleId ? formatSaleIdWithData(sales.find(s => s.id === selectedSaleId) || {} as any) : ''}
       />
     </>
   );
