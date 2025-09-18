@@ -62,7 +62,7 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
   budget, 
   onSuccess 
 }) => {
-  const { clientData } = useAuth();
+  const { clientData, isClient } = useAuth();
   const { calculateItemTotal, calculateSubtotal, calculateTotalWithDiscount } = useBudgetCalculations();
   
   const [isEditing, setIsEditing] = useState(false);
@@ -127,7 +127,7 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
       console.log('=== CARREGANDO DADOS DO ORÇAMENTO ===');
       console.log('Budget ID:', budget.id);
       
-      // Buscar dados atualizados
+      // Buscar dados atualizados (apenas itens com quantidade > 0)
       const { data: items, error } = await supabase
         .from('budget_items')
         .select(`
@@ -135,6 +135,7 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
           products(id, name, internal_code, price)
         `)
         .eq('budget_id', budget.id)
+        .gt('quantity', 0)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -142,12 +143,6 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
       console.log('Itens carregados do banco:', items);
       console.log('Quantidade de itens:', items?.length || 0);
 
-      // Limpar estado atual antes de definir novos dados
-      setBudgetItems([]);
-      
-      // Aguardar um tick para garantir que o estado foi limpo
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
       setBudgetItems(items?.map(item => ({
         ...item,
         products: item.products ? {
@@ -275,40 +270,102 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
         return;
       }
 
-      // Primeiro: REMOVER TODOS os itens existentes
-      console.log('Removendo TODOS os itens existentes para orçamento:', budget.id);
-      const { error: deleteError } = await supabase
-        .from('budget_items')
-        .delete()
-        .eq('budget_id', budget.id);
+      // Sincronizar itens conforme o tipo de usuário
+      if (isClient) {
+        console.log('Cliente logado: usando sincronização sem DELETE (RLS)');
+        // Buscar itens atuais do orçamento
+        const { data: currentItems, error: currentError } = await supabase
+          .from('budget_items')
+          .select('id, product_id, quantity')
+          .eq('budget_id', budget.id);
+        if (currentError) {
+          console.error('Erro ao buscar itens atuais:', currentError);
+          throw currentError;
+        }
 
-      if (deleteError) {
-        console.error('Erro ao remover itens existentes:', deleteError);
-        throw deleteError;
+        const currentMap = new Map((currentItems || []).map(ci => [ci.product_id, ci]));
+        const validProductIds = new Set(validItems.map(v => v.product_id));
+
+        // 1) Zerar itens removidos (quantidade 0)
+        const toZero = (currentItems || []).filter(ci => !validProductIds.has(ci.product_id));
+        if (toZero.length > 0) {
+          const ids = toZero.map(ci => ci.id);
+          console.log('Zerando itens removidos (soft-delete):', ids);
+          const { error: zeroError } = await supabase
+            .from('budget_items')
+            .update({ quantity: 0, total_price: 0, discount_percentage: 0 })
+            .in('id', ids);
+          if (zeroError) {
+            console.error('Erro ao zerar itens:', zeroError);
+            throw zeroError;
+          }
+        }
+
+        // 2) Atualizar itens existentes
+        const toUpdate = validItems.filter(v => currentMap.has(v.product_id));
+        if (toUpdate.length > 0) {
+          console.log('Atualizando itens existentes:', toUpdate.map(i => i.product_id));
+          await Promise.all(toUpdate.map(async (item) => {
+            const { error } = await supabase
+              .from('budget_items')
+              .update({
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                total_price: item.total_price,
+                discount_percentage: item.discount_percentage || 0
+              })
+              .eq('budget_id', budget.id)
+              .eq('product_id', item.product_id);
+            if (error) throw error;
+          }));
+        }
+
+        // 3) Inserir itens novos
+        const toInsert = validItems.filter(v => !currentMap.has(v.product_id)).map(item => ({
+          budget_id: budget.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          discount_percentage: item.discount_percentage || 0
+        }));
+        if (toInsert.length > 0) {
+          console.log('Inserindo itens novos:', toInsert.map(i => i.product_id));
+          const { error: insertError } = await supabase
+            .from('budget_items')
+            .insert(toInsert);
+          if (insertError) {
+            console.error('Erro ao inserir itens novos:', insertError);
+            throw insertError;
+          }
+        }
+      } else {
+        // Fluxo normal (usuário autenticado) - remover e inserir
+        console.log('Usuário interno: removendo e inserindo itens');
+        const { error: deleteError } = await supabase
+          .from('budget_items')
+          .delete()
+          .eq('budget_id', budget.id);
+        if (deleteError) {
+          console.error('Erro ao remover itens existentes:', deleteError);
+          throw deleteError;
+        }
+        const itemsToInsert = validItems.map(item => ({
+          budget_id: budget.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          discount_percentage: item.discount_percentage || 0
+        }));
+        const { error: itemsError } = await supabase
+          .from('budget_items')
+          .insert(itemsToInsert);
+        if (itemsError) {
+          console.error('Erro ao inserir novos itens:', itemsError);
+          throw itemsError;
+        }
       }
-      console.log('✓ Itens existentes removidos com sucesso');
-
-      // Segundo: INSERIR APENAS os novos itens válidos
-      const itemsToInsert = validItems.map(item => ({
-        budget_id: budget.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price,
-        discount_percentage: item.discount_percentage || 0
-      }));
-
-      console.log('Inserindo APENAS estes novos itens:', itemsToInsert);
-
-      const { error: itemsError } = await supabase
-        .from('budget_items')
-        .insert(itemsToInsert);
-
-      if (itemsError) {
-        console.error('Erro ao inserir novos itens:', itemsError);
-        throw itemsError;
-      }
-      console.log('✓ Novos itens inseridos com sucesso');
 
       // Terceiro: Calcular o total correto APENAS dos itens válidos
       const itemsForCalculation = validItems.map(item => ({
