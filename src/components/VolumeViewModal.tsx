@@ -31,12 +31,15 @@ const VolumeViewModal = ({ isOpen, onClose, saleId }: VolumeViewModalProps) => {
     
     setLoading(true);
     try {
+      console.log('Buscando volumes para sale_id:', saleId);
       const { data, error } = await supabase
         .from('sale_volumes')
         .select('id, volume_number, weight_kg, width_cm, height_cm, length_cm')
         .eq('sale_id', saleId)
         .order('volume_number');
 
+      console.log('Result from sale_volumes query:', { data, error });
+      
       if (error) throw error;
       setVolumes(data || []);
     } catch (error) {

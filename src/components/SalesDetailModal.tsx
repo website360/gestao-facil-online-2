@@ -89,6 +89,7 @@ interface Client {
   cnpj?: string;
   cpf?: string;
   razao_social?: string;
+  inscricao_estadual?: string;
   client_type?: string;
   birth_date?: string;
 }
@@ -403,6 +404,16 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                           <label className="block text-sm font-medium text-gray-700 mb-1">Razão Social</label>
                           <div className="p-2 bg-white border border-gray-200 rounded text-sm">
                             {client.razao_social}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Inscrição Estadual - apenas para Pessoa Jurídica */}
+                      {(client.client_type === 'pj' || client.client_type === 'juridica') && client.inscricao_estadual && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Inscrição Estadual</label>
+                          <div className="p-2 bg-white border border-gray-200 rounded text-sm">
+                            {client.inscricao_estadual}
                           </div>
                         </div>
                       )}

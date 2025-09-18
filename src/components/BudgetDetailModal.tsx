@@ -50,10 +50,17 @@ interface Client {
   phone?: string;
   street?: string;
   number?: string;
+  complement?: string;
   neighborhood?: string;
   city?: string;
   state?: string;
   cep?: string;
+  cnpj?: string;
+  cpf?: string;
+  razao_social?: string;
+  inscricao_estadual?: string;
+  client_type?: string;
+  birth_date?: string;
 }
 
 interface PaymentMethod {
@@ -276,6 +283,94 @@ const BudgetDetailModal: React.FC<BudgetDetailModalProps> = ({ isOpen, onClose, 
                   </div>
                 </div>
               </div>
+
+              {/* Dados Completos do Cliente */}
+              {client && (
+                <Card style={{ backgroundColor: '#F9FAFB' }} className="border-blue-200">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold">Dados Completos do Cliente</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                        <div className="p-2 bg-white border border-gray-200 rounded text-sm font-semibold">
+                          {client.name}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <div className="p-2 bg-white border border-gray-200 rounded text-sm">
+                          {client.email || 'Não informado'}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                        <div className="p-2 bg-white border border-gray-200 rounded text-sm">
+                          {client.phone || 'Não informado'}
+                        </div>
+                      </div>
+                      
+                      {/* CPF - apenas para Pessoa Física */}
+                      {client.client_type !== 'pj' && client.client_type !== 'juridica' && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+                          <div className="p-2 bg-white border border-gray-200 rounded text-sm">
+                            {client.cpf || 'Não informado'}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Data de Nascimento - apenas para Pessoa Física */}
+                      {client.client_type !== 'pj' && client.client_type !== 'juridica' && client.birth_date && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
+                          <div className="p-2 bg-white border border-gray-200 rounded text-sm">
+                            {new Date(client.birth_date).toLocaleDateString('pt-BR')}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* CNPJ - apenas para Pessoa Jurídica */}
+                      {(client.client_type === 'pj' || client.client_type === 'juridica') && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
+                          <div className="p-2 bg-white border border-gray-200 rounded text-sm">
+                            {client.cnpj || 'Não informado'}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Razão Social - apenas para Pessoa Jurídica */}
+                      {(client.client_type === 'pj' || client.client_type === 'juridica') && client.razao_social && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Razão Social</label>
+                          <div className="p-2 bg-white border border-gray-200 rounded text-sm">
+                            {client.razao_social}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Inscrição Estadual - apenas para Pessoa Jurídica */}
+                      {(client.client_type === 'pj' || client.client_type === 'juridica') && client.inscricao_estadual && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Inscrição Estadual</label>
+                          <div className="p-2 bg-white border border-gray-200 rounded text-sm">
+                            {client.inscricao_estadual}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Endereço Completo</label>
+                        <div className="p-2 bg-white border border-gray-200 rounded text-sm">
+                          {`${client.street || ''} ${client.number || ''} ${client.complement || ''}, ${client.neighborhood || ''}, ${client.city || ''} - ${client.state || ''}, CEP: ${client.cep || ''}`}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Informações de Pagamento e Frete */}
               <div className="bg-gray-50 p-4 rounded-lg">
