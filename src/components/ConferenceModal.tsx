@@ -79,18 +79,29 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
   const fetchSaleData = async () => {
     if (!saleId) return;
     try {
+      // Buscar dados da venda primeiro
       const {
         data: salesData,
         error: salesError
       } = await supabase.from('sales').select(`
           *,
-          clients(name),
-          shipping_options(name)
+          clients(name)
         `).eq('id', saleId).single();
       if (salesError) throw salesError;
       
+      // Buscar opção de frete separadamente se existir
+      let shippingName = '';
+      if (salesData.shipping_option_id) {
+        const { data: shippingData } = await supabase
+          .from('shipping_options')
+          .select('name')
+          .eq('id', salesData.shipping_option_id)
+          .single();
+        
+        shippingName = shippingData?.name?.toLowerCase() || '';
+      }
+      
       // Verificar se o frete é Correios (PAC ou SEDEX)
-      const shippingName = (salesData.shipping_options as any)?.name?.toLowerCase() || '';
       const isCorreiosShipping = shippingName.includes('pac') || shippingName.includes('sedex') || 
                                shippingName.includes('correios');
       
