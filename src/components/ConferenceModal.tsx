@@ -66,6 +66,7 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
   const [quantityInput, setQuantityInput] = useState('');
   const [codeMessage, setCodeMessage] = useState('');
   const [showVolumeModal, setShowVolumeModal] = useState(false);
+  const [needsDimensions, setNeedsDimensions] = useState(false);
   const codeInputRef = useRef<HTMLInputElement>(null);
   const quantityInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -83,9 +84,18 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
         error: salesError
       } = await supabase.from('sales').select(`
           *,
-          clients(name)
+          clients(name),
+          shipping_options(name)
         `).eq('id', saleId).single();
       if (salesError) throw salesError;
+      
+      // Verificar se o frete é Correios (PAC ou SEDEX)
+      const shippingName = (salesData.shipping_options as any)?.name?.toLowerCase() || '';
+      const isCorreiosShipping = shippingName.includes('pac') || shippingName.includes('sedex') || 
+                               shippingName.includes('correios');
+      
+      setNeedsDimensions(isCorreiosShipping);
+      
       setSaleData({
         ...salesData,
         clients: salesData.clients ? {
@@ -530,6 +540,7 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
         onClose={() => setShowVolumeModal(false)}
         saleId={saleId}
         onComplete={handleVolumeComplete}
+        needsDimensions={needsDimensions}
       />
     </Dialog>
   );

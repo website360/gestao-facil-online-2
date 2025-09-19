@@ -15,6 +15,7 @@ interface VolumeWeightModalProps {
   onClose: () => void;
   saleId: string | null;
   onComplete: () => void;
+  needsDimensions?: boolean;
 }
 
 interface VolumeWeight {
@@ -29,7 +30,8 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
   isOpen,
   onClose,
   saleId,
-  onComplete
+  onComplete,
+  needsDimensions = false
 }) => {
   const [totalVolumes, setTotalVolumes] = useState<number>(1);
   const [volumes, setVolumes] = useState<VolumeWeight[]>([]);
@@ -79,13 +81,22 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
   };
 
   const handleSaveVolumes = async () => {
-    // Validar se todos os volumes têm peso e dimensões válidas
-    const hasInvalidData = volumes.some(vol => 
-      vol.weight_kg <= 0 || vol.width_cm <= 0 || vol.height_cm <= 0 || vol.length_cm <= 0
-    );
-    if (hasInvalidData) {
-      toast.error('Todos os volumes devem ter peso e dimensões (largura, altura, comprimento) maiores que 0');
+    // Validar se todos os volumes têm peso válido
+    const hasInvalidWeight = volumes.some(vol => vol.weight_kg <= 0);
+    if (hasInvalidWeight) {
+      toast.error('Todos os volumes devem ter peso maior que 0');
       return;
+    }
+
+    // Se precisar de dimensões (frete Correios), validar dimensões também
+    if (needsDimensions) {
+      const hasInvalidDimensions = volumes.some(vol => 
+        vol.width_cm <= 0 || vol.height_cm <= 0 || vol.length_cm <= 0
+      );
+      if (hasInvalidDimensions) {
+        toast.error('Para frete Correios, todos os volumes devem ter dimensões (largura, altura, comprimento) maiores que 0');
+        return;
+      }
     }
 
     setSaving(true);
@@ -95,17 +106,23 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
       if (!user) throw new Error('Usuário não encontrado');
 
       // Salvar cada volume na tabela
-      const volumePromises = volumes.map(volume => 
-        supabase.from('sale_volumes').insert({
+      const volumePromises = volumes.map(volume => {
+        const volumeData: any = {
           sale_id: saleId!,
           volume_number: volume.volume_number,
           weight_kg: volume.weight_kg,
-          width_cm: volume.width_cm,
-          height_cm: volume.height_cm,
-          length_cm: volume.length_cm,
           created_by: user.id
-        })
-      );
+        };
+
+        // Só incluir dimensões se necessário (frete Correios)
+        if (needsDimensions) {
+          volumeData.width_cm = volume.width_cm;
+          volumeData.height_cm = volume.height_cm;
+          volumeData.length_cm = volume.length_cm;
+        }
+
+        return supabase.from('sale_volumes').insert(volumeData);
+      });
 
       await Promise.all(volumePromises);
 
@@ -160,9 +177,9 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
-            Registro de Volumes, Pesos e Dimensões
+            {needsDimensions ? 'Registro de Volumes, Pesos e Dimensões' : 'Registro de Volumes e Pesos'}
             {saleId && (
               <Badge variant="outline" className="ml-2">
                 {formatSaleId(saleId)}
@@ -214,7 +231,10 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Scale className="w-5 h-5" />
-                Peso e Dimensões de cada volume ({totalVolumes} {totalVolumes === 1 ? 'volume' : 'volumes'})
+                {needsDimensions 
+                  ? `Peso e Dimensões de cada volume (${totalVolumes} ${totalVolumes === 1 ? 'volume' : 'volumes'})`
+                  : `Peso de cada volume (${totalVolumes} ${totalVolumes === 1 ? 'volume' : 'volumes'})`
+                }
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -225,7 +245,7 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
                       Volume {volume.volume_number}
                     </Label>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className={`grid gap-3 ${needsDimensions ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 md:grid-cols-1'}`}>
                       {/* Peso */}
                       <div className="space-y-1">
                         <Label htmlFor={`weight-${volume.volume_number}`} className="text-sm">
@@ -246,65 +266,70 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
                         </div>
                       </div>
 
-                      {/* Largura */}
-                      <div className="space-y-1">
-                        <Label htmlFor={`width-${volume.volume_number}`} className="text-sm">
-                          Largura
-                        </Label>
-                        <div className="flex items-center gap-1">
-                          <Input
-                            id={`width-${volume.volume_number}`}
-                            type="number"
-                            step="0.1"
-                            min="0.1"
-                            value={volume.width_cm || ''}
-                            onChange={(e) => handleDimensionChange(volume.volume_number, 'width_cm', e.target.value)}
-                            placeholder="0.0"
-                            className="text-center text-sm"
-                          />
-                          <span className="text-xs text-muted-foreground min-w-[20px]">cm</span>
-                        </div>
-                      </div>
+                      {/* Dimensões - só aparecem se needsDimensions for true */}
+                      {needsDimensions && (
+                        <>
+                          {/* Largura */}
+                          <div className="space-y-1">
+                            <Label htmlFor={`width-${volume.volume_number}`} className="text-sm">
+                              Largura
+                            </Label>
+                            <div className="flex items-center gap-1">
+                              <Input
+                                id={`width-${volume.volume_number}`}
+                                type="number"
+                                step="0.1"
+                                min="0.1"
+                                value={volume.width_cm || ''}
+                                onChange={(e) => handleDimensionChange(volume.volume_number, 'width_cm', e.target.value)}
+                                placeholder="0.0"
+                                className="text-center text-sm"
+                              />
+                              <span className="text-xs text-muted-foreground min-w-[20px]">cm</span>
+                            </div>
+                          </div>
 
-                      {/* Altura */}
-                      <div className="space-y-1">
-                        <Label htmlFor={`height-${volume.volume_number}`} className="text-sm">
-                          Altura
-                        </Label>
-                        <div className="flex items-center gap-1">
-                          <Input
-                            id={`height-${volume.volume_number}`}
-                            type="number"
-                            step="0.1"
-                            min="0.1"
-                            value={volume.height_cm || ''}
-                            onChange={(e) => handleDimensionChange(volume.volume_number, 'height_cm', e.target.value)}
-                            placeholder="0.0"
-                            className="text-center text-sm"
-                          />
-                          <span className="text-xs text-muted-foreground min-w-[20px]">cm</span>
-                        </div>
-                      </div>
+                          {/* Altura */}
+                          <div className="space-y-1">
+                            <Label htmlFor={`height-${volume.volume_number}`} className="text-sm">
+                              Altura
+                            </Label>
+                            <div className="flex items-center gap-1">
+                              <Input
+                                id={`height-${volume.volume_number}`}
+                                type="number"
+                                step="0.1"
+                                min="0.1"
+                                value={volume.height_cm || ''}
+                                onChange={(e) => handleDimensionChange(volume.volume_number, 'height_cm', e.target.value)}
+                                placeholder="0.0"
+                                className="text-center text-sm"
+                              />
+                              <span className="text-xs text-muted-foreground min-w-[20px]">cm</span>
+                            </div>
+                          </div>
 
-                      {/* Comprimento */}
-                      <div className="space-y-1">
-                        <Label htmlFor={`length-${volume.volume_number}`} className="text-sm">
-                          Comprimento
-                        </Label>
-                        <div className="flex items-center gap-1">
-                          <Input
-                            id={`length-${volume.volume_number}`}
-                            type="number"
-                            step="0.1"
-                            min="0.1"
-                            value={volume.length_cm || ''}
-                            onChange={(e) => handleDimensionChange(volume.volume_number, 'length_cm', e.target.value)}
-                            placeholder="0.0"
-                            className="text-center text-sm"
-                          />
-                          <span className="text-xs text-muted-foreground min-w-[20px]">cm</span>
-                        </div>
-                      </div>
+                          {/* Comprimento */}
+                          <div className="space-y-1">
+                            <Label htmlFor={`length-${volume.volume_number}`} className="text-sm">
+                              Comprimento
+                            </Label>
+                            <div className="flex items-center gap-1">
+                              <Input
+                                id={`length-${volume.volume_number}`}
+                                type="number"
+                                step="0.1"
+                                min="0.1"
+                                value={volume.length_cm || ''}
+                                onChange={(e) => handleDimensionChange(volume.volume_number, 'length_cm', e.target.value)}
+                                placeholder="0.0"
+                                className="text-center text-sm"
+                              />
+                              <span className="text-xs text-muted-foreground min-w-[20px]">cm</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -333,7 +358,10 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
                   </Button>
                   <Button
                     onClick={handleSaveVolumes}
-                    disabled={saving || volumes.some(vol => vol.weight_kg <= 0 || vol.width_cm <= 0 || vol.height_cm <= 0 || vol.length_cm <= 0)}
+                    disabled={saving || volumes.some(vol => 
+                      vol.weight_kg <= 0 || 
+                      (needsDimensions && (vol.width_cm <= 0 || vol.height_cm <= 0 || vol.length_cm <= 0))
+                    )}
                     className="bg-green-600 hover:bg-green-700"
                   >
                     {saving ? (
