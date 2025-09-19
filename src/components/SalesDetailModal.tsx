@@ -309,6 +309,8 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
     return paymentMethodName?.includes('boleto');
   };
 
+  if (!saleData) return null;
+
   return (
     <TooltipProvider>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -443,7 +445,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Meio de Pagamento</label>
                       <div className="p-3 bg-white border border-gray-200 rounded">
-                        {getPaymentMethodName(saleData.payment_method_id)}
+                        {getPaymentMethodName(saleData?.payment_method_id)}
                       </div>
                     </div>
                     {shouldShowInstallmentInfo() && (
@@ -451,7 +453,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                         <label className="block text-sm font-medium text-gray-700 mb-1">Parcelas</label>
                         <div className="p-3 bg-white border border-gray-200 rounded">
                           {(() => {
-                            const paymentMethodName = getPaymentMethodName(saleData.payment_method_id)?.toLowerCase();
+                            const paymentMethodName = getPaymentMethodName(saleData?.payment_method_id)?.toLowerCase();
                             if (paymentMethodName?.includes('cheque')) {
                               return `${saleData.check_installments || 1}x`;
                             } else if (paymentMethodName?.includes('boleto')) {
