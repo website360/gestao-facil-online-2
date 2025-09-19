@@ -163,7 +163,12 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
         installments: budgetToUse.installments || 1,
         discount_percentage: budgetToUse.discount_percentage || 0,
         invoice_percentage: budgetToUse.invoice_percentage || 0,
-        local_delivery_info: budgetToUse.local_delivery_info
+        local_delivery_info: budgetToUse.local_delivery_info,
+        // Campos de parcelamento que estavam faltando
+        check_installments: budgetToUse.check_installments || 1,
+        check_due_dates: budgetToUse.check_due_dates || [],
+        boleto_installments: budgetToUse.boleto_installments || 1,
+        boleto_due_dates: budgetToUse.boleto_due_dates || []
       };
       
       console.log('Sale payload:', salePayload);
