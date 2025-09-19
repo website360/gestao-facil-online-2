@@ -34,6 +34,10 @@ interface Sale {
   shipping_option_id?: string;
   shipping_cost?: number;
   installments?: number;
+  check_installments?: number;
+  check_due_dates?: number[];
+  boleto_installments?: number;
+  boleto_due_dates?: number[];
   tracking_code?: string;
   budget_id?: string;
   clients: { name: string } | null;
@@ -66,6 +70,10 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
   const [shippingOptionId, setShippingOptionId] = useState('');
   const [shippingCost, setShippingCost] = useState(0);
   const [installments, setInstallments] = useState(1);
+  const [checkInstallments, setCheckInstallments] = useState(1);
+  const [boletoInstallments, setBoletoInstallments] = useState(1);
+  const [checkDueDates, setCheckDueDates] = useState<number[]>([10, 20, 30, 40]);
+  const [boletoDueDates, setBoletoDueDates] = useState<number[]>([10, 20, 30, 40, 50, 60]);
   const [trackingCode, setTrackingCode] = useState('');
 
   // Check if sale is finalized
@@ -128,6 +136,10 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
       setShippingOptionId(salesData.shipping_option_id || '');
       setShippingCost(salesData.shipping_cost || 0);
       setInstallments(salesData.installments || 1);
+      setCheckInstallments(salesData.check_installments || 1);
+      setBoletoInstallments(salesData.boleto_installments || 1);
+      setCheckDueDates(salesData.check_due_dates || [10, 20, 30, 40]);
+      setBoletoDueDates(salesData.boleto_due_dates || [10, 20, 30, 40, 50, 60]);
       setTrackingCode(salesData.tracking_code || '');
     } catch (error) {
       console.error('Erro ao carregar detalhes da venda:', error);
@@ -192,6 +204,10 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
           shipping_option_id: shippingOptionId || null,
           shipping_cost: shippingCost || 0,
           installments: installments || 1,
+          check_installments: checkInstallments || 1,
+          check_due_dates: checkDueDates,
+          boleto_installments: boletoInstallments || 1,
+          boleto_due_dates: boletoDueDates,
           tracking_code: trackingCode || null
         })
         .eq('id', saleId);
@@ -493,11 +509,33 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
                 </div>
 
                 <div>
-                  <Label htmlFor="installments">Parcelas</Label>
+                  <Label htmlFor="installments">Parcelas Genéricas</Label>
                   <Input
                     type="number"
                     value={installments}
                     onChange={(e) => setInstallments(parseInt(e.target.value) || 1)}
+                    min="1"
+                    disabled={isFinalized}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="checkInstallments">Parcelas de Cheque</Label>
+                  <Input
+                    type="number"
+                    value={checkInstallments}
+                    onChange={(e) => setCheckInstallments(parseInt(e.target.value) || 1)}
+                    min="1"
+                    disabled={isFinalized}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="boletoInstallments">Parcelas de Boleto</Label>
+                  <Input
+                    type="number"
+                    value={boletoInstallments}
+                    onChange={(e) => setBoletoInstallments(parseInt(e.target.value) || 1)}
                     min="1"
                     disabled={isFinalized}
                   />
@@ -532,7 +570,12 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
                     <label className="block text-xs text-gray-600 mb-1">1° Cheque (dias)</label>
                     <Input
                       type="number"
-                      defaultValue={10}
+                      value={checkDueDates[0] || 10}
+                      onChange={(e) => {
+                        const newDates = [...checkDueDates];
+                        newDates[0] = parseInt(e.target.value) || 10;
+                        setCheckDueDates(newDates);
+                      }}
                       disabled={isFinalized}
                       className="text-center"
                     />
@@ -541,7 +584,12 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
                     <label className="block text-xs text-gray-600 mb-1">2° Cheque (dias)</label>
                     <Input
                       type="number"
-                      defaultValue={20}
+                      value={checkDueDates[1] || 20}
+                      onChange={(e) => {
+                        const newDates = [...checkDueDates];
+                        newDates[1] = parseInt(e.target.value) || 20;
+                        setCheckDueDates(newDates);
+                      }}
                       disabled={isFinalized}
                       className="text-center"
                     />
@@ -550,7 +598,12 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
                     <label className="block text-xs text-gray-600 mb-1">3° Cheque (dias)</label>
                     <Input
                       type="number"
-                      defaultValue={30}
+                      value={checkDueDates[2] || 30}
+                      onChange={(e) => {
+                        const newDates = [...checkDueDates];
+                        newDates[2] = parseInt(e.target.value) || 30;
+                        setCheckDueDates(newDates);
+                      }}
                       disabled={isFinalized}
                       className="text-center"
                     />
@@ -559,9 +612,105 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
                     <label className="block text-xs text-gray-600 mb-1">4° Cheque (dias)</label>
                     <Input
                       type="number"
-                      defaultValue={40}
+                      value={checkDueDates[3] || 40}
+                      onChange={(e) => {
+                        const newDates = [...checkDueDates];
+                        newDates[3] = parseInt(e.target.value) || 40;
+                        setCheckDueDates(newDates);
+                      }}
                       disabled={isFinalized}
                       className="text-center"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Prazos dos Boletos */}
+              <div className="mb-4">
+                <Label>Prazos dos Boletos (em dias)</Label>
+                <div className="grid grid-cols-6 gap-2 mt-2">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">1° Boleto</label>
+                    <Input
+                      type="number"
+                      value={boletoDueDates[0] || 10}
+                      onChange={(e) => {
+                        const newDates = [...boletoDueDates];
+                        newDates[0] = parseInt(e.target.value) || 10;
+                        setBoletoDueDates(newDates);
+                      }}
+                      disabled={isFinalized}
+                      className="text-center text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">2° Boleto</label>
+                    <Input
+                      type="number"
+                      value={boletoDueDates[1] || 20}
+                      onChange={(e) => {
+                        const newDates = [...boletoDueDates];
+                        newDates[1] = parseInt(e.target.value) || 20;
+                        setBoletoDueDates(newDates);
+                      }}
+                      disabled={isFinalized}
+                      className="text-center text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">3° Boleto</label>
+                    <Input
+                      type="number"
+                      value={boletoDueDates[2] || 30}
+                      onChange={(e) => {
+                        const newDates = [...boletoDueDates];
+                        newDates[2] = parseInt(e.target.value) || 30;
+                        setBoletoDueDates(newDates);
+                      }}
+                      disabled={isFinalized}
+                      className="text-center text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">4° Boleto</label>
+                    <Input
+                      type="number"
+                      value={boletoDueDates[3] || 40}
+                      onChange={(e) => {
+                        const newDates = [...boletoDueDates];
+                        newDates[3] = parseInt(e.target.value) || 40;
+                        setBoletoDueDates(newDates);
+                      }}
+                      disabled={isFinalized}
+                      className="text-center text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">5° Boleto</label>
+                    <Input
+                      type="number"
+                      value={boletoDueDates[4] || 50}
+                      onChange={(e) => {
+                        const newDates = [...boletoDueDates];
+                        newDates[4] = parseInt(e.target.value) || 50;
+                        setBoletoDueDates(newDates);
+                      }}
+                      disabled={isFinalized}
+                      className="text-center text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">6° Boleto</label>
+                    <Input
+                      type="number"
+                      value={boletoDueDates[5] || 60}
+                      onChange={(e) => {
+                        const newDates = [...boletoDueDates];
+                        newDates[5] = parseInt(e.target.value) || 60;
+                        setBoletoDueDates(newDates);
+                      }}
+                      disabled={isFinalized}
+                      className="text-center text-xs"
                     />
                   </div>
                 </div>

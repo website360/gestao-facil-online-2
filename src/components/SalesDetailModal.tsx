@@ -446,7 +446,15 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Parcelas</label>
                         <div className="p-3 bg-white border border-gray-200 rounded">
-                          {saleData.installments || 1}x
+                          {(() => {
+                            const paymentMethodName = getPaymentMethodName(saleData.payment_method_id)?.toLowerCase();
+                            if (paymentMethodName?.includes('cheque')) {
+                              return `${saleData.check_installments || 1}x`;
+                            } else if (paymentMethodName?.includes('boleto')) {
+                              return `${saleData.boleto_installments || 1}x`;
+                            }
+                            return `${saleData.installments || 1}x`;
+                          })()}
                         </div>
                       </div>
                     )}
