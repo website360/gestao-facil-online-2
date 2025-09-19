@@ -175,6 +175,12 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
     }
   };
 
+  const getPaymentMethodName = (id?: string) => {
+    if (!id) return '';
+    const method = paymentMethods.find((m) => m.id === id);
+    return method?.name || '';
+  };
+
   const handleSave = async () => {
     if (isFinalized) {
       toast.error('Não é possível editar uma venda finalizada');
@@ -508,38 +514,49 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="installments">Parcelas Genéricas</Label>
-                  <Input
-                    type="number"
-                    value={installments}
-                    onChange={(e) => setInstallments(parseInt(e.target.value) || 1)}
-                    min="1"
-                    disabled={isFinalized}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="checkInstallments">Parcelas de Cheque</Label>
-                  <Input
-                    type="number"
-                    value={checkInstallments}
-                    onChange={(e) => setCheckInstallments(parseInt(e.target.value) || 1)}
-                    min="1"
-                    disabled={isFinalized}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="boletoInstallments">Parcelas de Boleto</Label>
-                  <Input
-                    type="number"
-                    value={boletoInstallments}
-                    onChange={(e) => setBoletoInstallments(parseInt(e.target.value) || 1)}
-                    min="1"
-                    disabled={isFinalized}
-                  />
-                </div>
+                {(() => {
+                  const pm = getPaymentMethodName(paymentMethodId)?.toLowerCase();
+                  if (pm?.includes('cheque')) {
+                    return (
+                      <div>
+                        <Label htmlFor="checkInstallments">Parcelas de Cheque</Label>
+                        <Input
+                          type="number"
+                          value={checkInstallments}
+                          onChange={(e) => setCheckInstallments(parseInt(e.target.value) || 1)}
+                          min="1"
+                          disabled={isFinalized}
+                        />
+                      </div>
+                    );
+                  }
+                  if (pm?.includes('boleto')) {
+                    return (
+                      <div>
+                        <Label htmlFor="boletoInstallments">Parcelas de Boleto</Label>
+                        <Input
+                          type="number"
+                          value={boletoInstallments}
+                          onChange={(e) => setBoletoInstallments(parseInt(e.target.value) || 1)}
+                          min="1"
+                          disabled={isFinalized}
+                        />
+                      </div>
+                    );
+                  }
+                  return (
+                    <div>
+                      <Label htmlFor="installments">Parcelas</Label>
+                      <Input
+                        type="number"
+                        value={installments}
+                        onChange={(e) => setInstallments(parseInt(e.target.value) || 1)}
+                        min="1"
+                        disabled={isFinalized}
+                      />
+                    </div>
+                  );
+                })()}
 
                 <div>
                   <Label htmlFor="paymentType">Tipo de Pagamento</Label>
@@ -563,158 +580,162 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
               </div>
 
               {/* Prazos dos Cheques */}
-              <div className="mb-4">
-                <Label>Prazos dos Cheques (em dias)</Label>
-                <div className="grid grid-cols-4 gap-4 mt-2">
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">1° Cheque (dias)</label>
-                    <Input
-                      type="number"
-                      value={checkDueDates[0] || 10}
-                      onChange={(e) => {
-                        const newDates = [...checkDueDates];
-                        newDates[0] = parseInt(e.target.value) || 10;
-                        setCheckDueDates(newDates);
-                      }}
-                      disabled={isFinalized}
-                      className="text-center"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">2° Cheque (dias)</label>
-                    <Input
-                      type="number"
-                      value={checkDueDates[1] || 20}
-                      onChange={(e) => {
-                        const newDates = [...checkDueDates];
-                        newDates[1] = parseInt(e.target.value) || 20;
-                        setCheckDueDates(newDates);
-                      }}
-                      disabled={isFinalized}
-                      className="text-center"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">3° Cheque (dias)</label>
-                    <Input
-                      type="number"
-                      value={checkDueDates[2] || 30}
-                      onChange={(e) => {
-                        const newDates = [...checkDueDates];
-                        newDates[2] = parseInt(e.target.value) || 30;
-                        setCheckDueDates(newDates);
-                      }}
-                      disabled={isFinalized}
-                      className="text-center"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">4° Cheque (dias)</label>
-                    <Input
-                      type="number"
-                      value={checkDueDates[3] || 40}
-                      onChange={(e) => {
-                        const newDates = [...checkDueDates];
-                        newDates[3] = parseInt(e.target.value) || 40;
-                        setCheckDueDates(newDates);
-                      }}
-                      disabled={isFinalized}
-                      className="text-center"
-                    />
+              {getPaymentMethodName(paymentMethodId)?.toLowerCase().includes('cheque') && (
+                <div className="mb-4">
+                  <Label>Prazos dos Cheques (em dias)</Label>
+                  <div className="grid grid-cols-4 gap-4 mt-2">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">1° Cheque (dias)</label>
+                      <Input
+                        type="number"
+                        value={checkDueDates[0] || 10}
+                        onChange={(e) => {
+                          const newDates = [...checkDueDates];
+                          newDates[0] = parseInt(e.target.value) || 10;
+                          setCheckDueDates(newDates);
+                        }}
+                        disabled={isFinalized}
+                        className="text-center"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">2° Cheque (dias)</label>
+                      <Input
+                        type="number"
+                        value={checkDueDates[1] || 20}
+                        onChange={(e) => {
+                          const newDates = [...checkDueDates];
+                          newDates[1] = parseInt(e.target.value) || 20;
+                          setCheckDueDates(newDates);
+                        }}
+                        disabled={isFinalized}
+                        className="text-center"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">3° Cheque (dias)</label>
+                      <Input
+                        type="number"
+                        value={checkDueDates[2] || 30}
+                        onChange={(e) => {
+                          const newDates = [...checkDueDates];
+                          newDates[2] = parseInt(e.target.value) || 30;
+                          setCheckDueDates(newDates);
+                        }}
+                        disabled={isFinalized}
+                        className="text-center"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">4° Cheque (dias)</label>
+                      <Input
+                        type="number"
+                        value={checkDueDates[3] || 40}
+                        onChange={(e) => {
+                          const newDates = [...checkDueDates];
+                          newDates[3] = parseInt(e.target.value) || 40;
+                          setCheckDueDates(newDates);
+                        }}
+                        disabled={isFinalized}
+                        className="text-center"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Prazos dos Boletos */}
-              <div className="mb-4">
-                <Label>Prazos dos Boletos (em dias)</Label>
-                <div className="grid grid-cols-6 gap-2 mt-2">
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">1° Boleto</label>
-                    <Input
-                      type="number"
-                      value={boletoDueDates[0] || 10}
-                      onChange={(e) => {
-                        const newDates = [...boletoDueDates];
-                        newDates[0] = parseInt(e.target.value) || 10;
-                        setBoletoDueDates(newDates);
-                      }}
-                      disabled={isFinalized}
-                      className="text-center text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">2° Boleto</label>
-                    <Input
-                      type="number"
-                      value={boletoDueDates[1] || 20}
-                      onChange={(e) => {
-                        const newDates = [...boletoDueDates];
-                        newDates[1] = parseInt(e.target.value) || 20;
-                        setBoletoDueDates(newDates);
-                      }}
-                      disabled={isFinalized}
-                      className="text-center text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">3° Boleto</label>
-                    <Input
-                      type="number"
-                      value={boletoDueDates[2] || 30}
-                      onChange={(e) => {
-                        const newDates = [...boletoDueDates];
-                        newDates[2] = parseInt(e.target.value) || 30;
-                        setBoletoDueDates(newDates);
-                      }}
-                      disabled={isFinalized}
-                      className="text-center text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">4° Boleto</label>
-                    <Input
-                      type="number"
-                      value={boletoDueDates[3] || 40}
-                      onChange={(e) => {
-                        const newDates = [...boletoDueDates];
-                        newDates[3] = parseInt(e.target.value) || 40;
-                        setBoletoDueDates(newDates);
-                      }}
-                      disabled={isFinalized}
-                      className="text-center text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">5° Boleto</label>
-                    <Input
-                      type="number"
-                      value={boletoDueDates[4] || 50}
-                      onChange={(e) => {
-                        const newDates = [...boletoDueDates];
-                        newDates[4] = parseInt(e.target.value) || 50;
-                        setBoletoDueDates(newDates);
-                      }}
-                      disabled={isFinalized}
-                      className="text-center text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">6° Boleto</label>
-                    <Input
-                      type="number"
-                      value={boletoDueDates[5] || 60}
-                      onChange={(e) => {
-                        const newDates = [...boletoDueDates];
-                        newDates[5] = parseInt(e.target.value) || 60;
-                        setBoletoDueDates(newDates);
-                      }}
-                      disabled={isFinalized}
-                      className="text-center text-xs"
-                    />
+              {getPaymentMethodName(paymentMethodId)?.toLowerCase().includes('boleto') && (
+                <div className="mb-4">
+                  <Label>Prazos dos Boletos (em dias)</Label>
+                  <div className="grid grid-cols-6 gap-2 mt-2">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">1° Boleto</label>
+                      <Input
+                        type="number"
+                        value={boletoDueDates[0] || 10}
+                        onChange={(e) => {
+                          const newDates = [...boletoDueDates];
+                          newDates[0] = parseInt(e.target.value) || 10;
+                          setBoletoDueDates(newDates);
+                        }}
+                        disabled={isFinalized}
+                        className="text-center text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">2° Boleto</label>
+                      <Input
+                        type="number"
+                        value={boletoDueDates[1] || 20}
+                        onChange={(e) => {
+                          const newDates = [...boletoDueDates];
+                          newDates[1] = parseInt(e.target.value) || 20;
+                          setBoletoDueDates(newDates);
+                        }}
+                        disabled={isFinalized}
+                        className="text-center text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">3° Boleto</label>
+                      <Input
+                        type="number"
+                        value={boletoDueDates[2] || 30}
+                        onChange={(e) => {
+                          const newDates = [...boletoDueDates];
+                          newDates[2] = parseInt(e.target.value) || 30;
+                          setBoletoDueDates(newDates);
+                        }}
+                        disabled={isFinalized}
+                        className="text-center text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">4° Boleto</label>
+                      <Input
+                        type="number"
+                        value={boletoDueDates[3] || 40}
+                        onChange={(e) => {
+                          const newDates = [...boletoDueDates];
+                          newDates[3] = parseInt(e.target.value) || 40;
+                          setBoletoDueDates(newDates);
+                        }}
+                        disabled={isFinalized}
+                        className="text-center text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">5° Boleto</label>
+                      <Input
+                        type="number"
+                        value={boletoDueDates[4] || 50}
+                        onChange={(e) => {
+                          const newDates = [...boletoDueDates];
+                          newDates[4] = parseInt(e.target.value) || 50;
+                          setBoletoDueDates(newDates);
+                        }}
+                        disabled={isFinalized}
+                        className="text-center text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">6° Boleto</label>
+                      <Input
+                        type="number"
+                        value={boletoDueDates[5] || 60}
+                        onChange={(e) => {
+                          const newDates = [...boletoDueDates];
+                          newDates[5] = parseInt(e.target.value) || 60;
+                          setBoletoDueDates(newDates);
+                        }}
+                        disabled={isFinalized}
+                        className="text-center text-xs"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>

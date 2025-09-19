@@ -289,7 +289,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
     const option = shippingOptions.find(o => o.id === id);
     return option?.name || 'Não informado';
   };
-
+  
   // Verificar se deve mostrar informações de parcelas/prazos
   const shouldShowInstallmentInfo = () => {
     const paymentMethodName = getPaymentMethodName(saleData?.payment_method_id)?.toLowerCase();
@@ -303,7 +303,11 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
     return paymentMethodName?.includes('cheque');
   };
 
-  if (!saleData) return null;
+  // Verificar se deve mostrar informações específicas de boleto
+  const shouldShowBoletoInfo = () => {
+    const paymentMethodName = getPaymentMethodName(saleData?.payment_method_id)?.toLowerCase();
+    return paymentMethodName?.includes('boleto');
+  };
 
   return (
     <TooltipProvider>
@@ -467,34 +471,35 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                   </div>
 
                   {/* Prazos dos Cheques - só mostrar se for pagamento com cheque */}
-                  {shouldShowCheckInfo() && (
+                  {shouldShowCheckInfo() && Array.isArray(saleData.check_due_dates) && saleData.check_due_dates.length > 0 && (
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Prazos dos Cheques (em dias)</label>
                       <div className="grid grid-cols-4 gap-4">
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">1° Cheque (dias)</label>
-                          <div className="p-2 bg-white border border-gray-200 rounded text-center">
-                            {saleData.check_due_dates?.[0] || 10}
+                        {saleData.check_due_dates.map((days, idx) => (
+                          <div key={`check-${idx}`}>
+                            <label className="block text-xs text-gray-600 mb-1">{idx + 1}° Cheque (dias)</label>
+                            <div className="p-2 bg-white border border-gray-200 rounded text-center">
+                              {days}
+                            </div>
                           </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">2° Cheque (dias)</label>
-                          <div className="p-2 bg-white border border-gray-200 rounded text-center">
-                            {saleData.check_due_dates?.[1] || 20}
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Prazos dos Boletos - só mostrar se for pagamento com boleto */}
+                  {shouldShowBoletoInfo() && Array.isArray(saleData.boleto_due_dates) && saleData.boleto_due_dates.length > 0 && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Prazos dos Boletos (em dias)</label>
+                      <div className="grid grid-cols-6 gap-4">
+                        {saleData.boleto_due_dates.map((days, idx) => (
+                          <div key={`boleto-${idx}`}>
+                            <label className="block text-xs text-gray-600 mb-1">{idx + 1}° Boleto (dias)</label>
+                            <div className="p-2 bg-white border border-gray-200 rounded text-center">
+                              {days}
+                            </div>
                           </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">3° Cheque (dias)</label>
-                          <div className="p-2 bg-white border border-gray-200 rounded text-center">
-                            {saleData.check_due_dates?.[2] || 30}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-600 mb-1">4° Cheque (dias)</label>
-                          <div className="p-2 bg-white border border-gray-200 rounded text-center">
-                            {saleData.check_due_dates?.[3] || 40}
-                          </div>
-                        </div>
+                        ))}
                       </div>
                     </div>
                   )}
