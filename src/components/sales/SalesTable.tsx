@@ -63,6 +63,7 @@ interface SalesTableProps {
   onConfirmDelivery: (saleId: string) => void;
   onViewDeliveryNotes: (saleId: string) => void;
   onFinalizeSale: (saleId: string) => void;
+  onGenerateShippingLabel: (saleId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -97,6 +98,7 @@ const SalesTable = ({
   onConfirmDelivery,
   onViewDeliveryNotes,
   onFinalizeSale,
+  onGenerateShippingLabel,
   getStatusColor,
   getStatusLabel,
   formatSaleId,
@@ -362,6 +364,7 @@ const SalesTable = ({
                 selectedItems={selectedItems}
                 onItemSelect={onItemSelect}
                 showBulkActions={showBulkActions}
+                onGenerateShippingLabel={onGenerateShippingLabel}
               />
             ))}
           </TableBody>

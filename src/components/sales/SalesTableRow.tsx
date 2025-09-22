@@ -60,6 +60,7 @@ interface SalesTableRowProps {
   onConfirmDelivery: (saleId: string) => void;
   onViewDeliveryNotes: (saleId: string) => void;
   onFinalizeSale: (saleId: string) => void;
+  onGenerateShippingLabel: (saleId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -94,7 +95,8 @@ const SalesTableRow = ({
   getCurrentResponsible,
   selectedItems,
   onItemSelect,
-  showBulkActions = false
+  showBulkActions = false,
+  onGenerateShippingLabel
 }: SalesTableRowProps) => {
   const openTrackingPage = (trackingCode: string) => {
     const url = `https://www2.correios.com.br/sistemas/rastreamento/resultado.cfm?objeto=${trackingCode}`;
@@ -111,10 +113,13 @@ const SalesTableRow = ({
              (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Package className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" />
+                  <Package 
+                    className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" 
+                    onClick={() => onGenerateShippingLabel(sale.id)}
+                  />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Pronta para gerar etiqueta dos Correios</p>
+                  <p>Gerar etiqueta dos Correios</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -188,10 +193,13 @@ const SalesTableRow = ({
              (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Package className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" />
+                  <Package 
+                    className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" 
+                    onClick={() => onGenerateShippingLabel(sale.id)}
+                  />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Pronta para gerar etiqueta dos Correios</p>
+                  <p>Gerar etiqueta dos Correios</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -284,10 +292,13 @@ const SalesTableRow = ({
              (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Package className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" />
+                  <Package 
+                    className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" 
+                    onClick={() => onGenerateShippingLabel(sale.id)}
+                  />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Pronta para gerar etiqueta dos Correios</p>
+                  <p>Gerar etiqueta dos Correios</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -366,10 +377,13 @@ const SalesTableRow = ({
              (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Package className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" />
+                  <Package 
+                    className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" 
+                    onClick={() => onGenerateShippingLabel(sale.id)}
+                  />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Pronta para gerar etiqueta dos Correios</p>
+                  <p>Gerar etiqueta dos Correios</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -473,10 +487,13 @@ const SalesTableRow = ({
            (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Package className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" />
+                <Package 
+                  className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" 
+                  onClick={() => onGenerateShippingLabel(sale.id)}
+                />
               </TooltipTrigger>
               <TooltipContent>
-                <p>Pronta para gerar etiqueta dos Correios</p>
+                <p>Gerar etiqueta dos Correios</p>
               </TooltipContent>
             </Tooltip>
           )}

@@ -15,6 +15,7 @@ import DeliveryConfirmModal from './sales/DeliveryConfirmModal';
 import DeliveryNotesModal from './sales/DeliveryNotesModal';
 import StatusChangeModal from './sales/StatusChangeModal';
 import FinalizeSaleModal from './sales/FinalizeSaleModal';
+import ShippingLabelConfirmModal from './ShippingLabelConfirmModal';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { formatSaleId } from '@/lib/budgetFormatter';
@@ -65,6 +66,8 @@ const SalesManagement = () => {
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [deletingBulk, setDeletingBulk] = useState(false);
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
+  const [shippingLabelModalOpen, setShippingLabelModalOpen] = useState(false);
+  const [selectedSaleForShippingLabel, setSelectedSaleForShippingLabel] = useState<string | null>(null);
 
   // Bulk selection hook
   const {
@@ -323,6 +326,34 @@ const SalesManagement = () => {
     }
   };
 
+  const handleGenerateShippingLabel = (saleId: string) => {
+    setSelectedSaleForShippingLabel(saleId);
+    setShippingLabelModalOpen(true);
+  };
+
+  const handleConfirmShippingLabel = async () => {
+    if (!selectedSaleForShippingLabel) return;
+
+    try {
+      const { error } = await supabase
+        .from('sales')
+        .update({ 
+          ready_for_shipping_label: false
+        })
+        .eq('id', selectedSaleForShippingLabel);
+
+      if (error) throw error;
+      
+      toast.success('Etiqueta gerada com sucesso! O ícone foi removido da lista.');
+      setShippingLabelModalOpen(false);
+      setSelectedSaleForShippingLabel(null);
+      fetchSales();
+    } catch (error) {
+      console.error('Erro ao gerar etiqueta:', error);
+      toast.error('Erro ao gerar etiqueta');
+    }
+  };
+
   // Get selected sale data for modals
   const selectedSale = selectedSaleId ? sales.find(sale => sale.id === selectedSaleId) : null;
   const selectedDeliverySale = selectedSaleForDelivery ? sales.find(sale => sale.id === selectedSaleForDelivery) : null;
@@ -370,6 +401,7 @@ const SalesManagement = () => {
         getStatusLabel={getStatusLabel}
         formatSaleId={formatSaleIdWithData}
         getCurrentResponsible={getCurrentResponsible}
+        onGenerateShippingLabel={handleGenerateShippingLabel}
       />
 
       {/* Modals */}
@@ -475,6 +507,14 @@ const SalesManagement = () => {
         onClose={() => setFinalizeModalOpen(false)}
         onConfirm={handleFinalizeSaleConfirm}
         saleId={selectedSaleId ? formatSaleIdWithData(sales.find(s => s.id === selectedSaleId) || {} as any) : ''}
+      />
+
+      {/* Modal de Confirmação de Etiqueta */}
+      <ShippingLabelConfirmModal
+        isOpen={shippingLabelModalOpen}
+        onClose={() => setShippingLabelModalOpen(false)}
+        onConfirm={handleConfirmShippingLabel}
+        saleId={selectedSaleForShippingLabel ? formatSaleIdWithData(sales.find(s => s.id === selectedSaleForShippingLabel) || {} as any) : ''}
       />
     </>
   );

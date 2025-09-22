@@ -61,6 +61,7 @@ interface SalesManagementContentProps {
   onConfirmDelivery: (saleId: string) => void;
   onViewDeliveryNotes: (saleId: string) => void;
   onFinalizeSale: (saleId: string) => void;
+  onGenerateShippingLabel: (saleId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -94,6 +95,7 @@ const SalesManagementContent = ({
   onConfirmDelivery,
   onViewDeliveryNotes,
   onFinalizeSale,
+  onGenerateShippingLabel,
   getStatusColor,
   getStatusLabel,
   formatSaleId,
@@ -145,6 +147,7 @@ const SalesManagementContent = ({
             getStatusLabel={getStatusLabel}
             formatSaleId={formatSaleId}
             getCurrentResponsible={getCurrentResponsible}
+            onGenerateShippingLabel={onGenerateShippingLabel}
           />
 
           <SalesPagination
