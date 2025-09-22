@@ -236,6 +236,18 @@ const Catalog = () => {
         return;
       }
 
+      // Obter todos os cards de produtos
+      const productCards = catalogContainer.querySelectorAll('> div');
+      if (productCards.length === 0) {
+        toast.error('Nenhum produto encontrado para impressão');
+        return;
+      }
+
+      // Calcular quantas colunas temos baseado no grid
+      const containerStyles = window.getComputedStyle(catalogContainer);
+      const gridTemplateColumns = containerStyles.gridTemplateColumns;
+      const columnCount = gridTemplateColumns.split(' ').length;
+
       // Capturar a imagem do container
       const canvas = await html2canvas(catalogContainer, {
         scale: 2,
@@ -245,55 +257,132 @@ const Catalog = () => {
       });
 
       // Criar PDF
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
       
       // Calcular dimensões mantendo a proporção
       const imgWidth = pageWidth - (margin * 2);
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      let position = margin;
+      const scale = imgWidth / canvas.width;
+      const imgHeight = canvas.height * scale;
       
       // Se a imagem couber em uma página
       if (imgHeight <= pageHeight - (margin * 2)) {
-        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
       } else {
-        // Dividir em múltiplas páginas
-        const pageImgHeight = pageHeight - (margin * 2);
-        const totalPages = Math.ceil(imgHeight / pageImgHeight);
-        
-        for (let i = 0; i < totalPages; i++) {
-          if (i > 0) {
-            pdf.addPage();
+        // Calcular alturas das linhas de produtos
+        const productRows: Array<{elements: Element[], top: number, bottom: number}> = [];
+        let currentRow: Element[] = [];
+        let currentRowTop = -1;
+        let currentRowBottom = -1;
+
+        // Agrupar produtos por linha
+        Array.from(productCards).forEach((card, index) => {
+          const rect = card.getBoundingClientRect();
+          const containerRect = catalogContainer.getBoundingClientRect();
+          const relativeTop = rect.top - containerRect.top;
+          const relativeBottom = rect.bottom - containerRect.top;
+
+          // Se é o primeiro produto ou está na mesma linha
+          if (currentRowTop === -1 || Math.abs(relativeTop - currentRowTop) < 50) {
+            if (currentRowTop === -1) {
+              currentRowTop = relativeTop;
+              currentRowBottom = relativeBottom;
+            } else {
+              currentRowBottom = Math.max(currentRowBottom, relativeBottom);
+            }
+            currentRow.push(card);
+          } else {
+            // Nova linha
+            if (currentRow.length > 0) {
+              productRows.push({
+                elements: [...currentRow],
+                top: currentRowTop,
+                bottom: currentRowBottom
+              });
+            }
+            currentRow = [card];
+            currentRowTop = relativeTop;
+            currentRowBottom = relativeBottom;
           }
+        });
+
+        // Adicionar a última linha
+        if (currentRow.length > 0) {
+          productRows.push({
+            elements: [...currentRow],
+            top: currentRowTop,
+            bottom: currentRowBottom
+          });
+        }
+
+        // Gerar PDF página por página, respeitando as linhas
+        const maxPageHeight = (pageHeight - (margin * 2)) / scale;
+        let currentPageHeight = 0;
+        let currentSourceY = 0;
+        let isFirstPage = true;
+
+        for (let i = 0; i < productRows.length; i++) {
+          const row = productRows[i];
+          const rowHeight = row.bottom - row.top;
           
-          const sourceY = (i * pageImgHeight * canvas.height) / imgHeight;
-          const sourceHeight = Math.min(
-            (pageImgHeight * canvas.height) / imgHeight,
-            canvas.height - sourceY
-          );
+          // Se a linha não cabe na página atual, criar nova página
+          if (!isFirstPage && currentPageHeight + rowHeight > maxPageHeight) {
+            // Finalizar página atual
+            const pageCanvas = document.createElement('canvas');
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = currentPageHeight;
+            const pageCtx = pageCanvas.getContext('2d');
+            
+            if (pageCtx) {
+              pageCtx.drawImage(
+                canvas,
+                0, currentSourceY, canvas.width, currentPageHeight,
+                0, 0, canvas.width, currentPageHeight
+              );
+              
+              const pageImgData = pageCanvas.toDataURL('image/png');
+              const pageImgHeight = currentPageHeight * scale;
+              
+              pdf.addImage(pageImgData, 'PNG', margin, margin, imgWidth, pageImgHeight);
+            }
+            
+            // Preparar nova página
+            pdf.addPage();
+            currentSourceY = row.top;
+            currentPageHeight = rowHeight;
+          } else {
+            // Adicionar linha à página atual
+            if (isFirstPage) {
+              currentSourceY = row.top;
+              currentPageHeight = rowHeight;
+              isFirstPage = false;
+            } else {
+              currentPageHeight = row.bottom - currentSourceY;
+            }
+          }
+        }
+
+        // Finalizar última página
+        if (currentPageHeight > 0) {
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = currentPageHeight;
+          const pageCtx = pageCanvas.getContext('2d');
           
-          // Criar canvas temporário para esta seção
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = canvas.width;
-          tempCanvas.height = sourceHeight;
-          const tempCtx = tempCanvas.getContext('2d');
-          
-          if (tempCtx) {
-            tempCtx.drawImage(
+          if (pageCtx) {
+            pageCtx.drawImage(
               canvas,
-              0, sourceY, canvas.width, sourceHeight,
-              0, 0, canvas.width, sourceHeight
+              0, currentSourceY, canvas.width, currentPageHeight,
+              0, 0, canvas.width, currentPageHeight
             );
             
-            const tempImgData = tempCanvas.toDataURL('image/png');
-            const tempImgHeight = (sourceHeight * imgWidth) / canvas.width;
+            const pageImgData = pageCanvas.toDataURL('image/png');
+            const pageImgHeight = currentPageHeight * scale;
             
-            pdf.addImage(tempImgData, 'PNG', margin, margin, imgWidth, tempImgHeight);
+            pdf.addImage(pageImgData, 'PNG', margin, margin, imgWidth, pageImgHeight);
           }
         }
       }
