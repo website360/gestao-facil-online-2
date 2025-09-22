@@ -276,10 +276,10 @@ const SalesTableRow = ({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onDeliveryStart(sale.id)}
+                    onClick={() => onConfirmDelivery(sale.id)}
                     className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
                   >
-                    <Truck className="h-4 w-4" />
+                    <PackageCheck className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
