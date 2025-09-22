@@ -38,6 +38,7 @@ interface Sale {
   total_weight_kg?: number;
   shipping_option_name?: string | null;
   shipping_option_visible?: boolean;
+  ready_for_shipping_label?: boolean;
 }
 
 interface SalesTableRowProps {
@@ -524,6 +525,27 @@ const SalesTableRow = ({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Confirmar Geração de Nota Fiscal</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Botão para gerar etiqueta dos Correios */}
+          {(userRole === 'admin' || userRole === 'gerente') && 
+           sale.ready_for_shipping_label && 
+           (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {/* TODO: Implementar geração de etiqueta */}}
+                  className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 animate-pulse"
+                >
+                  <Package className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Gerar Etiqueta dos Correios</p>
               </TooltipContent>
             </Tooltip>
           )}

@@ -786,6 +786,7 @@ export type Database = {
           notes: string | null
           payment_method_id: string | null
           payment_type_id: string | null
+          ready_for_shipping_label: boolean | null
           responsible_user_id: string | null
           separation_complete: boolean | null
           separation_completed_at: string | null
@@ -826,6 +827,7 @@ export type Database = {
           notes?: string | null
           payment_method_id?: string | null
           payment_type_id?: string | null
+          ready_for_shipping_label?: boolean | null
           responsible_user_id?: string | null
           separation_complete?: boolean | null
           separation_completed_at?: string | null
@@ -866,6 +868,7 @@ export type Database = {
           notes?: string | null
           payment_method_id?: string | null
           payment_type_id?: string | null
+          ready_for_shipping_label?: boolean | null
           responsible_user_id?: string | null
           separation_complete?: boolean | null
           separation_completed_at?: string | null

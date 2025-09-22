@@ -32,6 +32,7 @@ interface Sale {
   delivery_user_id?: string | null;
   shipping_option_visible?: boolean;
   shipping_option_name?: string | null;
+  ready_for_shipping_label?: boolean;
 }
 
 export const useSalesManagement = () => {

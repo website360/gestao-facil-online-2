@@ -43,6 +43,7 @@ interface Sale {
   created_by_profile: { name: string } | null;
   total_volumes?: number;
   total_weight_kg?: number;
+  ready_for_shipping_label?: boolean;
 }
 
 interface SaleVolume {

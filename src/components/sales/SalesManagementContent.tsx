@@ -31,6 +31,7 @@ interface Sale {
   invoice_number?: string;
   total_volumes?: number;
   total_weight_kg?: number;
+  ready_for_shipping_label?: boolean;
 }
 
 interface SalesManagementContentProps {

@@ -129,16 +129,24 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
       // Calcular peso total
       const totalWeight = volumes.reduce((sum, vol) => sum + vol.weight_kg, 0);
 
+      // Preparar dados para atualizar a venda
+      const updateData: any = {
+        status: 'nota_fiscal',
+        conference_user_id: user.id,
+        conference_completed_at: new Date().toISOString(),
+        total_volumes: totalVolumes,
+        total_weight_kg: totalWeight
+      };
+
+      // Se precisou de dimensões (frete Correios), marcar como pronta para gerar etiqueta
+      if (needsDimensions) {
+        updateData.ready_for_shipping_label = true;
+      }
+
       // Atualizar a venda com informações dos volumes e finalizar conferência
       const { error } = await supabase
         .from('sales')
-        .update({
-          status: 'nota_fiscal',
-          conference_user_id: user.id,
-          conference_completed_at: new Date().toISOString(),
-          total_volumes: totalVolumes,
-          total_weight_kg: totalWeight
-        })
+        .update(updateData)
         .eq('id', saleId);
 
       if (error) throw error;
