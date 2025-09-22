@@ -105,7 +105,21 @@ const SalesTableRow = ({
     return (
       <TableRow key={sale.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100">
         <TableCell className="font-mono text-sm font-bold text-gray-900 py-4 px-6">
-          {formatSaleId(sale)}
+          <div className="flex items-center gap-2">
+            {/* Ícone para gerar etiqueta dos Correios */}
+            {sale.ready_for_shipping_label && 
+             (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Package className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Pronta para gerar etiqueta dos Correios</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {formatSaleId(sale)}
+          </div>
         </TableCell>
         <TableCell className="font-medium text-gray-800 py-4 px-6">{sale.clients?.name}</TableCell>
         <TableCell className="py-4 px-6">
@@ -168,7 +182,21 @@ const SalesTableRow = ({
     return (
       <TableRow key={sale.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100">
         <TableCell className="font-mono text-sm font-bold text-gray-900 py-4 px-6">
-          {formatSaleId(sale)}
+          <div className="flex items-center gap-2">
+            {/* Ícone para gerar etiqueta dos Correios */}
+            {sale.ready_for_shipping_label && 
+             (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Package className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Pronta para gerar etiqueta dos Correios</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {formatSaleId(sale)}
+          </div>
         </TableCell>
         <TableCell className="font-medium text-gray-800 py-4 px-6">{sale.clients?.name}</TableCell>
         <TableCell className="py-4 px-6">
@@ -250,7 +278,21 @@ const SalesTableRow = ({
     return (
       <TableRow key={sale.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100">
         <TableCell className="font-mono text-sm font-bold text-gray-900 py-4 px-6">
-          {formatSaleId(sale)}
+          <div className="flex items-center gap-2">
+            {/* Ícone para gerar etiqueta dos Correios */}
+            {sale.ready_for_shipping_label && 
+             (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Package className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Pronta para gerar etiqueta dos Correios</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {formatSaleId(sale)}
+          </div>
         </TableCell>
         <TableCell className="font-medium text-gray-800 py-4 px-6">{sale.clients?.name}</TableCell>
         <TableCell className="py-4 px-6">
@@ -318,7 +360,21 @@ const SalesTableRow = ({
     return (
       <TableRow key={sale.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100">
         <TableCell className="font-mono text-sm font-bold text-gray-900 py-4 px-6">
-          {formatSaleId(sale)}
+          <div className="flex items-center gap-2">
+            {/* Ícone para gerar etiqueta dos Correios */}
+            {sale.ready_for_shipping_label && 
+             (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Package className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Pronta para gerar etiqueta dos Correios</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {formatSaleId(sale)}
+          </div>
         </TableCell>
         <TableCell className="font-medium text-gray-800 py-4 px-6">{sale.clients?.name}</TableCell>
         <TableCell className="py-4 px-6">
@@ -410,7 +466,22 @@ const SalesTableRow = ({
   return (
     <TableRow key={sale.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100">
       <TableCell className="font-mono text-sm font-bold text-gray-900 py-4 px-6">
-        {formatSaleId(sale)}
+        <div className="flex items-center gap-2">
+          {/* Ícone para gerar etiqueta dos Correios */}
+          {(userRole === 'admin' || userRole === 'gerente') && 
+           sale.ready_for_shipping_label && 
+           (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Package className="h-4 w-4 text-orange-600 animate-pulse cursor-pointer" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Pronta para gerar etiqueta dos Correios</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {formatSaleId(sale)}
+        </div>
       </TableCell>
       <TableCell className="font-medium text-gray-800 py-4 px-6">{sale.clients?.name}</TableCell>
       <TableCell className="py-4 px-6">
@@ -525,27 +596,6 @@ const SalesTableRow = ({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Confirmar Geração de Nota Fiscal</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {/* Botão para gerar etiqueta dos Correios */}
-          {(userRole === 'admin' || userRole === 'gerente') && 
-           sale.ready_for_shipping_label && 
-           (sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega') && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {/* TODO: Implementar geração de etiqueta */}}
-                  className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 animate-pulse"
-                >
-                  <Package className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Gerar Etiqueta dos Correios</p>
               </TooltipContent>
             </Tooltip>
           )}
