@@ -11,7 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
-import { Search, ShoppingBag, Package, Filter, AlertCircle, Link } from 'lucide-react';
+import { Search, ShoppingBag, Package, Filter, AlertCircle, Link, Printer } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface Product {
   id: string;
@@ -223,6 +225,97 @@ const Catalog = () => {
     }
   };
 
+  const generatePDF = async () => {
+    try {
+      toast.loading('Gerando PDF do catálogo...');
+      
+      // Buscar o elemento que contém os produtos
+      const catalogContainer = document.getElementById('catalog-products-grid');
+      if (!catalogContainer) {
+        toast.error('Erro ao localizar o conteúdo para impressão');
+        return;
+      }
+
+      // Capturar a imagem do container
+      const canvas = await html2canvas(catalogContainer, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#F2F8FF'
+      });
+
+      // Criar PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      
+      // Calcular dimensões mantendo a proporção
+      const imgWidth = pageWidth - (margin * 2);
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      let position = margin;
+      
+      // Se a imagem couber em uma página
+      if (imgHeight <= pageHeight - (margin * 2)) {
+        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+      } else {
+        // Dividir em múltiplas páginas
+        const pageImgHeight = pageHeight - (margin * 2);
+        const totalPages = Math.ceil(imgHeight / pageImgHeight);
+        
+        for (let i = 0; i < totalPages; i++) {
+          if (i > 0) {
+            pdf.addPage();
+          }
+          
+          const sourceY = (i * pageImgHeight * canvas.height) / imgHeight;
+          const sourceHeight = Math.min(
+            (pageImgHeight * canvas.height) / imgHeight,
+            canvas.height - sourceY
+          );
+          
+          // Criar canvas temporário para esta seção
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = canvas.width;
+          tempCanvas.height = sourceHeight;
+          const tempCtx = tempCanvas.getContext('2d');
+          
+          if (tempCtx) {
+            tempCtx.drawImage(
+              canvas,
+              0, sourceY, canvas.width, sourceHeight,
+              0, 0, canvas.width, sourceHeight
+            );
+            
+            const tempImgData = tempCanvas.toDataURL('image/png');
+            const tempImgHeight = (sourceHeight * imgWidth) / canvas.width;
+            
+            pdf.addImage(tempImgData, 'PNG', margin, margin, imgWidth, tempImgHeight);
+          }
+        }
+      }
+      
+      // Gerar nome do arquivo com data atual
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0];
+      const fileName = `catalogo-produtos-${dateStr}.pdf`;
+      
+      // Fazer download
+      pdf.save(fileName);
+      
+      toast.dismiss();
+      toast.success('PDF do catálogo gerado com sucesso!');
+      
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast.dismiss();
+      toast.error('Erro ao gerar PDF do catálogo');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ backgroundColor: '#F2F8FF' }}>
@@ -429,15 +522,27 @@ const Catalog = () => {
                   </Badge>
                 )}
               </div>
-              <div>
-                Mostrando {products.length} produtos
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={generatePDF}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 hover:bg-blue-50"
+                  disabled={products.length === 0}
+                >
+                  <Printer className="w-4 h-4" />
+                  Gerar PDF
+                </Button>
+                <div>
+                  Mostrando {products.length} produtos
+                </div>
               </div>
             </div>
           </CardHeader>
         </Card>
 
         {/* Grid de produtos com fotos */}
-        <div className={getGridClasses()}>
+        <div id="catalog-products-grid" className={getGridClasses()}>
           {products.map((product) => {
             return (
               <Card key={product.id} className="glass hover:shadow-lg transition-all">
