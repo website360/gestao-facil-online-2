@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
-import { Search, ShoppingBag, Package, Filter, AlertCircle, Link, Printer } from 'lucide-react';
+import { Search, ShoppingBag, Package, Filter, AlertCircle, Printer } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -450,20 +450,6 @@ const Catalog = () => {
                  userType === 'seller_internal' ? 'Visualização Vendedor Interno' :
                  userType === 'seller_external' ? 'Visualização Vendedor Externo' : 'Visualização Pública'}
               </Badge>
-            </div>
-          )}
-          
-          {/* Link para cadastro se for público */}
-          {userType === 'public' && (
-            <div className="flex justify-center mb-4">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/cadastro')}
-                className="flex items-center gap-2"
-              >
-                <Link className="w-4 h-4" />
-                Solicitar Cadastro
-              </Button>
             </div>
           )}
         </div>
