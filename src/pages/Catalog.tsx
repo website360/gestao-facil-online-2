@@ -259,14 +259,19 @@ const Catalog = () => {
       const availableWidth = pageWidth - (margin * 2);
       const availableHeight = pageHeight - (margin * 2);
       
-      // Calcular escala para ajustar à largura da página
-      const scale = availableWidth / canvas.width;
-      const scaledCanvasHeight = canvas.height * scale;
+      // Calcular escalas que respeitam largura e altura
+      const widthScaleAll = availableWidth / canvas.width;
+      const heightScaleAll = availableHeight / canvas.height;
+      const baseScale = Math.min(widthScaleAll, heightScaleAll);
+      const scaledCanvasHeight = canvas.height * baseScale;
+      const domToCanvas = canvas.width / catalogContainer.clientWidth;
       
-      // Se tudo cabe em uma página
+      // Se tudo cabe em uma página (com escala que respeita a altura)
       if (scaledCanvasHeight <= availableHeight) {
         const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', margin, margin, availableWidth, scaledCanvasHeight);
+        const drawWidth = canvas.width * baseScale;
+        const drawHeight = canvas.height * baseScale;
+        pdf.addImage(imgData, 'PNG', margin, margin, drawWidth, drawHeight);
       } else {
         // Calcular quantas linhas de produtos temos
         const containerRect = catalogContainer.getBoundingClientRect();
@@ -346,23 +351,27 @@ const Catalog = () => {
             
             const pageCanvas = document.createElement('canvas');
             pageCanvas.width = canvas.width;
-            pageCanvas.height = pageHeight;
+            pageCanvas.height = Math.round(pageHeight * domToCanvas);
             const pageCtx = pageCanvas.getContext('2d');
             
             if (pageCtx) {
               pageCtx.drawImage(
                 canvas,
-                0, pageStartY, canvas.width, pageHeight,
-                0, 0, canvas.width, pageHeight
+                0, Math.round(pageStartY * domToCanvas), canvas.width, Math.round(pageHeight * domToCanvas),
+                0, 0, canvas.width, Math.round(pageHeight * domToCanvas)
               );
               
               const pageImgData = pageCanvas.toDataURL('image/png');
-              const pageImgHeight = pageHeight * scale;
+              const widthScalePage = availableWidth / canvas.width;
+              const heightScalePage = availableHeight / pageCanvas.height;
+              const finalScale = Math.min(widthScalePage, heightScalePage);
+              const drawWidth = canvas.width * finalScale;
+              const drawHeight = pageCanvas.height * finalScale;
               
               if (pageNumber > 0) {
                 pdf.addPage();
               }
-              pdf.addImage(pageImgData, 'PNG', margin, margin, availableWidth, pageImgHeight);
+              pdf.addImage(pageImgData, 'PNG', margin, margin, drawWidth, drawHeight);
               pageNumber++;
             }
             
@@ -383,23 +392,27 @@ const Catalog = () => {
           
           const pageCanvas = document.createElement('canvas');
           pageCanvas.width = canvas.width;
-          pageCanvas.height = pageHeight;
+          pageCanvas.height = Math.round(pageHeight * domToCanvas);
           const pageCtx = pageCanvas.getContext('2d');
           
           if (pageCtx) {
             pageCtx.drawImage(
               canvas,
-              0, pageStartY, canvas.width, pageHeight,
-              0, 0, canvas.width, pageHeight
+              0, Math.round(pageStartY * domToCanvas), canvas.width, Math.round(pageHeight * domToCanvas),
+              0, 0, canvas.width, Math.round(pageHeight * domToCanvas)
             );
             
             const pageImgData = pageCanvas.toDataURL('image/png');
-            const pageImgHeight = pageHeight * scale;
+            const widthScalePage = availableWidth / canvas.width;
+            const heightScalePage = availableHeight / pageCanvas.height;
+            const finalScale = Math.min(widthScalePage, heightScalePage);
+            const drawWidth = canvas.width * finalScale;
+            const drawHeight = pageCanvas.height * finalScale;
             
             if (pageNumber > 0) {
               pdf.addPage();
             }
-            pdf.addImage(pageImgData, 'PNG', margin, margin, availableWidth, pageImgHeight);
+            pdf.addImage(pageImgData, 'PNG', margin, margin, drawWidth, drawHeight);
           }
         }
       }
