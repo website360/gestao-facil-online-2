@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useBudgetCalculations } from '@/hooks/useBudgetCalculations';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 import { toast } from 'sonner';
+import SalePDFGenerator from './sales/SalePDFGenerator';
 
 import { formatBudgetId, formatSaleId } from '@/lib/budgetFormatter';
 
@@ -526,15 +527,18 @@ const ClientWelcomeDashboard = () => {
                             )}
                           </>
                         ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewSale(item.id)}
-                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
-                            title="Ver detalhes da venda"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-1 justify-center items-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewSale(item.id)}
+                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
+                              title="Ver detalhes da venda"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <SalePDFGenerator sale={item.original_data} />
+                          </div>
                         )}
                       </div>
                     </TableCell>
