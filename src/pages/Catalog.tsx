@@ -237,7 +237,7 @@ const Catalog = () => {
       }
 
       // Obter todos os cards de produtos
-      const productCards = catalogContainer.querySelectorAll('> div');
+      const productCards = catalogContainer.children;
       if (productCards.length === 0) {
         toast.error('Nenhum produto encontrado para impressão');
         return;
