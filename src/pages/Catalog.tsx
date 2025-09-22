@@ -319,20 +319,31 @@ const Catalog = () => {
           });
         }
 
-        // Gerar páginas
-        const maxPageHeightInPixels = availableHeight / scale;
-        let currentPageStartY = 0;
-        let currentPageHeight = 0;
-        let rowsInCurrentPage: typeof productRows = [];
+        // Gerar páginas com limite de linhas baseado nas colunas
+        const getMaxRowsPerPage = (columns: number) => {
+          switch (columns) {
+            case 3: return 3;
+            case 4: return 3;
+            case 5: return 4;
+            default: return 3;
+          }
+        };
+        
+        const maxRowsPerPage = getMaxRowsPerPage(columnsCount);
+        let currentPageRows: typeof productRows = [];
+        let pageNumber = 0;
         
         for (let i = 0; i < productRows.length; i++) {
           const row = productRows[i];
-          const rowHeightScaled = row.height;
           
-          // Se esta linha não cabe na página atual, finalizar a página
-          if (currentPageHeight > 0 && currentPageHeight + rowHeightScaled > maxPageHeightInPixels) {
+          // Se já temos o máximo de linhas na página atual ou é a primeira página
+          if (currentPageRows.length === maxRowsPerPage) {
             // Gerar página atual
-            const pageHeight = currentPageHeight;
+            const firstRow = currentPageRows[0];
+            const lastRow = currentPageRows[currentPageRows.length - 1];
+            const pageStartY = firstRow.top;
+            const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
+            
             const pageCanvas = document.createElement('canvas');
             pageCanvas.width = canvas.width;
             pageCanvas.height = pageHeight;
@@ -341,51 +352,51 @@ const Catalog = () => {
             if (pageCtx) {
               pageCtx.drawImage(
                 canvas,
-                0, currentPageStartY, canvas.width, pageHeight,
+                0, pageStartY, canvas.width, pageHeight,
                 0, 0, canvas.width, pageHeight
               );
               
               const pageImgData = pageCanvas.toDataURL('image/png');
               const pageImgHeight = pageHeight * scale;
               
-              if (pdf.internal.pages.length > 1) {
+              if (pageNumber > 0) {
                 pdf.addPage();
               }
               pdf.addImage(pageImgData, 'PNG', margin, margin, availableWidth, pageImgHeight);
+              pageNumber++;
             }
             
             // Iniciar nova página
-            currentPageStartY = row.top;
-            currentPageHeight = row.height;
-            rowsInCurrentPage = [row];
+            currentPageRows = [row];
           } else {
             // Adicionar linha à página atual
-            if (currentPageHeight === 0) {
-              currentPageStartY = row.top;
-            }
-            currentPageHeight = (row.top + row.height) - currentPageStartY;
-            rowsInCurrentPage.push(row);
+            currentPageRows.push(row);
           }
         }
         
-        // Gerar última página
-        if (currentPageHeight > 0) {
+        // Gerar última página se houver linhas restantes
+        if (currentPageRows.length > 0) {
+          const firstRow = currentPageRows[0];
+          const lastRow = currentPageRows[currentPageRows.length - 1];
+          const pageStartY = firstRow.top;
+          const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
+          
           const pageCanvas = document.createElement('canvas');
           pageCanvas.width = canvas.width;
-          pageCanvas.height = currentPageHeight;
+          pageCanvas.height = pageHeight;
           const pageCtx = pageCanvas.getContext('2d');
           
           if (pageCtx) {
             pageCtx.drawImage(
               canvas,
-              0, currentPageStartY, canvas.width, currentPageHeight,
-              0, 0, canvas.width, currentPageHeight
+              0, pageStartY, canvas.width, pageHeight,
+              0, 0, canvas.width, pageHeight
             );
             
             const pageImgData = pageCanvas.toDataURL('image/png');
-            const pageImgHeight = currentPageHeight * scale;
+            const pageImgHeight = pageHeight * scale;
             
-            if (pdf.internal.pages.length > 1) {
+            if (pageNumber > 0) {
               pdf.addPage();
             }
             pdf.addImage(pageImgData, 'PNG', margin, margin, availableWidth, pageImgHeight);
