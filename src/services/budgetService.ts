@@ -30,6 +30,84 @@ interface BudgetFormData {
 }
 
 export class BudgetService {
+  // Função para comparar se apenas preços/descontos foram alterados
+  private static isOnlyPriceOrDiscountChange(
+    formData: BudgetFormData, 
+    originalBudget: LocalBudget
+  ): boolean {
+    console.log('=== CHECKING IF ONLY PRICE/DISCOUNT CHANGES ===');
+    console.log('Form data items:', formData.items);
+    console.log('Original budget items:', originalBudget.budget_items);
+    
+    // Verificar se desconto geral mudou
+    const generalDiscountChanged = formData.discount_percentage !== (originalBudget.discount_percentage || 0);
+    console.log('General discount changed:', generalDiscountChanged);
+    
+    // Verificar mudanças nos itens
+    const originalItems = originalBudget.budget_items || [];
+    const formItems = formData.items.filter(item => item.product_id && item.product_id.trim() !== '' && item.quantity > 0);
+    
+    // Se quantidade de itens mudou, não é apenas preço/desconto
+    if (originalItems.length !== formItems.length) {
+      console.log('Different number of items - not only price/discount change');
+      return false;
+    }
+    
+    // Verificar cada item
+    for (let i = 0; i < formItems.length; i++) {
+      const formItem = formItems[i];
+      const originalItem = originalItems.find(orig => orig.product_id === formItem.product_id);
+      
+      if (!originalItem) {
+        console.log('New product found - not only price/discount change');
+        return false;
+      }
+      
+      // Verificar se algo além de preço e desconto mudou
+      if (
+        formItem.product_id !== originalItem.product_id ||
+        formItem.quantity !== originalItem.quantity
+      ) {
+        console.log('Product or quantity changed - not only price/discount change');
+        return false;
+      }
+      
+      // Verificar se preço ou desconto do item mudou
+      const priceChanged = formItem.unit_price !== originalItem.unit_price;
+      const itemDiscountChanged = formItem.discount_percentage !== (originalItem.discount_percentage || 0);
+      
+      console.log(`Item ${i}: price changed: ${priceChanged}, discount changed: ${itemDiscountChanged}`);
+    }
+    
+    // Verificar se outras propriedades importantes mudaram
+    const otherFieldsChanged = (
+      formData.client_id !== originalBudget.client_id ||
+      formData.notes !== (originalBudget.notes || '') ||
+      formData.invoice_percentage !== (originalBudget.invoice_percentage || 0) ||
+      formData.payment_method_id !== (originalBudget.payment_method_id || '') ||
+      formData.payment_type_id !== (originalBudget.payment_type_id || '') ||
+      formData.shipping_option_id !== (originalBudget.shipping_option_id || '') ||
+      formData.shipping_cost !== (originalBudget.shipping_cost || 0) ||
+      formData.local_delivery_info !== (originalBudget.local_delivery_info || '') ||
+      formData.installments !== (originalBudget.installments || 1) ||
+      formData.check_installments !== (originalBudget.check_installments || 1) ||
+      JSON.stringify(formData.check_due_dates) !== JSON.stringify(originalBudget.check_due_dates || []) ||
+      formData.boleto_installments !== (originalBudget.boleto_installments || 1) ||
+      JSON.stringify(formData.boleto_due_dates) !== JSON.stringify(originalBudget.boleto_due_dates || [])
+    );
+    
+    console.log('Other fields changed:', otherFieldsChanged);
+    
+    // É apenas mudança de preço/desconto se:
+    // 1. Mudou desconto geral OU preços/descontos de itens
+    // 2. E NÃO mudou nenhum outro campo importante
+    const isPriceOrDiscountOnly = !otherFieldsChanged;
+    
+    console.log('Is only price/discount change:', isPriceOrDiscountOnly);
+    console.log('=== END CHECKING PRICE/DISCOUNT CHANGES ===');
+    
+    return isPriceOrDiscountOnly;
+  }
   static validateFormData(formData: BudgetFormData): boolean {
     console.log('=== VALIDATING FORM DATA ===');
     console.log('Form data received:', formData);
@@ -247,11 +325,41 @@ export class BudgetService {
       console.log('Calculating total amount...');
       const totalAmount = this.calculateTotalAmount(formData);
       console.log('Total amount calculated:', totalAmount);
+      
+      // Determinar o status baseado na lógica de negócio
+      let newStatus = formData.status;
+      
+      // Se for admin/gerente editando orçamento que estava aguardando aprovação
+      const isAdminOrManager = !isClient && (userRole === 'admin' || userRole === 'gerente');
+      const wasAwaitingApproval = editingBudget.status === 'aguardando_aprovacao';
+      
+      if (isAdminOrManager && wasAwaitingApproval) {
+        // Verificar se são apenas alterações de preço/desconto
+        const isOnlyPriceOrDiscountChange = this.isOnlyPriceOrDiscountChange(formData, editingBudget);
+        
+        if (isOnlyPriceOrDiscountChange) {
+          // Admin/gerente pode manter o status aguardando_aprovacao para aprovar diretamente
+          newStatus = 'aguardando_aprovacao';
+          console.log('Only price/discount changes detected - keeping status as aguardando_aprovacao for direct approval');
+        } else {
+          // Outras alterações fazem voltar para processando
+          newStatus = 'processando';
+          console.log('Other changes detected - returning to processando status');
+        }
+      } else if (isClient && wasAwaitingApproval) {
+        // Cliente sempre volta para processando quando edita
+        newStatus = 'processando';
+        console.log('Client editing - returning to processando status');
+      } else {
+        // Outros casos mantêm status processando ou status atual do form
+        newStatus = formData.status || 'processando';
+        console.log('Using form status or default processando:', newStatus);
+      }
 
       const budgetPayload = {
         client_id: formData.client_id,
         notes: formData.notes,
-        status: 'processando' as const,
+        status: newStatus,
         total_amount: totalAmount,
         discount_percentage: formData.discount_percentage,
         invoice_percentage: formData.invoice_percentage,
@@ -322,8 +430,15 @@ export class BudgetService {
       }
 
       console.log('New budget items inserted successfully');
+      
+      // Mostrar mensagem diferente baseada no status final
+      if (isAdminOrManager && wasAwaitingApproval && newStatus === 'aguardando_aprovacao') {
+        toast.success('Orçamento atualizado com sucesso! Apenas preços/descontos alterados - pronto para aprovação.');
+      } else {
+        toast.success('Orçamento atualizado com sucesso!');
+      }
+      
       console.log('=== END UPDATING BUDGET ===');
-      toast.success('Orçamento atualizado com sucesso!');
     } catch (error) {
       console.error('Error in updateBudget:', error);
       toast.error('Erro ao atualizar orçamento: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
