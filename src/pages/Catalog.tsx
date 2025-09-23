@@ -328,111 +328,198 @@ const Catalog = () => {
 
             // Criar promessa para renderizar cada produto
             const renderPromise = new Promise<void>((resolve) => {
-              // Card com borda
+              // Card com fundo branco e sombra sutil
+              ctx.fillStyle = '#FFFFFF'; 
+              ctx.fillRect(x + 6, y + 6, cardW - 12, cardH - 12);
+              
+              // Sombra do card
+              ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+              ctx.fillRect(x + 8, y + 8, cardW - 12, cardH - 12);
+              
+              // Card principal
               ctx.fillStyle = '#FFFFFF';
-              ctx.fillRect(x + 8, y + 8, cardW - 16, cardH - 16);
+              ctx.fillRect(x + 6, y + 6, cardW - 12, cardH - 12);
+              
+              // Borda sutil
               ctx.strokeStyle = '#E5E7EB';
               ctx.lineWidth = 1;
-              ctx.strokeRect(x + 8, y + 8, cardW - 16, cardH - 16);
+              ctx.strokeRect(x + 6, y + 6, cardW - 12, cardH - 12);
 
-              const padding = 16;
+              const padding = 20;
               const innerX = x + padding;
               const innerY = y + padding;
               const innerW = cardW - (padding * 2);
               const innerH = cardH - (padding * 2);
 
-              // Área para imagem (metade superior do card)
-              const imgAreaH = innerH * 0.6;
-              const imgSize = Math.min(innerW * 0.8, imgAreaH * 0.8);
+              // Área para imagem (60% superior do card)
+              const imgAreaH = innerH * 0.55;
+              const imgSize = Math.min(innerW - 20, imgAreaH - 15);
               const imgX = innerX + (innerW - imgSize) / 2;
-              const imgY = innerY + 10;
+              const imgY = innerY + 5;
 
               function renderProductText() {
-                // Área de texto (metade inferior)
-                const textY = innerY + imgAreaH + 20;
-                let currentTextY = textY;
+                // Área de texto (parte inferior)
+                const textStartY = innerY + imgAreaH + 10;
+                let currentY = textStartY;
 
-                // Nome do produto (2 linhas máximo)
-                ctx.fillStyle = '#111827';
-                ctx.font = 'bold 18px Arial';
-                const maxNameWidth = innerW - 8;
+                // Nome do produto com fonte maior e bold
+                ctx.fillStyle = '#1F2937';
+                ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                const maxNameWidth = innerW - 12;
                 const name = product.name || 'Produto sem nome';
                 const nameLines = wrapText(ctx, name, maxNameWidth, 2);
                 
-                nameLines.forEach(line => {
-                  ctx.fillText(line, innerX + 4, currentTextY);
-                  currentTextY += 22;
+                nameLines.forEach((line, index) => {
+                  ctx.fillText(line, innerX + 6, currentY);
+                  currentY += 24;
                 });
 
-                // Código interno
+                currentY += 8;
+
+                // Código interno com estilo mais sutil
                 if (product.internal_code) {
-                  currentTextY += 5;
                   ctx.fillStyle = '#6B7280';
-                  ctx.font = '14px Arial';
-                  ctx.fillText(`Cód: ${product.internal_code}`, innerX + 4, currentTextY);
-                  currentTextY += 18;
+                  ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                  ctx.fillText(`Código: ${product.internal_code}`, innerX + 6, currentY);
+                  currentY += 22;
                 }
 
-                // Preço (destacado)
+                // Preço com destaque - fundo colorido
                 if (product.price) {
-                  currentTextY += 5;
-                  ctx.fillStyle = '#DC2626';
-                  ctx.font = 'bold 20px Arial';
+                  currentY += 4;
+                  
+                  // Fundo do preço
                   const priceText = formatCurrency(product.price);
-                  ctx.fillText(priceText, innerX + 4, currentTextY);
-                  currentTextY += 25;
+                  ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                  const priceWidth = ctx.measureText(priceText).width + 16;
+                  const priceHeight = 32;
+                  
+                  // Gradiente para o preço (simulado com cores)
+                  ctx.fillStyle = '#DC2626';
+                  ctx.fillRect(innerX + 3, currentY - 24, priceWidth, priceHeight);
+                  
+                  // Cantos arredondados simulados
+                  ctx.fillStyle = '#DC2626';
+                  ctx.beginPath();
+                  ctx.roundRect ? ctx.roundRect(innerX + 3, currentY - 24, priceWidth, priceHeight, 6) : 
+                    ctx.fillRect(innerX + 3, currentY - 24, priceWidth, priceHeight);
+                  ctx.fill();
+                  
+                  // Texto do preço em branco
+                  ctx.fillStyle = '#FFFFFF';
+                  ctx.fillText(priceText, innerX + 11, currentY - 4);
+                  currentY += 18;
                 }
 
-                // Categoria
+                currentY += 8;
+
+                // Categoria com badge
                 if (product.categories?.name) {
-                  ctx.fillStyle = '#4B5563';
-                  ctx.font = '12px Arial';
-                  ctx.fillText(product.categories.name, innerX + 4, currentTextY);
-                  currentTextY += 16;
+                  const categoryText = product.categories.name;
+                  ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                  const catWidth = ctx.measureText(categoryText).width + 12;
+                  
+                  // Badge da categoria
+                  ctx.fillStyle = '#F3F4F6';
+                  ctx.fillRect(innerX + 6, currentY - 16, catWidth, 20);
+                  
+                  // Texto da categoria
+                  ctx.fillStyle = '#374151';
+                  ctx.fillText(categoryText, innerX + 12, currentY - 2);
+                  currentY += 12;
                 }
 
-                // Status de estoque
+                // Status de estoque com indicador colorido
+                currentY += 6;
                 const stockText = getStockStatusText(product.stock);
-                ctx.fillStyle = product.stock > (shouldUseStockLimit ? 10 : 0) ? '#10B981' : '#EF4444';
-                ctx.font = '12px Arial';
-                ctx.fillText(stockText, innerX + 4, currentTextY);
+                const isInStock = product.stock > (shouldUseStockLimit ? 10 : 0);
+                
+                // Bolinha indicadora
+                ctx.beginPath();
+                ctx.arc(innerX + 12, currentY - 6, 4, 0, 2 * Math.PI);
+                ctx.fillStyle = isInStock ? '#10B981' : '#EF4444';
+                ctx.fill();
+                
+                // Texto do estoque
+                ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                ctx.fillStyle = isInStock ? '#065F46' : '#991B1B';
+                ctx.fillText(stockText, innerX + 22, currentY);
 
                 resolve();
               }
 
-              // Carregar e desenhar imagem do produto
+              // Carregar e desenhar imagem do produto com bordas arredondadas
               if (product.photo_url) {
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
                 img.onload = () => {
                   try {
+                    // Criar clipping path para bordas arredondadas
+                    ctx.save();
+                    ctx.beginPath();
+                    if (ctx.roundRect) {
+                      ctx.roundRect(imgX, imgY, imgSize, imgSize, 8);
+                    } else {
+                      ctx.rect(imgX, imgY, imgSize, imgSize);
+                    }
+                    ctx.clip();
                     ctx.drawImage(img, imgX, imgY, imgSize, imgSize);
+                    ctx.restore();
+                    
+                    // Borda sutil na imagem
+                    ctx.strokeStyle = '#E5E7EB';
+                    ctx.lineWidth = 1;
+                    if (ctx.roundRect) {
+                      ctx.beginPath();
+                      ctx.roundRect(imgX, imgY, imgSize, imgSize, 8);
+                      ctx.stroke();
+                    } else {
+                      ctx.strokeRect(imgX, imgY, imgSize, imgSize);
+                    }
                   } catch (error) {
                     console.warn('Erro ao desenhar imagem:', error);
-                    // Desenhar placeholder se falhar
-                    ctx.fillStyle = '#F3F4F6';
-                    ctx.fillRect(imgX, imgY, imgSize, imgSize);
-                    ctx.strokeStyle = '#D1D5DB';
-                    ctx.strokeRect(imgX, imgY, imgSize, imgSize);
+                    drawImagePlaceholder();
                   }
                   renderProductText();
                 };
                 img.onerror = () => {
-                  // Desenhar placeholder
-                  ctx.fillStyle = '#F3F4F6';
-                  ctx.fillRect(imgX, imgY, imgSize, imgSize);
-                  ctx.strokeStyle = '#D1D5DB';
-                  ctx.strokeRect(imgX, imgY, imgSize, imgSize);
+                  drawImagePlaceholder();
                   renderProductText();
                 };
                 img.src = product.photo_url;
               } else {
-                // Placeholder quando não há imagem
-                ctx.fillStyle = '#F3F4F6';
-                ctx.fillRect(imgX, imgY, imgSize, imgSize);
-                ctx.strokeStyle = '#D1D5DB';
-                ctx.strokeRect(imgX, imgY, imgSize, imgSize);
+                drawImagePlaceholder();
                 renderProductText();
+              }
+
+              function drawImagePlaceholder() {
+                // Placeholder com gradiente sutil
+                ctx.fillStyle = '#F9FAFB';
+                if (ctx.roundRect) {
+                  ctx.beginPath();
+                  ctx.roundRect(imgX, imgY, imgSize, imgSize, 8);
+                  ctx.fill();
+                } else {
+                  ctx.fillRect(imgX, imgY, imgSize, imgSize);
+                }
+                
+                // Borda do placeholder
+                ctx.strokeStyle = '#E5E7EB';
+                ctx.lineWidth = 1;
+                if (ctx.roundRect) {
+                  ctx.beginPath();
+                  ctx.roundRect(imgX, imgY, imgSize, imgSize, 8);
+                  ctx.stroke();
+                } else {
+                  ctx.strokeRect(imgX, imgY, imgSize, imgSize);
+                }
+                
+                // Ícone de imagem no centro
+                ctx.fillStyle = '#9CA3AF';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('📷', imgX + imgSize/2, imgY + imgSize/2 + 8);
+                ctx.textAlign = 'left'; // Reset
               }
             });
 
