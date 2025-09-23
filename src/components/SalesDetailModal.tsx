@@ -681,20 +681,20 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                       </div>
                     </div>
 
-                    {/* Totais */}
-                    <div className="bg-white p-4 rounded-lg border space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Subtotal:</span>
-                        <span className="text-sm font-semibold">{formatCurrency(saleItems.reduce((sum, item) => sum + item.total_price, 0))}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-red-600">
-                        <span className="text-sm font-medium">Desconto (0%):</span>
-                        <span className="text-sm font-semibold">R$ 0,00</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Total dos Produtos:</span>
-                        <span className="text-sm font-semibold">{formatCurrency(saleItems.reduce((sum, item) => sum + item.total_price, 0))}</span>
-                      </div>
+                     {/* Totais */}
+                     <div className="bg-white p-4 rounded-lg border space-y-2">
+                       <div className="flex justify-between items-center">
+                         <span className="text-sm font-medium">Subtotal:</span>
+                         <span className="text-sm font-semibold">{formatCurrency(saleItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0))}</span>
+                       </div>
+                       <div className="flex justify-between items-center text-red-600">
+                         <span className="text-sm font-medium">Desconto:</span>
+                         <span className="text-sm font-semibold">-{formatCurrency(saleItems.reduce((sum, item) => sum + (item.quantity * item.unit_price - item.total_price), 0))}</span>
+                       </div>
+                       <div className="flex justify-between items-center">
+                         <span className="text-sm font-medium">Total dos Produtos:</span>
+                         <span className="text-sm font-semibold">{formatCurrency(saleItems.reduce((sum, item) => sum + item.total_price, 0))}</span>
+                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Frete:</span>
                         <span className="text-sm font-semibold">{formatCurrency(saleData.shipping_cost || 0)}</span>

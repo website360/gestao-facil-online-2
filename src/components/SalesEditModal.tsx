@@ -976,11 +976,11 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
               <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Subtotal:</span>
-                  <span className="text-sm font-semibold">{formatCurrency(saleItems.reduce((sum, item) => sum + item.total_price, 0))}</span>
+                  <span className="text-sm font-semibold">{formatCurrency(saleItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0))}</span>
                 </div>
                 <div className="flex justify-between items-center text-red-600">
-                  <span className="text-sm font-medium">Desconto (0%):</span>
-                  <span className="text-sm font-semibold">R$ 0,00</span>
+                  <span className="text-sm font-medium">Desconto:</span>
+                  <span className="text-sm font-semibold">-{formatCurrency(saleItems.reduce((sum, item) => sum + (item.quantity * item.unit_price - item.total_price), 0))}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Total dos Produtos:</span>
