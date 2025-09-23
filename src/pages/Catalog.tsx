@@ -251,13 +251,26 @@ const Catalog = () => {
         backgroundColor: '#F2F8FF'
       });
 
-      // Criar PDF
+      // Criar PDF com folha A4 e margem de 1cm
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
+      const margin = 10; // 1cm de margem
       const availableWidth = pageWidth - (margin * 2);
       const availableHeight = pageHeight - (margin * 2);
+      
+      // Configurar produtos por página baseado nas colunas selecionadas
+      const getProductsPerPage = (columns: number) => {
+        switch (columns) {
+          case 3: return 9;  // 3 colunas x 3 linhas = 9 produtos
+          case 4: return 9;  // 3 colunas x 3 linhas = 9 produtos  
+          case 5: return 15; // 5 colunas x 3 linhas = 15 produtos
+          case 6: return 15; // 5 colunas x 3 linhas = 15 produtos
+          default: return 9;
+        }
+      };
+      
+      const productsPerPage = getProductsPerPage(columnsCount);
       
       // Calcular escalas que respeitam largura e altura
       const widthScaleAll = availableWidth / canvas.width;
@@ -324,25 +337,17 @@ const Catalog = () => {
           });
         }
 
-        // Gerar páginas com limite de linhas baseado nas colunas
-        const getMaxRowsPerPage = (columns: number) => {
-          switch (columns) {
-            case 3: return 3;
-            case 4: return 3;
-            case 5: return 4;
-            default: return 3;
-          }
-        };
-        
-        const maxRowsPerPage = getMaxRowsPerPage(columnsCount);
+        // Gerar páginas respeitando o limite de produtos por página
+        let cardsPerPage = 0;
         let currentPageRows: typeof productRows = [];
         let pageNumber = 0;
         
         for (let i = 0; i < productRows.length; i++) {
           const row = productRows[i];
+          const cardsInRow = row.cards.length;
           
-          // Se já temos o máximo de linhas na página atual ou é a primeira página
-          if (currentPageRows.length === maxRowsPerPage) {
+          // Verificar se adicionar esta linha ultrapassaria o limite de produtos por página
+          if (cardsPerPage + cardsInRow > productsPerPage && currentPageRows.length > 0) {
             // Gerar página atual
             const firstRow = currentPageRows[0];
             const lastRow = currentPageRows[currentPageRows.length - 1];
@@ -377,9 +382,11 @@ const Catalog = () => {
             
             // Iniciar nova página
             currentPageRows = [row];
+            cardsPerPage = cardsInRow;
           } else {
             // Adicionar linha à página atual
             currentPageRows.push(row);
+            cardsPerPage += cardsInRow;
           }
         }
         
