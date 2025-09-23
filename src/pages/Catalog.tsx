@@ -283,27 +283,24 @@ const Catalog = () => {
       if (scaledCanvasHeight <= availableHeight) {
         const imgData = canvas.toDataURL('image/png');
         
-        // Calcular dimensões respeitando a proporção
-        const canvasAspectRatio = canvas.width / canvas.height;
-        const pageAspectRatio = availableWidth / availableHeight;
+        // Priorizar ocupar toda a largura disponível
+        const drawWidth = availableWidth;
+        const drawHeight = availableWidth / (canvas.width / canvas.height);
         
-        let drawWidth, drawHeight;
+        // Se a altura calculada for maior que disponível, ajustar pela altura
+        const finalDrawHeight = Math.min(drawHeight, availableHeight);
+        const finalDrawWidth = finalDrawHeight * (canvas.width / canvas.height);
         
-        if (canvasAspectRatio > pageAspectRatio) {
-          // Canvas é mais largo, limitar pela largura
-          drawWidth = availableWidth;
-          drawHeight = availableWidth / canvasAspectRatio;
-        } else {
-          // Canvas é mais alto, limitar pela altura
-          drawHeight = availableHeight;
-          drawWidth = availableHeight * canvasAspectRatio;
-        }
+        // Sempre usar toda a largura disponível se possível
+        const useFullWidth = finalDrawWidth >= availableWidth * 0.95; // 95% da largura
+        const finalWidth = useFullWidth ? availableWidth : finalDrawWidth;
+        const finalHeight = useFullWidth ? availableWidth / (canvas.width / canvas.height) : finalDrawHeight;
         
-        // Centralizar na página
-        const offsetX = margin + (availableWidth - drawWidth) / 2;
-        const offsetY = margin + (availableHeight - drawHeight) / 2;
+        // Centralizar apenas verticalmente (horizontalmente usar margem padrão)
+        const offsetX = margin;
+        const offsetY = margin + (availableHeight - finalHeight) / 2;
         
-        pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
+        pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
       } else {
         // Calcular quantas linhas de produtos temos
         const containerRect = catalogContainer.getBoundingClientRect();
@@ -387,30 +384,27 @@ const Catalog = () => {
               
               const pageImgData = pageCanvas.toDataURL('image/png');
               
-              // Calcular dimensões para ocupar toda a área útil sem distorção
-              const canvasAspectRatio = pageCanvas.width / pageCanvas.height;
-              const pageAspectRatio = availableWidth / availableHeight;
+              // Priorizar ocupar toda a largura disponível
+              const drawWidth = availableWidth;
+              const drawHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
               
-              let drawWidth, drawHeight;
+              // Se a altura calculada for maior que disponível, ajustar pela altura
+              const finalDrawHeight = Math.min(drawHeight, availableHeight);
+              const finalDrawWidth = finalDrawHeight * (pageCanvas.width / pageCanvas.height);
               
-              if (canvasAspectRatio > pageAspectRatio) {
-                // Canvas é mais largo, limitar pela largura
-                drawWidth = availableWidth;
-                drawHeight = availableWidth / canvasAspectRatio;
-              } else {
-                // Canvas é mais alto, limitar pela altura
-                drawHeight = availableHeight;
-                drawWidth = availableHeight * canvasAspectRatio;
-              }
+              // Sempre usar toda a largura disponível se possível
+              const useFullWidth = finalDrawWidth >= availableWidth * 0.95; // 95% da largura
+              const finalWidth = useFullWidth ? availableWidth : finalDrawWidth;
+              const finalHeight = useFullWidth ? availableWidth / (pageCanvas.width / pageCanvas.height) : finalDrawHeight;
               
-              // Centralizar na página
-              const offsetX = margin + (availableWidth - drawWidth) / 2;
-              const offsetY = margin + (availableHeight - drawHeight) / 2;
+              // Centralizar apenas verticalmente (horizontalmente usar margem padrão)
+              const offsetX = margin;
+              const offsetY = margin + (availableHeight - finalHeight) / 2;
               
               if (pageNumber > 0) {
                 pdf.addPage();
               }
-              pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
+              pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
               pageNumber++;
             }
             
@@ -445,30 +439,27 @@ const Catalog = () => {
             
             const pageImgData = pageCanvas.toDataURL('image/png');
             
-            // Calcular dimensões para ocupar toda a área útil sem distorção
-            const canvasAspectRatio = pageCanvas.width / pageCanvas.height;
-            const pageAspectRatio = availableWidth / availableHeight;
+            // Priorizar ocupar toda a largura disponível
+            const drawWidth = availableWidth;
+            const drawHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
             
-            let drawWidth, drawHeight;
+            // Se a altura calculada for maior que disponível, ajustar pela altura
+            const finalDrawHeight = Math.min(drawHeight, availableHeight);
+            const finalDrawWidth = finalDrawHeight * (pageCanvas.width / pageCanvas.height);
             
-            if (canvasAspectRatio > pageAspectRatio) {
-              // Canvas é mais largo, limitar pela largura
-              drawWidth = availableWidth;
-              drawHeight = availableWidth / canvasAspectRatio;
-            } else {
-              // Canvas é mais alto, limitar pela altura
-              drawHeight = availableHeight;
-              drawWidth = availableHeight * canvasAspectRatio;
-            }
+            // Sempre usar toda a largura disponível se possível
+            const useFullWidth = finalDrawWidth >= availableWidth * 0.95; // 95% da largura
+            const finalWidth = useFullWidth ? availableWidth : finalDrawWidth;
+            const finalHeight = useFullWidth ? availableWidth / (pageCanvas.width / pageCanvas.height) : finalDrawHeight;
             
-            // Centralizar na página
-            const offsetX = margin + (availableWidth - drawWidth) / 2;
-            const offsetY = margin + (availableHeight - drawHeight) / 2;
+            // Centralizar apenas verticalmente (horizontalmente usar margem padrão)
+            const offsetX = margin;
+            const offsetY = margin + (availableHeight - finalHeight) / 2;
             
             if (pageNumber > 0) {
               pdf.addPage();
             }
-            pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
+            pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
           }
         }
       }
