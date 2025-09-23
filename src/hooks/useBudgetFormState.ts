@@ -67,16 +67,18 @@ export const useBudgetFormState = (editingBudget: LocalBudget | null) => {
       
       const budgetGeneralDiscount = editingBudget.discount_percentage || 0;
       
-      const items = editingBudget.budget_items?.map(item => {
-        console.log('Processing item:', item);
-        return {
-          product_id: item.product_id || '',
-          quantity: item.quantity || 1,
-          unit_price: item.unit_price || 0,
-          discount_percentage: item.discount_percentage || budgetGeneralDiscount,
-          product_code: item.products?.internal_code || ''
-        };
-      }) || [];
+      const items = (editingBudget.budget_items || [])
+        .filter(item => (item.quantity || 0) > 0)
+        .map(item => {
+          console.log('Processing item:', item);
+          return {
+            product_id: item.product_id || '',
+            quantity: item.quantity || 1,
+            unit_price: item.unit_price || 0,
+            discount_percentage: item.discount_percentage || budgetGeneralDiscount,
+            product_code: item.products?.internal_code || ''
+          };
+        });
 
       console.log('Processed items:', items);
 

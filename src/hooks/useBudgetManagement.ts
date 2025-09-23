@@ -266,10 +266,12 @@ export const useBudgetManagement = (userRole?: string) => {
         // Combinar os dados
         const processedData = budgetsData.map(budget => {
           const creatorProfile = profilesData?.find(profile => profile.id === budget.created_by) || null;
+          const filteredItems = (budget as any).budget_items?.filter((bi: any) => (bi.quantity ?? 0) > 0) || [];
           
           return {
             ...budget,
-            creator_profile: creatorProfile
+            creator_profile: creatorProfile,
+            budget_items: filteredItems,
           };
         });
 

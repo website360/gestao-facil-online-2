@@ -265,10 +265,23 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
       
       console.log('Itens válidos para salvamento:', validItems);
       
-      if (validItems.length === 0) {
-        toast.error('Adicione pelo menos um item válido ao orçamento');
-        return;
+      // Deduplicar por produto (somar quantidades) para evitar duplicações acidentais
+      const itemsMap = new Map<string, BudgetItem>();
+      for (const it of validItems) {
+        if (!it.product_id) continue;
+        const existing = itemsMap.get(it.product_id);
+        if (existing) {
+          const merged = { ...existing, quantity: existing.quantity + it.quantity, unit_price: it.unit_price, discount_percentage: it.discount_percentage || 0 } as BudgetItem;
+          merged.total_price = calculateItemTotal({ quantity: merged.quantity, unit_price: merged.unit_price, discount_percentage: merged.discount_percentage || 0 } as any);
+          itemsMap.set(it.product_id, merged);
+        } else {
+          const copy = { ...it } as BudgetItem;
+          copy.total_price = calculateItemTotal({ quantity: copy.quantity, unit_price: copy.unit_price, discount_percentage: copy.discount_percentage || 0 } as any);
+          itemsMap.set(it.product_id, copy);
+        }
       }
+      const itemsToPersist = Array.from(itemsMap.values());
+      console.log('Itens após deduplicação:', itemsToPersist);
 
       // Sincronizar itens conforme o tipo de usuário
       if (isClient) {
@@ -287,7 +300,7 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
         }
 
         // Segundo: Inserir apenas os itens válidos atuais (sem duplicatas)
-        const itemsToInsert = validItems.map(item => ({
+        const itemsToInsert = itemsToPersist.map(item => ({
           budget_id: budget.id,
           product_id: item.product_id,
           quantity: item.quantity,
@@ -317,7 +330,7 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
           console.error('Erro ao remover itens existentes:', deleteError);
           throw deleteError;
         }
-        const itemsToInsert = validItems.map(item => ({
+        const itemsToInsert = itemsToPersist.map(item => ({
           budget_id: budget.id,
           product_id: item.product_id,
           quantity: item.quantity,
@@ -335,7 +348,7 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
       }
 
       // Terceiro: Calcular o total correto APENAS dos itens válidos
-      const itemsForCalculation = validItems.map(item => ({
+      const itemsForCalculation = itemsToPersist.map(item => ({
         product_id: item.product_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
@@ -410,13 +423,21 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
 
   if (!budget) return null;
 
-  // Converter para formato compatível com os cálculos
-  const itemsForCalculation = budgetItems.map(item => ({
-    product_id: item.product_id,
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    discount_percentage: item.discount_percentage || 0
-  }));
+  // Converter para formato compatível com os cálculos (com deduplicação de visualização)
+  const itemsForCalculation = (() => {
+    const m = new Map<string, { quantity: number; unit_price: number; discount_percentage: number }>();
+    for (const it of budgetItems) {
+      if (!it.product_id || it.quantity <= 0) continue;
+      const existing = m.get(it.product_id);
+      const dp = it.discount_percentage || 0;
+      if (existing) {
+        m.set(it.product_id, { quantity: existing.quantity + it.quantity, unit_price: it.unit_price, discount_percentage: dp });
+      } else {
+        m.set(it.product_id, { quantity: it.quantity, unit_price: it.unit_price, discount_percentage: dp });
+      }
+    }
+    return Array.from(m.entries()).map(([product_id, v]) => ({ product_id, ...v }));
+  })();
   
   const subtotal = calculateSubtotal(itemsForCalculation as any);
   const total = calculateTotalWithDiscount(itemsForCalculation as any);
