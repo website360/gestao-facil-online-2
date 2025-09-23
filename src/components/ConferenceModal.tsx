@@ -395,9 +395,6 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
                             <p className="text-xs text-green-600">
                               Código: {foundItem.products?.internal_code}
                             </p>
-                            <p className="text-xs text-green-600">
-                              Quantidade esperada: {foundItem.quantity} {foundItem.products?.stock_unit}
-                            </p>
                           </div>
                         </div>
                       </div>
