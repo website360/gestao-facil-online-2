@@ -229,10 +229,27 @@ const Catalog = () => {
     try {
       toast.loading('Gerando PDF do catálogo...');
       
-      if (products.length === 0) {
+      // Buscar o elemento que contém os produtos
+      const catalogContainer = document.getElementById('catalog-products-grid');
+      if (!catalogContainer) {
+        toast.error('Erro ao localizar o conteúdo para impressão');
+        return;
+      }
+
+      // Obter todos os cards de produtos
+      const productCards = catalogContainer.children;
+      if (productCards.length === 0) {
         toast.error('Nenhum produto encontrado para impressão');
         return;
       }
+
+      // Capturar a imagem do container completo
+      const canvas = await html2canvas(catalogContainer, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#F2F8FF'
+      });
 
       // Criar PDF com folha A4 e margem de 1cm
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -255,287 +272,205 @@ const Catalog = () => {
       
       const productsPerPage = getProductsPerPage(columnsCount);
       
-      // Gerar páginas com grid fixo para preencher toda a largura útil (margem de 1cm)
-      const getPDFColumns = (cols: number) => (cols >= 5 ? 5 : 3);
-      const pdfColumns = getPDFColumns(columnsCount);
-      const pdfRows = 3; // sempre 3 linhas
-      const pageProducts = pdfColumns * pdfRows;
-
-      let pageNumber = 0;
+      // Calcular escalas que respeitam largura e altura
+      const widthScaleAll = availableWidth / canvas.width;
+      const heightScaleAll = availableHeight / canvas.height;
+      const baseScale = Math.min(widthScaleAll, heightScaleAll);
+      const scaledCanvasHeight = canvas.height * baseScale;
+      const domToCanvas = canvas.width / catalogContainer.clientWidth;
       
-      // Função auxiliar para quebrar texto em múltiplas linhas
-      function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {
-        const words = text.split(' ');
-        const lines: string[] = [];
-        let currentLine = words[0] || '';
+      // Se tudo cabe em uma página (com escala que respeita a altura)
+      if (scaledCanvasHeight <= availableHeight) {
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Calcular dimensões respeitando a proporção
+        const canvasAspectRatio = canvas.width / canvas.height;
+        const pageAspectRatio = availableWidth / availableHeight;
+        
+        let drawWidth, drawHeight;
+        
+        if (canvasAspectRatio > pageAspectRatio) {
+          // Canvas é mais largo, limitar pela largura
+          drawWidth = availableWidth;
+          drawHeight = availableWidth / canvasAspectRatio;
+        } else {
+          // Canvas é mais alto, limitar pela altura
+          drawHeight = availableHeight;
+          drawWidth = availableHeight * canvasAspectRatio;
+        }
+        
+        // Centralizar na página
+        const offsetX = margin + (availableWidth - drawWidth) / 2;
+        const offsetY = margin + (availableHeight - drawHeight) / 2;
+        
+        pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
+      } else {
+        // Calcular quantas linhas de produtos temos
+        const containerRect = catalogContainer.getBoundingClientRect();
+        const productRows: Array<{cards: Element[], top: number, height: number}> = [];
+        
+        // Agrupar produtos por linha baseado na posição Y
+        const cardsArray = Array.from(productCards);
+        const cardPositions = cardsArray.map(card => {
+          const rect = card.getBoundingClientRect();
+          return {
+            card,
+            top: rect.top - containerRect.top,
+            bottom: rect.bottom - containerRect.top,
+            height: rect.height
+          };
+        });
 
-        for (let i = 1; i < words.length; i++) {
-          const word = words[i];
-          const width = ctx.measureText(currentLine + ' ' + word).width;
-          if (width < maxWidth && lines.length < maxLines - 1) {
-            currentLine += ' ' + word;
+        // Agrupar por linhas (produtos com Y similar)
+        let currentRowY = -1;
+        let currentRow: typeof cardPositions = [];
+        
+        cardPositions.forEach(cardPos => {
+          if (currentRowY === -1 || Math.abs(cardPos.top - currentRowY) < 20) {
+            if (currentRowY === -1) currentRowY = cardPos.top;
+            currentRow.push(cardPos);
           } else {
-            lines.push(currentLine);
-            currentLine = word;
-            if (lines.length >= maxLines - 1) {
-              if (i < words.length - 1) {
-                currentLine += '...';
-              }
-              break;
+            // Nova linha
+            if (currentRow.length > 0) {
+              const rowTop = Math.min(...currentRow.map(c => c.top));
+              const rowBottom = Math.max(...currentRow.map(c => c.bottom));
+              productRows.push({
+                cards: currentRow.map(c => c.card),
+                top: rowTop,
+                height: rowBottom - rowTop
+              });
             }
+            currentRow = [cardPos];
+            currentRowY = cardPos.top;
+          }
+        });
+        
+        // Adicionar última linha
+        if (currentRow.length > 0) {
+          const rowTop = Math.min(...currentRow.map(c => c.top));
+          const rowBottom = Math.max(...currentRow.map(c => c.bottom));
+          productRows.push({
+            cards: currentRow.map(c => c.card),
+            top: rowTop,
+            height: rowBottom - rowTop
+          });
+        }
+
+        // Gerar páginas respeitando o limite de produtos por página
+        let cardsPerPage = 0;
+        let currentPageRows: typeof productRows = [];
+        let pageNumber = 0;
+        
+        for (let i = 0; i < productRows.length; i++) {
+          const row = productRows[i];
+          const cardsInRow = row.cards.length;
+          
+          // Verificar se adicionar esta linha ultrapassaria o limite de produtos por página
+          if (cardsPerPage + cardsInRow > productsPerPage && currentPageRows.length > 0) {
+            // Gerar página atual
+            const firstRow = currentPageRows[0];
+            const lastRow = currentPageRows[currentPageRows.length - 1];
+            const pageStartY = firstRow.top;
+            const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
+            
+            const pageCanvas = document.createElement('canvas');
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = Math.round(pageHeight * domToCanvas);
+            const pageCtx = pageCanvas.getContext('2d');
+            
+            if (pageCtx) {
+              pageCtx.drawImage(
+                canvas,
+                0, Math.round(pageStartY * domToCanvas), canvas.width, Math.round(pageHeight * domToCanvas),
+                0, 0, canvas.width, Math.round(pageHeight * domToCanvas)
+              );
+              
+              const pageImgData = pageCanvas.toDataURL('image/png');
+              
+              // Calcular dimensões para ocupar toda a área útil sem distorção
+              const canvasAspectRatio = pageCanvas.width / pageCanvas.height;
+              const pageAspectRatio = availableWidth / availableHeight;
+              
+              let drawWidth, drawHeight;
+              
+              if (canvasAspectRatio > pageAspectRatio) {
+                // Canvas é mais largo, limitar pela largura
+                drawWidth = availableWidth;
+                drawHeight = availableWidth / canvasAspectRatio;
+              } else {
+                // Canvas é mais alto, limitar pela altura
+                drawHeight = availableHeight;
+                drawWidth = availableHeight * canvasAspectRatio;
+              }
+              
+              // Centralizar na página
+              const offsetX = margin + (availableWidth - drawWidth) / 2;
+              const offsetY = margin + (availableHeight - drawHeight) / 2;
+              
+              if (pageNumber > 0) {
+                pdf.addPage();
+              }
+              pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
+              pageNumber++;
+            }
+            
+            // Iniciar nova página
+            currentPageRows = [row];
+            cardsPerPage = cardsInRow;
+          } else {
+            // Adicionar linha à página atual
+            currentPageRows.push(row);
+            cardsPerPage += cardsInRow;
           }
         }
-        lines.push(currentLine);
-        return lines.slice(0, maxLines);
-      }
-
-      // Processar cada página sequencialmente
-      for (let start = 0; start < products.length; start += pageProducts) {
-        await new Promise<void>((pageResolve) => {
-          // Canvas proporcional à área útil da página para evitar sobras laterais
-          const targetWidthPx = 1500; // base em px
-          const targetHeightPx = Math.round(targetWidthPx * (availableHeight / availableWidth));
+        
+        // Gerar última página se houver linhas restantes
+        if (currentPageRows.length > 0) {
+          const firstRow = currentPageRows[0];
+          const lastRow = currentPageRows[currentPageRows.length - 1];
+          const pageStartY = firstRow.top;
+          const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
+          
           const pageCanvas = document.createElement('canvas');
-          pageCanvas.width = targetWidthPx;
-          pageCanvas.height = targetHeightPx;
-          const ctx = pageCanvas.getContext('2d');
-
-          if (!ctx) {
-            pageResolve();
-            return;
-          }
-
-          // Fundo branco
-          ctx.fillStyle = '#F2F8FF';
-          ctx.fillRect(0, 0, targetWidthPx, targetHeightPx);
-
-          // Dimensões dos cards
-          const cardW = targetWidthPx / pdfColumns;
-          const cardH = targetHeightPx / pdfRows;
-
-          const count = Math.min(pageProducts, products.length - start);
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = Math.round(pageHeight * domToCanvas);
+          const pageCtx = pageCanvas.getContext('2d');
           
-          // Criar array de promesas para carregar todas as imagens desta página
-          const renderPromises: Promise<void>[] = [];
-          
-          for (let i = 0; i < count; i++) {
-            const idx = start + i;
-            const product = products[idx];
-            const row = Math.floor(i / pdfColumns);
-            const col = i % pdfColumns;
-            const x = col * cardW;
-            const y = row * cardH;
-
-            // Criar promessa para renderizar cada produto
-            const renderPromise = new Promise<void>((resolve) => {
-              // Card com fundo branco e sombra sutil
-              ctx.fillStyle = '#FFFFFF'; 
-              ctx.fillRect(x + 6, y + 6, cardW - 12, cardH - 12);
-              
-              // Sombra do card
-              ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
-              ctx.fillRect(x + 8, y + 8, cardW - 12, cardH - 12);
-              
-              // Card principal
-              ctx.fillStyle = '#FFFFFF';
-              ctx.fillRect(x + 6, y + 6, cardW - 12, cardH - 12);
-              
-              // Borda sutil
-              ctx.strokeStyle = '#E5E7EB';
-              ctx.lineWidth = 1;
-              ctx.strokeRect(x + 6, y + 6, cardW - 12, cardH - 12);
-
-              const padding = 20;
-              const innerX = x + padding;
-              const innerY = y + padding;
-              const innerW = cardW - (padding * 2);
-              const innerH = cardH - (padding * 2);
-
-              // Área para imagem (60% superior do card)
-              const imgAreaH = innerH * 0.55;
-              const imgSize = Math.min(innerW - 20, imgAreaH - 15);
-              const imgX = innerX + (innerW - imgSize) / 2;
-              const imgY = innerY + 5;
-
-              function renderProductText() {
-                // Área de texto (parte inferior)
-                const textStartY = innerY + imgAreaH + 10;
-                let currentY = textStartY;
-
-                // Nome do produto com fonte maior e bold
-                ctx.fillStyle = '#1F2937';
-                ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                const maxNameWidth = innerW - 12;
-                const name = product.name || 'Produto sem nome';
-                const nameLines = wrapText(ctx, name, maxNameWidth, 2);
-                
-                nameLines.forEach((line, index) => {
-                  ctx.fillText(line, innerX + 6, currentY);
-                  currentY += 24;
-                });
-
-                currentY += 8;
-
-                // Código interno com estilo mais sutil
-                if (product.internal_code) {
-                  ctx.fillStyle = '#6B7280';
-                  ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                  ctx.fillText(`Código: ${product.internal_code}`, innerX + 6, currentY);
-                  currentY += 22;
-                }
-
-                // Preço com destaque - fundo colorido
-                if (product.price) {
-                  currentY += 4;
-                  
-                  // Fundo do preço
-                  const priceText = formatCurrency(product.price);
-                  ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                  const priceWidth = ctx.measureText(priceText).width + 16;
-                  const priceHeight = 32;
-                  
-                  // Gradiente para o preço (simulado com cores)
-                  ctx.fillStyle = '#DC2626';
-                  ctx.fillRect(innerX + 3, currentY - 24, priceWidth, priceHeight);
-                  
-                  // Cantos arredondados simulados
-                  ctx.fillStyle = '#DC2626';
-                  ctx.beginPath();
-                  ctx.roundRect ? ctx.roundRect(innerX + 3, currentY - 24, priceWidth, priceHeight, 6) : 
-                    ctx.fillRect(innerX + 3, currentY - 24, priceWidth, priceHeight);
-                  ctx.fill();
-                  
-                  // Texto do preço em branco
-                  ctx.fillStyle = '#FFFFFF';
-                  ctx.fillText(priceText, innerX + 11, currentY - 4);
-                  currentY += 18;
-                }
-
-                currentY += 8;
-
-                // Categoria com badge
-                if (product.categories?.name) {
-                  const categoryText = product.categories.name;
-                  ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                  const catWidth = ctx.measureText(categoryText).width + 12;
-                  
-                  // Badge da categoria
-                  ctx.fillStyle = '#F3F4F6';
-                  ctx.fillRect(innerX + 6, currentY - 16, catWidth, 20);
-                  
-                  // Texto da categoria
-                  ctx.fillStyle = '#374151';
-                  ctx.fillText(categoryText, innerX + 12, currentY - 2);
-                  currentY += 12;
-                }
-
-                // Status de estoque com indicador colorido
-                currentY += 6;
-                const stockText = getStockStatusText(product.stock);
-                const isInStock = product.stock > (shouldUseStockLimit ? 10 : 0);
-                
-                // Bolinha indicadora
-                ctx.beginPath();
-                ctx.arc(innerX + 12, currentY - 6, 4, 0, 2 * Math.PI);
-                ctx.fillStyle = isInStock ? '#10B981' : '#EF4444';
-                ctx.fill();
-                
-                // Texto do estoque
-                ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-                ctx.fillStyle = isInStock ? '#065F46' : '#991B1B';
-                ctx.fillText(stockText, innerX + 22, currentY);
-
-                resolve();
-              }
-
-              // Carregar e desenhar imagem do produto com bordas arredondadas
-              if (product.photo_url) {
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.onload = () => {
-                  try {
-                    // Criar clipping path para bordas arredondadas
-                    ctx.save();
-                    ctx.beginPath();
-                    if (ctx.roundRect) {
-                      ctx.roundRect(imgX, imgY, imgSize, imgSize, 8);
-                    } else {
-                      ctx.rect(imgX, imgY, imgSize, imgSize);
-                    }
-                    ctx.clip();
-                    ctx.drawImage(img, imgX, imgY, imgSize, imgSize);
-                    ctx.restore();
-                    
-                    // Borda sutil na imagem
-                    ctx.strokeStyle = '#E5E7EB';
-                    ctx.lineWidth = 1;
-                    if (ctx.roundRect) {
-                      ctx.beginPath();
-                      ctx.roundRect(imgX, imgY, imgSize, imgSize, 8);
-                      ctx.stroke();
-                    } else {
-                      ctx.strokeRect(imgX, imgY, imgSize, imgSize);
-                    }
-                  } catch (error) {
-                    console.warn('Erro ao desenhar imagem:', error);
-                    drawImagePlaceholder();
-                  }
-                  renderProductText();
-                };
-                img.onerror = () => {
-                  drawImagePlaceholder();
-                  renderProductText();
-                };
-                img.src = product.photo_url;
-              } else {
-                drawImagePlaceholder();
-                renderProductText();
-              }
-
-              function drawImagePlaceholder() {
-                // Placeholder com gradiente sutil
-                ctx.fillStyle = '#F9FAFB';
-                if (ctx.roundRect) {
-                  ctx.beginPath();
-                  ctx.roundRect(imgX, imgY, imgSize, imgSize, 8);
-                  ctx.fill();
-                } else {
-                  ctx.fillRect(imgX, imgY, imgSize, imgSize);
-                }
-                
-                // Borda do placeholder
-                ctx.strokeStyle = '#E5E7EB';
-                ctx.lineWidth = 1;
-                if (ctx.roundRect) {
-                  ctx.beginPath();
-                  ctx.roundRect(imgX, imgY, imgSize, imgSize, 8);
-                  ctx.stroke();
-                } else {
-                  ctx.strokeRect(imgX, imgY, imgSize, imgSize);
-                }
-                
-                // Ícone de imagem no centro
-                ctx.fillStyle = '#9CA3AF';
-                ctx.font = '24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('📷', imgX + imgSize/2, imgY + imgSize/2 + 8);
-                ctx.textAlign = 'left'; // Reset
-              }
-            });
-
-            renderPromises.push(renderPromise);
+          if (pageCtx) {
+            pageCtx.drawImage(
+              canvas,
+              0, Math.round(pageStartY * domToCanvas), canvas.width, Math.round(pageHeight * domToCanvas),
+              0, 0, canvas.width, Math.round(pageHeight * domToCanvas)
+            );
+            
+            const pageImgData = pageCanvas.toDataURL('image/png');
+            
+            // Calcular dimensões para ocupar toda a área útil sem distorção
+            const canvasAspectRatio = pageCanvas.width / pageCanvas.height;
+            const pageAspectRatio = availableWidth / availableHeight;
+            
+            let drawWidth, drawHeight;
+            
+            if (canvasAspectRatio > pageAspectRatio) {
+              // Canvas é mais largo, limitar pela largura
+              drawWidth = availableWidth;
+              drawHeight = availableWidth / canvasAspectRatio;
+            } else {
+              // Canvas é mais alto, limitar pela altura
+              drawHeight = availableHeight;
+              drawWidth = availableHeight * canvasAspectRatio;
+            }
+            
+            // Centralizar na página
+            const offsetX = margin + (availableWidth - drawWidth) / 2;
+            const offsetY = margin + (availableHeight - drawHeight) / 2;
+            
+            if (pageNumber > 0) {
+              pdf.addPage();
+            }
+            pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
           }
-
-          // Aguardar todas as renderizações desta página completarem
-          Promise.all(renderPromises).then(() => {
-            // Inserir a página ocupando exatamente a área útil
-            const img = pageCanvas.toDataURL('image/png');
-            if (pageNumber > 0) pdf.addPage();
-            pdf.addImage(img, 'PNG', margin, margin, availableWidth, availableHeight);
-            pageNumber++;
-            pageResolve();
-          });
-        });
+        }
       }
       
       // Gerar nome do arquivo com data atual
