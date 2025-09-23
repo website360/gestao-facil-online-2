@@ -476,7 +476,7 @@ export class BudgetService {
           .from('budget_items')
           .delete()
           .eq('budget_id', editingBudget.id)
-          .not('product_id', 'in', `(${productIds.map(id => `'${id}'`).join(',')})`);
+          .not('product_id', 'in', `(${productIds.join(',')})`);
 
         if (cleanupError) {
           console.error('Error cleaning up removed items:', cleanupError);
