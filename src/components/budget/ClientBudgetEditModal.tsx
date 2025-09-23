@@ -407,8 +407,9 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
       toast.success('Orçamento atualizado com sucesso!');
       setIsEditing(false);
       
-      // Aguardar um pouco para garantir que a transação foi commitada
-      console.log('Aguardando commit da transação...');
+      // Fechar modal e notificar sucesso
+      onSuccess();
+      onClose();
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Recarregar os dados atualizados do orçamento

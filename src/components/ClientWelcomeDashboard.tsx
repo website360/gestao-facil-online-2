@@ -281,7 +281,10 @@ const ClientWelcomeDashboard = () => {
   };
 
   const handleBudgetEditSuccess = () => {
-    fetchBudgets(); // Atualizar lista de orçamentos
+    // Não precisamos mais chamar fetchBudgets() aqui pois o ClientBudgetEditModal
+    // já salva corretamente e fecha automaticamente. A página será recarregada
+    // quando necessário pelo próprio hook useBudgetManagement
+    console.log('Budget edit success - modal will close automatically');
   };
 
   const getStatusDisplay = (item: CombinedItem) => {
