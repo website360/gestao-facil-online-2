@@ -279,197 +279,56 @@ const Catalog = () => {
       const scaledCanvasHeight = canvas.height * baseScale;
       const domToCanvas = canvas.width / catalogContainer.clientWidth;
       
-      // Se tudo cabe em uma página (com escala que respeita a altura)
-      if (scaledCanvasHeight <= availableHeight) {
-        const imgData = canvas.toDataURL('image/png');
-        
-        // Calcular dimensões respeitando a proporção
-        const canvasAspectRatio = canvas.width / canvas.height;
-        const pageAspectRatio = availableWidth / availableHeight;
-        
-        let drawWidth, drawHeight;
-        
-        if (canvasAspectRatio > pageAspectRatio) {
-          // Canvas é mais largo, limitar pela largura
-          drawWidth = availableWidth;
-          drawHeight = availableWidth / canvasAspectRatio;
-        } else {
-          // Canvas é mais alto, limitar pela altura
-          drawHeight = availableHeight;
-          drawWidth = availableHeight * canvasAspectRatio;
-        }
-        
-        // Centralizar na página
-        const offsetX = margin + (availableWidth - drawWidth) / 2;
-        const offsetY = margin + (availableHeight - drawHeight) / 2;
-        
-        pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
-      } else {
-        // Calcular quantas linhas de produtos temos
-        const containerRect = catalogContainer.getBoundingClientRect();
-        const productRows: Array<{cards: Element[], top: number, height: number}> = [];
-        
-        // Agrupar produtos por linha baseado na posição Y
-        const cardsArray = Array.from(productCards);
-        const cardPositions = cardsArray.map(card => {
-          const rect = card.getBoundingClientRect();
-          return {
-            card,
-            top: rect.top - containerRect.top,
-            bottom: rect.bottom - containerRect.top,
-            height: rect.height
-          };
-        });
+      // Gerar páginas com grid fixo para preencher toda a largura útil (margem de 1cm)
+      const getPDFColumns = (cols: number) => (cols >= 5 ? 5 : 3);
+      const pdfColumns = getPDFColumns(columnsCount);
+      const pdfRows = 3; // sempre 3 linhas
+      const pageProducts = pdfColumns * pdfRows;
 
-        // Agrupar por linhas (produtos com Y similar)
-        let currentRowY = -1;
-        let currentRow: typeof cardPositions = [];
-        
-        cardPositions.forEach(cardPos => {
-          if (currentRowY === -1 || Math.abs(cardPos.top - currentRowY) < 20) {
-            if (currentRowY === -1) currentRowY = cardPos.top;
-            currentRow.push(cardPos);
-          } else {
-            // Nova linha
-            if (currentRow.length > 0) {
-              const rowTop = Math.min(...currentRow.map(c => c.top));
-              const rowBottom = Math.max(...currentRow.map(c => c.bottom));
-              productRows.push({
-                cards: currentRow.map(c => c.card),
-                top: rowTop,
-                height: rowBottom - rowTop
-              });
-            }
-            currentRow = [cardPos];
-            currentRowY = cardPos.top;
-          }
-        });
-        
-        // Adicionar última linha
-        if (currentRow.length > 0) {
-          const rowTop = Math.min(...currentRow.map(c => c.top));
-          const rowBottom = Math.max(...currentRow.map(c => c.bottom));
-          productRows.push({
-            cards: currentRow.map(c => c.card),
-            top: rowTop,
-            height: rowBottom - rowTop
-          });
-        }
+      let pageNumber = 0;
+      for (let start = 0; start < products.length; start += pageProducts) {
+        // Canvas proporcional à área útil da página para evitar sobras laterais
+        const targetWidthPx = 1500; // base em px
+        const targetHeightPx = Math.round(targetWidthPx * (availableHeight / availableWidth));
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = targetWidthPx;
+        pageCanvas.height = targetHeightPx;
+        const ctx = pageCanvas.getContext('2d');
 
-        // Gerar páginas respeitando o limite de produtos por página
-        let cardsPerPage = 0;
-        let currentPageRows: typeof productRows = [];
-        let pageNumber = 0;
-        
-        for (let i = 0; i < productRows.length; i++) {
-          const row = productRows[i];
-          const cardsInRow = row.cards.length;
-          
-          // Verificar se adicionar esta linha ultrapassaria o limite de produtos por página
-          if (cardsPerPage + cardsInRow > productsPerPage && currentPageRows.length > 0) {
-            // Gerar página atual
-            const firstRow = currentPageRows[0];
-            const lastRow = currentPageRows[currentPageRows.length - 1];
-            const pageStartY = firstRow.top;
-            const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
-            
-            const pageCanvas = document.createElement('canvas');
-            pageCanvas.width = canvas.width;
-            pageCanvas.height = Math.round(pageHeight * domToCanvas);
-            const pageCtx = pageCanvas.getContext('2d');
-            
-            if (pageCtx) {
-              pageCtx.drawImage(
-                canvas,
-                0, Math.round(pageStartY * domToCanvas), canvas.width, Math.round(pageHeight * domToCanvas),
-                0, 0, canvas.width, Math.round(pageHeight * domToCanvas)
-              );
-              
-              const pageImgData = pageCanvas.toDataURL('image/png');
-              
-              // Calcular dimensões respeitando a proporção e os limites da página
-              const canvasAspectRatio = pageCanvas.width / pageCanvas.height;
-              const pageAspectRatio = availableWidth / availableHeight;
-              
-              let drawWidth, drawHeight;
-              
-              if (canvasAspectRatio > pageAspectRatio) {
-                // Canvas é mais largo, limitar pela largura
-                drawWidth = availableWidth;
-                drawHeight = availableWidth / canvasAspectRatio;
-              } else {
-                // Canvas é mais alto, limitar pela altura
-                drawHeight = availableHeight;
-                drawWidth = availableHeight * canvasAspectRatio;
-              }
-              
-              // Centralizar na página
-              const offsetX = margin + (availableWidth - drawWidth) / 2;
-              const offsetY = margin + (availableHeight - drawHeight) / 2;
-              
-              if (pageNumber > 0) {
-                pdf.addPage();
-              }
-              pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
-              pageNumber++;
-            }
-            
-            // Iniciar nova página
-            currentPageRows = [row];
-            cardsPerPage = cardsInRow;
-          } else {
-            // Adicionar linha à página atual
-            currentPageRows.push(row);
-            cardsPerPage += cardsInRow;
+        if (ctx) {
+          // Fundo branco
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, targetWidthPx, targetHeightPx);
+
+          // Dimensões dos cards
+          const cardW = targetWidthPx / pdfColumns;
+          const cardH = targetHeightPx / pdfRows;
+
+          const count = Math.min(pageProducts, products.length - start);
+          for (let i = 0; i < count; i++) {
+            const idx = start + i;
+            const row = Math.floor(i / pdfColumns);
+            const col = i % pdfColumns;
+            const x = col * cardW;
+            const y = row * cardH;
+
+            // Card básico
+            ctx.strokeStyle = '#E5E7EB';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x + 12, y + 12, cardW - 24, cardH - 24);
+
+            // Nome do produto
+            ctx.fillStyle = '#111827';
+            ctx.font = 'bold 28px Arial';
+            const name = (products[idx]?.name || 'Produto').substring(0, 40);
+            ctx.fillText(name, x + 24, y + 48);
           }
-        }
-        
-        // Gerar última página se houver linhas restantes
-        if (currentPageRows.length > 0) {
-          const firstRow = currentPageRows[0];
-          const lastRow = currentPageRows[currentPageRows.length - 1];
-          const pageStartY = firstRow.top;
-          const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
-          
-          const pageCanvas = document.createElement('canvas');
-          pageCanvas.width = canvas.width;
-          pageCanvas.height = Math.round(pageHeight * domToCanvas);
-          const pageCtx = pageCanvas.getContext('2d');
-          
-          if (pageCtx) {
-            pageCtx.drawImage(
-              canvas,
-              0, Math.round(pageStartY * domToCanvas), canvas.width, Math.round(pageHeight * domToCanvas),
-              0, 0, canvas.width, Math.round(pageHeight * domToCanvas)
-            );
-            
-            const pageImgData = pageCanvas.toDataURL('image/png');
-            
-            // Calcular dimensões respeitando a proporção e os limites da página
-            const canvasAspectRatio = pageCanvas.width / pageCanvas.height;
-            const pageAspectRatio = availableWidth / availableHeight;
-            
-            let drawWidth, drawHeight;
-            
-            if (canvasAspectRatio > pageAspectRatio) {
-              // Canvas é mais largo, limitar pela largura
-              drawWidth = availableWidth;
-              drawHeight = availableWidth / canvasAspectRatio;
-            } else {
-              // Canvas é mais alto, limitar pela altura
-              drawHeight = availableHeight;
-              drawWidth = availableHeight * canvasAspectRatio;
-            }
-            
-            // Centralizar na página
-            const offsetX = margin + (availableWidth - drawWidth) / 2;
-            const offsetY = margin + (availableHeight - drawHeight) / 2;
-            
-            if (pageNumber > 0) {
-              pdf.addPage();
-            }
-            pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
-          }
+
+          // Inserir a página ocupando exatamente a área útil (sem margens extras)
+          const img = pageCanvas.toDataURL('image/png');
+          if (pageNumber > 0) pdf.addPage();
+          pdf.addImage(img, 'PNG', margin, margin, availableWidth, availableHeight);
+          pageNumber++;
         }
       }
       
