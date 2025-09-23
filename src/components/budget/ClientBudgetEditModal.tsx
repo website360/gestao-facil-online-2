@@ -285,22 +285,39 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
 
       // Sincronizar itens conforme o tipo de usuário
       if (isClient) {
-        // Cliente logado: usar lógica simplificada para evitar duplicações
-        console.log('Cliente logado: limpando e recriando itens para evitar duplicações');
-        
-        // Primeiro: Zerar TODOS os itens existentes (soft delete)
-        const { error: zeroAllError } = await supabase
-          .from('budget_items')
-          .update({ quantity: 0, total_price: 0, discount_percentage: 0 })
-          .eq('budget_id', budget.id);
-        
-        if (zeroAllError) {
-          console.error('Erro ao zerar itens existentes:', zeroAllError);
-          throw zeroAllError;
+        // Cliente logado: usar UPSERT por (budget_id, product_id) para evitar duplicações
+        console.log('Cliente logado: atualizando itens via UPSERT (sem duplicar)');
+
+        // Conjunto dos produtos atuais (itens removidos precisam ser zerados)
+        const currentProductIds = itemsToPersist.map(i => i.product_id).filter(Boolean);
+
+        // 1) Zerar apenas itens que NÃO estão mais no orçamento (remoção)
+        if (currentProductIds.length > 0) {
+          const idsList = `(${currentProductIds.map(id => `'${id}'`).join(',')})`;
+          console.log('Zerando itens que não estão mais presentes. Mantendo:', idsList);
+          const { error: zeroRemovedError } = await supabase
+            .from('budget_items')
+            .update({ quantity: 0, total_price: 0 })
+            .eq('budget_id', budget.id)
+            .not('product_id', 'in', idsList);
+          if (zeroRemovedError) {
+            console.error('Erro ao zerar itens removidos:', zeroRemovedError);
+            throw zeroRemovedError;
+          }
+        } else {
+          // Se não há itens, zerar todos
+          const { error: zeroAllError } = await supabase
+            .from('budget_items')
+            .update({ quantity: 0, total_price: 0 })
+            .eq('budget_id', budget.id);
+          if (zeroAllError) {
+            console.error('Erro ao zerar todos os itens:', zeroAllError);
+            throw zeroAllError;
+          }
         }
 
-        // Segundo: Inserir apenas os itens válidos atuais (sem duplicatas)
-        const itemsToInsert = itemsToPersist.map(item => ({
+        // 2) UPSERT dos itens atuais (deduplicados)
+        const itemsToUpsert = itemsToPersist.map(item => ({
           budget_id: budget.id,
           product_id: item.product_id,
           quantity: item.quantity,
@@ -309,15 +326,14 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
           discount_percentage: item.discount_percentage || 0
         }));
 
-        console.log('Inserindo itens válidos:', itemsToInsert.map(i => i.product_id));
-        
-        const { error: insertError } = await supabase
+        console.log('Upserting itens (onConflict budget_id,product_id):', itemsToUpsert.map(i => i.product_id));
+        const { error: upsertError } = await supabase
           .from('budget_items')
-          .insert(itemsToInsert);
-          
-        if (insertError) {
-          console.error('Erro ao inserir itens:', insertError);
-          throw insertError;
+          .upsert(itemsToUpsert, { onConflict: 'budget_id,product_id' });
+
+        if (upsertError) {
+          console.error('Erro ao fazer upsert dos itens:', upsertError);
+          throw upsertError;
         }
       } else {
         // Fluxo normal (usuário autenticado) - remover e inserir
