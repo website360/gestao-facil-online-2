@@ -418,19 +418,6 @@ export class BudgetService {
 
       console.log('Budget updated successfully');
 
-      // Delete existing budget items
-      const { error: deleteError } = await supabase
-        .from('budget_items')
-        .delete()
-        .eq('budget_id', editingBudget.id);
-
-      if (deleteError) {
-        console.error('Error deleting existing items:', deleteError);
-        throw deleteError;
-      }
-
-      console.log('Existing budget items deleted');
-
       // Filtrar e DEDUPLICAR itens válidos por product_id para respeitar a unique constraint
       const validItems = formData.items
         .filter(item => item.product_id && item.product_id.trim() !== '' && item.quantity > 0);
@@ -467,16 +454,44 @@ export class BudgetService {
 
       const budgetItems = Array.from(dedupMap.values());
 
-      console.log('New budget items to insert (deduplicated):', budgetItems);
+      console.log('Budget items to upsert (deduplicated):', budgetItems);
 
       if (budgetItems.length > 0) {
-        const { error: itemsError } = await supabase
+        // Use UPSERT instead of DELETE + INSERT to prevent race conditions
+        const { error: upsertError } = await supabase
           .from('budget_items')
-          .insert(budgetItems);
+          .upsert(budgetItems, { 
+            onConflict: 'budget_id,product_id',
+            ignoreDuplicates: false 
+          });
 
-        if (itemsError) {
-          console.error('Error inserting budget items:', itemsError);
-          throw itemsError;
+        if (upsertError) {
+          console.error('Error upserting budget items:', upsertError);
+          throw upsertError;
+        }
+
+        // Clean up any items that were removed (not in the new list)
+        const productIds = budgetItems.map(item => item.product_id);
+        const { error: cleanupError } = await supabase
+          .from('budget_items')
+          .delete()
+          .eq('budget_id', editingBudget.id)
+          .not('product_id', 'in', `(${productIds.map(id => `'${id}'`).join(',')})`);
+
+        if (cleanupError) {
+          console.error('Error cleaning up removed items:', cleanupError);
+          throw cleanupError;
+        }
+      } else {
+        // No items, delete all existing items for this budget
+        const { error: deleteAllError } = await supabase
+          .from('budget_items')
+          .delete()
+          .eq('budget_id', editingBudget.id);
+
+        if (deleteAllError) {
+          console.error('Error deleting all items:', deleteAllError);
+          throw deleteAllError;
         }
       }
 
