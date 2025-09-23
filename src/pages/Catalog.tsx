@@ -229,27 +229,10 @@ const Catalog = () => {
     try {
       toast.loading('Gerando PDF do catálogo...');
       
-      // Buscar o elemento que contém os produtos
-      const catalogContainer = document.getElementById('catalog-products-grid');
-      if (!catalogContainer) {
-        toast.error('Erro ao localizar o conteúdo para impressão');
-        return;
-      }
-
-      // Obter todos os cards de produtos
-      const productCards = catalogContainer.children;
-      if (productCards.length === 0) {
+      if (products.length === 0) {
         toast.error('Nenhum produto encontrado para impressão');
         return;
       }
-
-      // Capturar a imagem do container completo
-      const canvas = await html2canvas(catalogContainer, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#F2F8FF'
-      });
 
       // Criar PDF com folha A4 e margem de 1cm
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -272,13 +255,6 @@ const Catalog = () => {
       
       const productsPerPage = getProductsPerPage(columnsCount);
       
-      // Calcular escalas que respeitam largura e altura
-      const widthScaleAll = availableWidth / canvas.width;
-      const heightScaleAll = availableHeight / canvas.height;
-      const baseScale = Math.min(widthScaleAll, heightScaleAll);
-      const scaledCanvasHeight = canvas.height * baseScale;
-      const domToCanvas = canvas.width / catalogContainer.clientWidth;
-      
       // Gerar páginas com grid fixo para preencher toda a largura útil (margem de 1cm)
       const getPDFColumns = (cols: number) => (cols >= 5 ? 5 : 3);
       const pdfColumns = getPDFColumns(columnsCount);
@@ -286,18 +262,51 @@ const Catalog = () => {
       const pageProducts = pdfColumns * pdfRows;
 
       let pageNumber = 0;
-      for (let start = 0; start < products.length; start += pageProducts) {
-        // Canvas proporcional à área útil da página para evitar sobras laterais
-        const targetWidthPx = 1500; // base em px
-        const targetHeightPx = Math.round(targetWidthPx * (availableHeight / availableWidth));
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = targetWidthPx;
-        pageCanvas.height = targetHeightPx;
-        const ctx = pageCanvas.getContext('2d');
+      
+      // Função auxiliar para quebrar texto em múltiplas linhas
+      function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {
+        const words = text.split(' ');
+        const lines: string[] = [];
+        let currentLine = words[0] || '';
 
-        if (ctx) {
+        for (let i = 1; i < words.length; i++) {
+          const word = words[i];
+          const width = ctx.measureText(currentLine + ' ' + word).width;
+          if (width < maxWidth && lines.length < maxLines - 1) {
+            currentLine += ' ' + word;
+          } else {
+            lines.push(currentLine);
+            currentLine = word;
+            if (lines.length >= maxLines - 1) {
+              if (i < words.length - 1) {
+                currentLine += '...';
+              }
+              break;
+            }
+          }
+        }
+        lines.push(currentLine);
+        return lines.slice(0, maxLines);
+      }
+
+      // Processar cada página sequencialmente
+      for (let start = 0; start < products.length; start += pageProducts) {
+        await new Promise<void>((pageResolve) => {
+          // Canvas proporcional à área útil da página para evitar sobras laterais
+          const targetWidthPx = 1500; // base em px
+          const targetHeightPx = Math.round(targetWidthPx * (availableHeight / availableWidth));
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = targetWidthPx;
+          pageCanvas.height = targetHeightPx;
+          const ctx = pageCanvas.getContext('2d');
+
+          if (!ctx) {
+            pageResolve();
+            return;
+          }
+
           // Fundo branco
-          ctx.fillStyle = '#FFFFFF';
+          ctx.fillStyle = '#F2F8FF';
           ctx.fillRect(0, 0, targetWidthPx, targetHeightPx);
 
           // Dimensões dos cards
@@ -305,31 +314,141 @@ const Catalog = () => {
           const cardH = targetHeightPx / pdfRows;
 
           const count = Math.min(pageProducts, products.length - start);
+          
+          // Criar array de promesas para carregar todas as imagens desta página
+          const renderPromises: Promise<void>[] = [];
+          
           for (let i = 0; i < count; i++) {
             const idx = start + i;
+            const product = products[idx];
             const row = Math.floor(i / pdfColumns);
             const col = i % pdfColumns;
             const x = col * cardW;
             const y = row * cardH;
 
-            // Card básico
-            ctx.strokeStyle = '#E5E7EB';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x + 12, y + 12, cardW - 24, cardH - 24);
+            // Criar promessa para renderizar cada produto
+            const renderPromise = new Promise<void>((resolve) => {
+              // Card com borda
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillRect(x + 8, y + 8, cardW - 16, cardH - 16);
+              ctx.strokeStyle = '#E5E7EB';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(x + 8, y + 8, cardW - 16, cardH - 16);
 
-            // Nome do produto
-            ctx.fillStyle = '#111827';
-            ctx.font = 'bold 28px Arial';
-            const name = (products[idx]?.name || 'Produto').substring(0, 40);
-            ctx.fillText(name, x + 24, y + 48);
+              const padding = 16;
+              const innerX = x + padding;
+              const innerY = y + padding;
+              const innerW = cardW - (padding * 2);
+              const innerH = cardH - (padding * 2);
+
+              // Área para imagem (metade superior do card)
+              const imgAreaH = innerH * 0.6;
+              const imgSize = Math.min(innerW * 0.8, imgAreaH * 0.8);
+              const imgX = innerX + (innerW - imgSize) / 2;
+              const imgY = innerY + 10;
+
+              function renderProductText() {
+                // Área de texto (metade inferior)
+                const textY = innerY + imgAreaH + 20;
+                let currentTextY = textY;
+
+                // Nome do produto (2 linhas máximo)
+                ctx.fillStyle = '#111827';
+                ctx.font = 'bold 18px Arial';
+                const maxNameWidth = innerW - 8;
+                const name = product.name || 'Produto sem nome';
+                const nameLines = wrapText(ctx, name, maxNameWidth, 2);
+                
+                nameLines.forEach(line => {
+                  ctx.fillText(line, innerX + 4, currentTextY);
+                  currentTextY += 22;
+                });
+
+                // Código interno
+                if (product.internal_code) {
+                  currentTextY += 5;
+                  ctx.fillStyle = '#6B7280';
+                  ctx.font = '14px Arial';
+                  ctx.fillText(`Cód: ${product.internal_code}`, innerX + 4, currentTextY);
+                  currentTextY += 18;
+                }
+
+                // Preço (destacado)
+                if (product.price) {
+                  currentTextY += 5;
+                  ctx.fillStyle = '#DC2626';
+                  ctx.font = 'bold 20px Arial';
+                  const priceText = formatCurrency(product.price);
+                  ctx.fillText(priceText, innerX + 4, currentTextY);
+                  currentTextY += 25;
+                }
+
+                // Categoria
+                if (product.categories?.name) {
+                  ctx.fillStyle = '#4B5563';
+                  ctx.font = '12px Arial';
+                  ctx.fillText(product.categories.name, innerX + 4, currentTextY);
+                  currentTextY += 16;
+                }
+
+                // Status de estoque
+                const stockText = getStockStatusText(product.stock);
+                ctx.fillStyle = product.stock > (shouldUseStockLimit ? 10 : 0) ? '#10B981' : '#EF4444';
+                ctx.font = '12px Arial';
+                ctx.fillText(stockText, innerX + 4, currentTextY);
+
+                resolve();
+              }
+
+              // Carregar e desenhar imagem do produto
+              if (product.photo_url) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                  try {
+                    ctx.drawImage(img, imgX, imgY, imgSize, imgSize);
+                  } catch (error) {
+                    console.warn('Erro ao desenhar imagem:', error);
+                    // Desenhar placeholder se falhar
+                    ctx.fillStyle = '#F3F4F6';
+                    ctx.fillRect(imgX, imgY, imgSize, imgSize);
+                    ctx.strokeStyle = '#D1D5DB';
+                    ctx.strokeRect(imgX, imgY, imgSize, imgSize);
+                  }
+                  renderProductText();
+                };
+                img.onerror = () => {
+                  // Desenhar placeholder
+                  ctx.fillStyle = '#F3F4F6';
+                  ctx.fillRect(imgX, imgY, imgSize, imgSize);
+                  ctx.strokeStyle = '#D1D5DB';
+                  ctx.strokeRect(imgX, imgY, imgSize, imgSize);
+                  renderProductText();
+                };
+                img.src = product.photo_url;
+              } else {
+                // Placeholder quando não há imagem
+                ctx.fillStyle = '#F3F4F6';
+                ctx.fillRect(imgX, imgY, imgSize, imgSize);
+                ctx.strokeStyle = '#D1D5DB';
+                ctx.strokeRect(imgX, imgY, imgSize, imgSize);
+                renderProductText();
+              }
+            });
+
+            renderPromises.push(renderPromise);
           }
 
-          // Inserir a página ocupando exatamente a área útil (sem margens extras)
-          const img = pageCanvas.toDataURL('image/png');
-          if (pageNumber > 0) pdf.addPage();
-          pdf.addImage(img, 'PNG', margin, margin, availableWidth, availableHeight);
-          pageNumber++;
-        }
+          // Aguardar todas as renderizações desta página completarem
+          Promise.all(renderPromises).then(() => {
+            // Inserir a página ocupando exatamente a área útil
+            const img = pageCanvas.toDataURL('image/png');
+            if (pageNumber > 0) pdf.addPage();
+            pdf.addImage(img, 'PNG', margin, margin, availableWidth, availableHeight);
+            pageNumber++;
+            pageResolve();
+          });
+        });
       }
       
       // Gerar nome do arquivo com data atual
