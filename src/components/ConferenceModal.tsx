@@ -24,6 +24,7 @@ interface SaleItem {
     internal_code: string;
     barcode: string | null;
     stock_unit: string;
+    photo_url: string | null;
   } | null;
 }
 interface ConferenceItem {
@@ -127,7 +128,7 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
         error
       } = await supabase.from('sale_items').select(`
           *,
-          products(name, internal_code, barcode, stock_unit)
+          products(name, internal_code, barcode, stock_unit, photo_url)
         `).eq('sale_id', saleId);
       if (error) throw error;
       setSaleItems(data?.map(item => ({
@@ -136,7 +137,8 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
           name: (item.products as any).name,
           internal_code: (item.products as any).internal_code,
           barcode: (item.products as any).barcode,
-          stock_unit: (item.products as any).stock_unit || 'Unidade'
+          stock_unit: (item.products as any).stock_unit || 'Unidade',
+          photo_url: (item.products as any).photo_url
         } : null
       })) || []);
     } catch (error) {
@@ -369,32 +371,64 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
                   </div>
 
                   {foundItem && (
-                    <div className="space-y-2">
-                      <Label htmlFor="quantity-input" className="text-sm">
-                        Quantidade Conferida
-                      </Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="quantity-input"
-                          ref={quantityInputRef}
-                          type="number"
-                          value={quantityInput}
-                          onChange={(e) => setQuantityInput(e.target.value)}
-                          placeholder="Digite a quantidade conferida"
-                          className="flex-1"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && quantityInput) {
-                              handleQuantitySubmit();
-                            }
-                          }}
-                        />
-                        <Button
-                          onClick={handleQuantitySubmit}
-                          disabled={!quantityInput}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          Conferir
-                        </Button>
+                    <div className="space-y-3">
+                      {/* Miniatura do produto encontrado */}
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-16 h-16 bg-gray-100 border rounded-lg overflow-hidden flex-shrink-0">
+                            {foundItem.products?.photo_url ? (
+                              <img
+                                src={foundItem.products.photo_url}
+                                alt={foundItem.products.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Package className="w-6 h-6 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-green-800 text-sm">
+                              {foundItem.products?.name}
+                            </h4>
+                            <p className="text-xs text-green-600">
+                              Código: {foundItem.products?.internal_code}
+                            </p>
+                            <p className="text-xs text-green-600">
+                              Quantidade esperada: {foundItem.quantity} {foundItem.products?.stock_unit}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="quantity-input" className="text-sm">
+                          Quantidade Conferida
+                        </Label>
+                        <div className="flex gap-2 mt-1">
+                          <Input
+                            id="quantity-input"
+                            ref={quantityInputRef}
+                            type="number"
+                            value={quantityInput}
+                            onChange={(e) => setQuantityInput(e.target.value)}
+                            placeholder="Digite a quantidade conferida"
+                            className="flex-1"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && quantityInput) {
+                                handleQuantitySubmit();
+                              }
+                            }}
+                          />
+                          <Button
+                            onClick={handleQuantitySubmit}
+                            disabled={!quantityInput}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            Conferir
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
