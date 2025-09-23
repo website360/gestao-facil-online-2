@@ -74,7 +74,7 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
   const [boletoInstallments, setBoletoInstallments] = useState(1);
   const [checkDueDates, setCheckDueDates] = useState<number[]>([10, 20, 30, 40]);
   const [boletoDueDates, setBoletoDueDates] = useState<number[]>([10, 20, 30, 40, 50, 60]);
-  const [trackingCode, setTrackingCode] = useState('');
+  
 
   // Check if sale is finalized
   const isFinalized = saleData?.status === 'finalizado';
@@ -140,7 +140,7 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
       setBoletoInstallments(salesData.boleto_installments || 1);
       setCheckDueDates(salesData.check_due_dates || [10, 20, 30, 40]);
       setBoletoDueDates(salesData.boleto_due_dates || [10, 20, 30, 40, 50, 60]);
-      setTrackingCode(salesData.tracking_code || '');
+      
     } catch (error) {
       console.error('Erro ao carregar detalhes da venda:', error);
       toast.error('Erro ao carregar detalhes da venda');
@@ -214,7 +214,7 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
           check_due_dates: checkDueDates,
           boleto_installments: boletoInstallments || 1,
           boleto_due_dates: boletoDueDates,
-          tracking_code: trackingCode || null
+          
         })
         .eq('id', saleId);
 
@@ -780,26 +780,6 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
               </div>
             </div>
 
-            {/* Campo de Rastreio - só aparece se a venda foi convertida de orçamento */}
-            {saleData.budget_id && (
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold mb-4 text-blue-800">Rastreamento da Entrega</h3>
-                <div>
-                  <Label htmlFor="trackingCode">Código de Rastreio dos Correios</Label>
-                  <Input
-                    type="text"
-                    value={trackingCode}
-                    onChange={(e) => setTrackingCode(e.target.value)}
-                    placeholder="Ex: BR123456789BR"
-                    disabled={isFinalized}
-                    className="uppercase"
-                  />
-                  <p className="text-sm text-gray-600 mt-1">
-                    Este código será usado para rastreamento na página dos Correios.
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Itens da Venda */}
             <div className="space-y-4">

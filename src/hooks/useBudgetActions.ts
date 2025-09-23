@@ -239,7 +239,8 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
         product_id: item.product_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        total_price: item.total_price
+        total_price: item.total_price,
+        discount_percentage: item.discount_percentage || 0
       }));
 
       console.log('Sale items to create:', saleItems);
