@@ -14,6 +14,19 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
     if (!budgetToDelete) return;
 
     try {
+      // Delete budget items first
+      const { error: itemsError } = await supabase
+        .from('budget_items')
+        .delete()
+        .eq('budget_id', budgetToDelete.id);
+
+      if (itemsError) {
+        console.error('Error deleting budget items:', itemsError);
+        toast.error('Erro ao remover itens do orçamento');
+        return;
+      }
+
+      // Then delete the budget
       const { error } = await supabase
         .from('budgets')
         .delete()
