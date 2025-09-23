@@ -19,6 +19,7 @@ interface SaleItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  discount_percentage?: number;
   products: { name: string; price: number } | null;
 }
 
@@ -886,22 +887,22 @@ const SalesEditModal: React.FC<SalesEditModalProps> = ({ isOpen, onClose, saleId
                             step="0.01"
                             min="0"
                             max="100"
-                            value={0}
+                            value={Number(item.discount_percentage || 0)}
                             className="w-20 bg-gray-100"
                             placeholder="0"
                             readOnly
-                            title="Desconto não implementado para vendas"
+                            title="Desconto aplicado do orçamento"
                           />
                         </TableCell>
                         <TableCell className="text-center">
                           <Input
                             type="text"
                             inputMode="decimal"
-                            value={Number.isFinite(item.unit_price) ? String(item.unit_price).replace('.', ',') : ''}
+                            value={formatNumber(item.unit_price * (1 - (Number(item.discount_percentage || 0) / 100)))}
                             className="w-24 bg-gray-100"
                             placeholder="0,00"
                             readOnly
-                            title="Sem desconto aplicado"
+                            title="Preço unitário com desconto"
                           />
                         </TableCell>
                         <TableCell className="text-center font-semibold">

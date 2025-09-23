@@ -15,6 +15,7 @@ interface SaleItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  discount_percentage?: number;
   products: { name: string; internal_code: string } | null;
 }
 
@@ -570,10 +571,10 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                                   <TableCell className="text-center">{item.products?.internal_code || 'N/A'}</TableCell>
                                   <TableCell className="text-center">{item.quantity}</TableCell>
                                   <TableCell className="text-center">{formatNumber(item.unit_price)}</TableCell>
-                                  <TableCell className="text-center">{saleData.discount_percentage || 0}%</TableCell>
-                                  <TableCell className="text-center">{formatNumber(item.unit_price * (1 - (saleData.discount_percentage || 0) / 100))}</TableCell>
+                                  <TableCell className="text-center">{item.discount_percentage || 0}%</TableCell>
+                                  <TableCell className="text-center">{formatNumber(item.unit_price * (1 - (Number(item.discount_percentage || 0) / 100)))}</TableCell>
                                   <TableCell className="text-center font-semibold text-green-600">
-                                    {formatCurrency((item.unit_price * (1 - (saleData.discount_percentage || 0) / 100)) * ((saleData.invoice_percentage || 0) / 100))}
+                                    {formatCurrency((item.unit_price * (1 - (Number(item.discount_percentage || 0) / 100))) * ((saleData.invoice_percentage || 0) / 100))}
                                   </TableCell>
                                   <TableCell className="text-center font-semibold">{formatCurrency(item.total_price)}</TableCell>
                                   <TableCell className="text-center">
@@ -633,10 +634,10 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                                    <span className="text-xs text-gray-500">Preço Unit.:</span>
                                    <p className="font-medium">{formatCurrency(item.unit_price)}</p>
                                  </div>
-                                 <div>
-                                   <span className="text-xs text-gray-500">Desconto:</span>
-                                   <p className="font-medium">0%</p>
-                                 </div>
+                                  <div>
+                                    <span className="text-xs text-gray-500">Desconto:</span>
+                                    <p className="font-medium">{item.discount_percentage || 0}%</p>
+                                  </div>
                                  <div>
                                    <span className="text-xs text-gray-500">Total:</span>
                                    <p className="font-semibold text-lg">{formatCurrency(item.total_price)}</p>
