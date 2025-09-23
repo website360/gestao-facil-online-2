@@ -272,80 +272,22 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
 
       // Sincronizar itens conforme o tipo de usuário
       if (isClient) {
-        console.log('Cliente logado: usando sincronização sem DELETE (RLS)');
-        // Buscar itens atuais do orçamento
-        const { data: currentItems, error: currentError } = await supabase
+        // Cliente logado: usar lógica simplificada para evitar duplicações
+        console.log('Cliente logado: limpando e recriando itens para evitar duplicações');
+        
+        // Primeiro: Zerar TODOS os itens existentes (soft delete)
+        const { error: zeroAllError } = await supabase
           .from('budget_items')
-          .select('id, product_id, quantity')
+          .update({ quantity: 0, total_price: 0, discount_percentage: 0 })
           .eq('budget_id', budget.id);
-        if (currentError) {
-          console.error('Erro ao buscar itens atuais:', currentError);
-          throw currentError;
+        
+        if (zeroAllError) {
+          console.error('Erro ao zerar itens existentes:', zeroAllError);
+          throw zeroAllError;
         }
 
-        const currentMap = new Map((currentItems || []).map(ci => [ci.product_id, ci]));
-
-        // Remover duplicatas existentes (manter o primeiro registro por produto)
-        const duplicatesToZero: string[] = [];
-        const seen = new Set<string>();
-        (currentItems || []).forEach(ci => {
-          if (!ci.product_id) return;
-          const key = ci.product_id;
-          if (seen.has(key)) {
-            duplicatesToZero.push(ci.id);
-          } else {
-            seen.add(key);
-          }
-        });
-        if (duplicatesToZero.length > 0) {
-          console.log('Zerando duplicatas existentes:', duplicatesToZero);
-          const { error: dupZeroErr } = await supabase
-            .from('budget_items')
-            .update({ quantity: 0, total_price: 0, discount_percentage: 0 })
-            .in('id', duplicatesToZero);
-          if (dupZeroErr) {
-            console.error('Erro ao zerar duplicatas:', dupZeroErr);
-          }
-        }
-
-        const validProductIds = new Set(validItems.map(v => v.product_id));
-
-        // 1) Zerar itens removidos (quantidade 0)
-        const toZero = (currentItems || []).filter(ci => !validProductIds.has(ci.product_id));
-        if (toZero.length > 0) {
-          const ids = toZero.map(ci => ci.id);
-          console.log('Zerando itens removidos (soft-delete):', ids);
-          const { error: zeroError } = await supabase
-            .from('budget_items')
-            .update({ quantity: 0, total_price: 0, discount_percentage: 0 })
-            .in('id', ids);
-          if (zeroError) {
-            console.error('Erro ao zerar itens:', zeroError);
-            throw zeroError;
-          }
-        }
-
-        // 2) Atualizar itens existentes
-        const toUpdate = validItems.filter(v => currentMap.has(v.product_id));
-        if (toUpdate.length > 0) {
-          console.log('Atualizando itens existentes:', toUpdate.map(i => i.product_id));
-          await Promise.all(toUpdate.map(async (item) => {
-            const { error } = await supabase
-              .from('budget_items')
-              .update({
-                quantity: item.quantity,
-                unit_price: item.unit_price,
-                total_price: item.total_price,
-                discount_percentage: item.discount_percentage || 0
-              })
-              .eq('budget_id', budget.id)
-              .eq('product_id', item.product_id);
-            if (error) throw error;
-          }));
-        }
-
-        // 3) Inserir itens novos
-        const toInsert = validItems.filter(v => !currentMap.has(v.product_id)).map(item => ({
+        // Segundo: Inserir apenas os itens válidos atuais (sem duplicatas)
+        const itemsToInsert = validItems.map(item => ({
           budget_id: budget.id,
           product_id: item.product_id,
           quantity: item.quantity,
@@ -353,15 +295,16 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
           total_price: item.total_price,
           discount_percentage: item.discount_percentage || 0
         }));
-        if (toInsert.length > 0) {
-          console.log('Inserindo itens novos:', toInsert.map(i => i.product_id));
-          const { error: insertError } = await supabase
-            .from('budget_items')
-            .insert(toInsert);
-          if (insertError) {
-            console.error('Erro ao inserir itens novos:', insertError);
-            throw insertError;
-          }
+
+        console.log('Inserindo itens válidos:', itemsToInsert.map(i => i.product_id));
+        
+        const { error: insertError } = await supabase
+          .from('budget_items')
+          .insert(itemsToInsert);
+          
+        if (insertError) {
+          console.error('Erro ao inserir itens:', insertError);
+          throw insertError;
         }
       } else {
         // Fluxo normal (usuário autenticado) - remover e inserir
