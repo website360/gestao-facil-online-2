@@ -253,11 +253,11 @@ const Catalog = () => {
 
       // Criar PDF com folha A4 e margem de 1cm
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+      const pageWidth = pdf.internal.pageSize.getWidth(); // 210mm
+      const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
       const margin = 10; // 1cm de margem
-      const availableWidth = pageWidth - (margin * 2);
-      const availableHeight = pageHeight - (margin * 2);
+      const availableWidth = pageWidth - (margin * 2); // 190mm
+      const availableHeight = pageHeight - (margin * 2); // 277mm
       
       // Configurar produtos por página baseado nas colunas selecionadas
       const getProductsPerPage = (columns: number) => {
@@ -282,9 +282,28 @@ const Catalog = () => {
       // Se tudo cabe em uma página (com escala que respeita a altura)
       if (scaledCanvasHeight <= availableHeight) {
         const imgData = canvas.toDataURL('image/png');
-        const drawWidth = canvas.width * baseScale;
-        const drawHeight = canvas.height * baseScale;
-        pdf.addImage(imgData, 'PNG', margin, margin, drawWidth, drawHeight);
+        
+        // Calcular dimensões respeitando a proporção
+        const canvasAspectRatio = canvas.width / canvas.height;
+        const pageAspectRatio = availableWidth / availableHeight;
+        
+        let drawWidth, drawHeight;
+        
+        if (canvasAspectRatio > pageAspectRatio) {
+          // Canvas é mais largo, limitar pela largura
+          drawWidth = availableWidth;
+          drawHeight = availableWidth / canvasAspectRatio;
+        } else {
+          // Canvas é mais alto, limitar pela altura
+          drawHeight = availableHeight;
+          drawWidth = availableHeight * canvasAspectRatio;
+        }
+        
+        // Centralizar na página
+        const offsetX = margin + (availableWidth - drawWidth) / 2;
+        const offsetY = margin + (availableHeight - drawHeight) / 2;
+        
+        pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
       } else {
         // Calcular quantas linhas de produtos temos
         const containerRect = catalogContainer.getBoundingClientRect();
@@ -367,16 +386,31 @@ const Catalog = () => {
               );
               
               const pageImgData = pageCanvas.toDataURL('image/png');
-              const widthScalePage = availableWidth / canvas.width;
-              const heightScalePage = availableHeight / pageCanvas.height;
-              const finalScale = Math.min(widthScalePage, heightScalePage);
-              const drawWidth = canvas.width * finalScale;
-              const drawHeight = pageCanvas.height * finalScale;
+              
+              // Calcular dimensões respeitando a proporção e os limites da página
+              const canvasAspectRatio = pageCanvas.width / pageCanvas.height;
+              const pageAspectRatio = availableWidth / availableHeight;
+              
+              let drawWidth, drawHeight;
+              
+              if (canvasAspectRatio > pageAspectRatio) {
+                // Canvas é mais largo, limitar pela largura
+                drawWidth = availableWidth;
+                drawHeight = availableWidth / canvasAspectRatio;
+              } else {
+                // Canvas é mais alto, limitar pela altura
+                drawHeight = availableHeight;
+                drawWidth = availableHeight * canvasAspectRatio;
+              }
+              
+              // Centralizar na página
+              const offsetX = margin + (availableWidth - drawWidth) / 2;
+              const offsetY = margin + (availableHeight - drawHeight) / 2;
               
               if (pageNumber > 0) {
                 pdf.addPage();
               }
-              pdf.addImage(pageImgData, 'PNG', margin, margin, drawWidth, drawHeight);
+              pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
               pageNumber++;
             }
             
@@ -410,16 +444,31 @@ const Catalog = () => {
             );
             
             const pageImgData = pageCanvas.toDataURL('image/png');
-            const widthScalePage = availableWidth / canvas.width;
-            const heightScalePage = availableHeight / pageCanvas.height;
-            const finalScale = Math.min(widthScalePage, heightScalePage);
-            const drawWidth = canvas.width * finalScale;
-            const drawHeight = pageCanvas.height * finalScale;
+            
+            // Calcular dimensões respeitando a proporção e os limites da página
+            const canvasAspectRatio = pageCanvas.width / pageCanvas.height;
+            const pageAspectRatio = availableWidth / availableHeight;
+            
+            let drawWidth, drawHeight;
+            
+            if (canvasAspectRatio > pageAspectRatio) {
+              // Canvas é mais largo, limitar pela largura
+              drawWidth = availableWidth;
+              drawHeight = availableWidth / canvasAspectRatio;
+            } else {
+              // Canvas é mais alto, limitar pela altura
+              drawHeight = availableHeight;
+              drawWidth = availableHeight * canvasAspectRatio;
+            }
+            
+            // Centralizar na página
+            const offsetX = margin + (availableWidth - drawWidth) / 2;
+            const offsetY = margin + (availableHeight - drawHeight) / 2;
             
             if (pageNumber > 0) {
               pdf.addPage();
             }
-            pdf.addImage(pageImgData, 'PNG', margin, margin, drawWidth, drawHeight);
+            pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, drawWidth, drawHeight);
           }
         }
       }
