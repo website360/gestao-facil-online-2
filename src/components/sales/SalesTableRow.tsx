@@ -238,6 +238,9 @@ const SalesTableRow = ({
         <TableCell className="text-gray-600 py-4 px-6">
           {new Date(sale.created_at).toLocaleDateString('pt-BR')}
         </TableCell>
+        <TableCell className="text-gray-600 py-4 px-6">
+          {sale.shipping_option_name || '-'}
+        </TableCell>
         <TableCell className="text-gray-600 py-4 px-6">{getCurrentResponsible(sale)}</TableCell>
         <TableCell className="py-4 px-6">
           <div className="flex gap-1">
