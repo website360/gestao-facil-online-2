@@ -26,6 +26,7 @@ interface SaleReportData {
   due_dates: string;
   payment_dates: string;
   total_amount: number;
+  discount_percentage: number;
   invoice_percentage: number;
   invoice_value: number;
   receipt_names: string;
@@ -92,6 +93,7 @@ const SalesByDateClientReport = () => {
             check_due_dates,
             boleto_installments,
             check_installments,
+            discount_percentage,
             invoice_percentage,
             created_by,
             payment_methods(name),
@@ -204,6 +206,7 @@ const SalesByDateClientReport = () => {
             due_dates: dueDates,
             payment_dates: paymentDates,
             total_amount: 0,
+            discount_percentage: budget?.discount_percentage || 0,
             invoice_percentage: budget?.invoice_percentage || 0,
             invoice_value: 0,
             receipt_names: ''
@@ -299,6 +302,7 @@ const SalesByDateClientReport = () => {
       'Parcelas',
       'Prazos (dias)',
       'Datas de Vencimento',
+      'Desconto (%)',
       'Total Final',
       'Nota Fiscal (%)',
       'Valor Nota Fiscal',
@@ -317,6 +321,7 @@ const SalesByDateClientReport = () => {
         clientData.installments,
         clientData.due_dates,
         clientData.payment_dates,
+        clientData.discount_percentage + '%',
         clientData.total_amount,
         clientData.invoice_percentage + '%',
         clientData.invoice_value,
@@ -751,6 +756,7 @@ const SalesByDateClientReport = () => {
                     <TableHead className="text-center">Parcelas</TableHead>
                     <TableHead>Prazos (dias)</TableHead>
                     <TableHead>Datas de Vencimento</TableHead>
+                    <TableHead className="text-center">Desconto (%)</TableHead>
                     <TableHead className="text-right">Total Final</TableHead>
                     <TableHead className="text-center">Nota Fiscal (%)</TableHead>
                     <TableHead className="text-right">Valor Nota Fiscal</TableHead>
@@ -769,6 +775,7 @@ const SalesByDateClientReport = () => {
                       <TableCell className="text-center">{clientData.installments}</TableCell>
                       <TableCell>{clientData.due_dates || 'À vista'}</TableCell>
                       <TableCell>{clientData.payment_dates || 'À vista'}</TableCell>
+                      <TableCell className="text-center">{clientData.discount_percentage}%</TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(clientData.total_amount)}
                       </TableCell>
