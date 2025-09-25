@@ -291,12 +291,12 @@ export const generateSalePDF = async (sale: any) => {
       doc.text(item.quantity.toString(), colXQty, yPosition + 5);
       doc.text(formatCurrency(item.unit_price), colXUnit, yPosition + 5);
       
-      const discount = 0; // Vendas não têm desconto por item
-      doc.text(`${discount}%`, colXDesc, yPosition + 5);
+      const itemDiscountPercentage = item.discount_percentage || 0;
+      doc.text(`${itemDiscountPercentage.toFixed(1)}%`, colXDesc, yPosition + 5);
 
       // Cálculos
       const itemSubtotal = item.quantity * item.unit_price;
-      const itemDiscount = 0; // Sem desconto individual em vendas
+      const itemDiscount = itemSubtotal * (itemDiscountPercentage / 100);
       const itemTotal = itemSubtotal - itemDiscount;
       
       subtotal += itemSubtotal;
