@@ -229,38 +229,38 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                         </Badge>
                       </div>
                       {(() => {
-                        const log = getStatusLogForStatus('separacao');
-                        const isCurrentStatusChange = log && currentStatus === 'separacao';
-                        
-                        if (log?.user_profile) {
+                        // Mostrar quem FINALIZOU a separação
+                        if (historyData.separation_user_profile && historyData.separation_completed_at) {
                           return (
                             <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                               <User className="w-4 h-4" />
-                              <span>Alterado por: {log.user_profile.name}</span>
-                              <Clock className="w-4 h-4 ml-2" />
-                              <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
-                            </div>
-                          );
-                        } else if (historyData.separation_user_profile && historyData.separation_completed_at) {
-                          return (
-                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                              <User className="w-4 h-4" />
-                              <span>Por: {historyData.separation_user_profile.name}</span>
+                              <span>Finalizado por: {historyData.separation_user_profile.name}</span>
                               <Clock className="w-4 h-4 ml-2" />
                               <span>{new Date(historyData.separation_completed_at).toLocaleString('pt-BR')}</span>
                             </div>
                           );
+                        } else if (currentStatus === 'separacao') {
+                          // Se está em separação mas não foi finalizada ainda, mostrar log de mudança para separação
+                          const log = getStatusLogForStatus('separacao');
+                          if (log?.user_profile) {
+                            return (
+                              <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                                <User className="w-4 h-4" />
+                                <span>Iniciado por: {log.user_profile.name}</span>
+                                <Clock className="w-4 h-4 ml-2" />
+                                <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
+                              </div>
+                            );
+                          }
                         }
                         return null;
                       })()}
                       {(() => {
-                        const log = getStatusLogForStatus('separacao');
-                        const isCurrentStatusChange = currentStatus === 'separacao';
-                        
-                        return log?.reason && isCurrentStatusChange && (
+                        const separationLog = getStatusLogForStatus('separacao');
+                        return separationLog?.reason && currentStatus === 'separacao' && (
                           <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
                             <p className="text-sm text-blue-800">
-                              <span className="font-semibold">Motivo:</span> {log.reason}
+                              <span className="font-semibold">Motivo:</span> {separationLog.reason}
                             </p>
                           </div>
                         );
@@ -294,37 +294,38 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                         </Badge>
                       </div>
                       {(() => {
-                        const log = getStatusLogForStatus('conferencia');
-                        
-                        if (log?.user_profile) {
+                        // Mostrar quem FINALIZOU a conferência
+                        if (historyData.conference_user_profile && historyData.conference_completed_at) {
                           return (
                             <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                               <User className="w-4 h-4" />
-                              <span>Alterado por: {log.user_profile.name}</span>
-                              <Clock className="w-4 h-4 ml-2" />
-                              <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
-                            </div>
-                          );
-                        } else if (historyData.conference_user_profile && historyData.conference_completed_at) {
-                          return (
-                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                              <User className="w-4 h-4" />
-                              <span>Por: {historyData.conference_user_profile.name}</span>
+                              <span>Finalizado por: {historyData.conference_user_profile.name}</span>
                               <Clock className="w-4 h-4 ml-2" />
                               <span>{new Date(historyData.conference_completed_at).toLocaleString('pt-BR')}</span>
                             </div>
                           );
+                        } else if (currentStatus === 'conferencia') {
+                          // Se está em conferência mas não foi finalizada ainda, mostrar log de mudança para conferência
+                          const log = getStatusLogForStatus('conferencia');
+                          if (log?.user_profile) {
+                            return (
+                              <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                                <User className="w-4 h-4" />
+                                <span>Iniciado por: {log.user_profile.name}</span>
+                                <Clock className="w-4 h-4 ml-2" />
+                                <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
+                              </div>
+                            );
+                          }
                         }
                         return null;
                       })()}
                       {(() => {
-                        const log = getStatusLogForStatus('conferencia');
-                        const isCurrentStatusChange = currentStatus === 'conferencia';
-                        
-                        return log?.reason && isCurrentStatusChange && (
+                        const conferenceLog = getStatusLogForStatus('conferencia');
+                        return conferenceLog?.reason && currentStatus === 'conferencia' && (
                           <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
                             <p className="text-sm text-blue-800">
-                              <span className="font-semibold">Motivo:</span> {log.reason}
+                              <span className="font-semibold">Motivo:</span> {conferenceLog.reason}
                             </p>
                           </div>
                         );
@@ -358,37 +359,38 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                         </Badge>
                       </div>
                       {(() => {
-                        const log = getStatusLogForStatus('nota_fiscal');
-                        
-                        if (log?.user_profile) {
+                        // Mostrar quem FINALIZOU a nota fiscal
+                        if (historyData.invoice_user_profile && historyData.invoice_completed_at) {
                           return (
                             <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                               <User className="w-4 h-4" />
-                              <span>Alterado por: {log.user_profile.name}</span>
-                              <Clock className="w-4 h-4 ml-2" />
-                              <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
-                            </div>
-                          );
-                        } else if (historyData.invoice_user_profile && historyData.invoice_completed_at) {
-                          return (
-                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                              <User className="w-4 h-4" />
-                              <span>Por: {historyData.invoice_user_profile.name}</span>
+                              <span>Finalizado por: {historyData.invoice_user_profile.name}</span>
                               <Clock className="w-4 h-4 ml-2" />
                               <span>{new Date(historyData.invoice_completed_at).toLocaleString('pt-BR')}</span>
                             </div>
                           );
+                        } else if (currentStatus === 'nota_fiscal') {
+                          // Se está em nota fiscal mas não foi finalizada ainda, mostrar log de mudança para nota fiscal
+                          const log = getStatusLogForStatus('nota_fiscal');
+                          if (log?.user_profile) {
+                            return (
+                              <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                                <User className="w-4 h-4" />
+                                <span>Iniciado por: {log.user_profile.name}</span>
+                                <Clock className="w-4 h-4 ml-2" />
+                                <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
+                              </div>
+                            );
+                          }
                         }
                         return null;
                       })()}
                       {(() => {
-                        const log = getStatusLogForStatus('nota_fiscal');
-                        const isCurrentStatusChange = currentStatus === 'nota_fiscal';
-                        
-                        return log?.reason && isCurrentStatusChange && (
+                        const invoiceLog = getStatusLogForStatus('nota_fiscal');
+                        return invoiceLog?.reason && currentStatus === 'nota_fiscal' && (
                           <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
                             <p className="text-sm text-blue-800">
-                              <span className="font-semibold">Motivo:</span> {log.reason}
+                              <span className="font-semibold">Motivo:</span> {invoiceLog.reason}
                             </p>
                           </div>
                         );
@@ -422,39 +424,38 @@ const SaleHistoryModal: React.FC<SaleHistoryModalProps> = ({
                         </Badge>
                       </div>
                       {(() => {
-                        const log = getStatusLogForStatus('entrega_realizada') || getStatusLogForStatus('aguardando_entrega');
-                        
-                        if (log?.user_profile) {
+                        // Mostrar quem FINALIZOU a entrega
+                        if (historyData.delivery_user_profile && historyData.delivery_completed_at) {
                           return (
                             <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                               <User className="w-4 h-4" />
-                              <span>Alterado por: {log.user_profile.name}</span>
-                              <Clock className="w-4 h-4 ml-2" />
-                              <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
-                            </div>
-                          );
-                        } else if (historyData.delivery_user_profile && historyData.delivery_completed_at) {
-                          return (
-                            <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                              <User className="w-4 h-4" />
-                              <span>Por: {historyData.delivery_user_profile.name}</span>
+                              <span>Finalizado por: {historyData.delivery_user_profile.name}</span>
                               <Clock className="w-4 h-4 ml-2" />
                               <span>{new Date(historyData.delivery_completed_at).toLocaleString('pt-BR')}</span>
                             </div>
                           );
+                        } else if (currentStatus === 'aguardando_entrega' || currentStatus === 'entrega_realizada') {
+                          // Se está aguardando entrega ou entrega realizada, mostrar log relevante
+                          const log = getStatusLogForStatus('aguardando_entrega') || getStatusLogForStatus('entrega_realizada');
+                          if (log?.user_profile) {
+                            return (
+                              <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                                <User className="w-4 h-4" />
+                                <span>{currentStatus === 'entrega_realizada' ? 'Finalizado por' : 'Iniciado por'}: {log.user_profile.name}</span>
+                                <Clock className="w-4 h-4 ml-2" />
+                                <span>{new Date(log.created_at).toLocaleString('pt-BR')}</span>
+                              </div>
+                            );
+                          }
                         }
                         return null;
                       })()}
                       {(() => {
-                        const log = getStatusLogForStatus('entrega_realizada') || getStatusLogForStatus('aguardando_entrega');
-                        // Sempre mostrar o motivo se a entrega foi realizada
-                        const shouldShowReason = currentStatus === 'entrega_realizada' || 
-                                                (currentStatus === 'aguardando_entrega' && log?.new_status === 'aguardando_entrega');
-                        
-                        return log?.reason && shouldShowReason && (
+                        const deliveryLog = getStatusLogForStatus('entrega_realizada') || getStatusLogForStatus('aguardando_entrega');
+                        return deliveryLog?.reason && (currentStatus === 'aguardando_entrega' || currentStatus === 'entrega_realizada') && (
                           <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
                             <p className="text-sm text-blue-800">
-                              <span className="font-semibold">Motivo:</span> {log.reason}
+                              <span className="font-semibold">Motivo:</span> {deliveryLog.reason}
                             </p>
                           </div>
                         );
