@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import { getPaymentMethodText, getPaymentTypeText, getShippingOptionText } from './pdfHelpers';
-
+import { supabase } from '@/integrations/supabase/client';
 export const generateSalePDF = async (sale: any) => {
   console.log('🚀 FUNÇÃO PDF VENDA EXECUTADA!');
   console.log('📊 Sale recebido:', sale);
@@ -63,7 +63,27 @@ export const generateSalePDF = async (sale: any) => {
     // Informações do cliente em lista
     doc.setFontSize(10);
     
-    const client = sale.clients;
+    // Garantir dados completos do cliente para o PDF
+    const clientId = sale.client_id;
+    let client = sale.clients as any;
+    try {
+      const neededKeys = ['email','phone','cep','street','number','complement','neighborhood','city','state','cpf','cnpj','razao_social','client_type'];
+      const missingInfo = !client || neededKeys.some((k) => !(client as any)?.[k]);
+      if (clientId && missingInfo) {
+        const { data: fullClient } = await supabase
+          .from('clients')
+          .select('id,name,email,phone,client_type,cpf,cnpj,razao_social,cep,street,number,complement,neighborhood,city,state')
+          .eq('id', clientId)
+          .single();
+        if (fullClient) {
+          client = { ...fullClient, ...client };
+          sale.clients = client; // atualizar referência usada abaixo
+          console.log('Cliente carregado via fallback para PDF:', client);
+        }
+      }
+    } catch (e) {
+      console.warn('Falha ao carregar cliente completo para PDF:', e);
+    }
     console.log('Dados do cliente para exibir:', client);
     
     // SEMPRE mostrar os campos principais, mesmo que vazios
