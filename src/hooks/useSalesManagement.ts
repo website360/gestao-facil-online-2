@@ -167,7 +167,23 @@ export const useSalesManagement = () => {
         .from('sales')
         .select(`
           *,
-          clients(name),
+          clients(
+            id,
+            name,
+            email,
+            phone,
+            client_type,
+            cpf,
+            cnpj,
+            razao_social,
+            cep,
+            street,
+            number,
+            complement,
+            neighborhood,
+            city,
+            state
+          ),
           budgets(created_by),
           sale_items(
             *,
