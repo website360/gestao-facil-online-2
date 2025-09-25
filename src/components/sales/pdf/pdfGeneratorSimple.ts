@@ -326,6 +326,14 @@ export const generateSalePDF = async (sale: any) => {
     // Continuar diretamente após os produtos, sem separação
     const shippingCost = sale.shipping_cost || 0;
     const discountPercentage = sale.discount_percentage || 0;
+    
+    // Debug logs para verificar os valores
+    console.log('=== DEBUG DESCONTO PDF ===');
+    console.log('sale.discount_percentage:', sale.discount_percentage);
+    console.log('discountPercentage processado:', discountPercentage);
+    console.log('subtotal:', subtotal);
+    console.log('=========================');
+    
     const globalDiscount = subtotal * (discountPercentage / 100);
     const finalTotal = subtotal - globalDiscount + shippingCost;
 
@@ -350,15 +358,15 @@ export const generateSalePDF = async (sale: any) => {
     
     yPosition += rowHeight;
     
-    // Linha do Desconto Global (se houver)
-    if (globalDiscount > 0) {
+    // Linha do Desconto Global (sempre mostrar se houver percentual)
+    if (discountPercentage > 0) {
       if ((currentIndex + 1) % 2 === 0) {
         doc.setFillColor(250, 250, 250);
         doc.rect(16, yPosition, pageWidth - 32, rowHeight, 'F');
       }
       
       doc.setFont('helvetica', 'bold');
-      doc.text('DESCONTO', 20, yPosition + 5);
+      doc.text(`DESCONTO (${discountPercentage.toFixed(1)}%)`, 20, yPosition + 5);
       doc.setTextColor(220, 38, 127); // Cor vermelha para desconto
       doc.text(`-${formatCurrency(globalDiscount)}`, pageWidth - 20, yPosition + 5, { align: 'right' });
       doc.setTextColor(darkColor.r, darkColor.g, darkColor.b); // Voltar cor normal
