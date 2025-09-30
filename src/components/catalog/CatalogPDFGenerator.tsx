@@ -115,23 +115,12 @@ export class CatalogPDFGenerator {
   async generatePDF(products: Product[]) {
     console.log('Gerando PDF com produtos:', products.length, products);
     
-    // Usar configurações personalizadas se disponíveis
-    if (this.catalogConfig) {
-      console.log('Usando configurações personalizadas:', this.catalogConfig);
-      
-      // Configurar o documento baseado nas configurações
-      this.doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-    } else {
-      this.doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-    }
+    // SEMPRE usar A4 retrato com valores fixos
+    this.doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
     
     // Verificar se temos produtos para gerar
     if (!products || products.length === 0) {
@@ -150,7 +139,7 @@ export class CatalogPDFGenerator {
     this.doc.addPage();
     
     let currentPage = 1;
-    let currentY = this.catalogConfig?.page?.marginTop || 20;
+    let currentY = 15; // Margem superior fixa de 15mm
     
     for (const categoryGroup of organizedProducts) {
       console.log(`=== INICIANDO CATEGORIA: ${categoryGroup.categoryName} ===`);
@@ -158,28 +147,27 @@ export class CatalogPDFGenerator {
       
       // Verificar se há espaço para o título da categoria
       const pageHeight = this.doc.internal.pageSize.height;
-      const bottomMargin = this.catalogConfig?.page?.marginBottom || 20;
+      const bottomMargin = 15; // Margem inferior fixa de 15mm
       
-      if (currentY > pageHeight - bottomMargin - 80) { // Espaço para título + pelo menos um card
+      if (currentY > pageHeight - bottomMargin - 60) { // Espaço para título + pelo menos um card
         console.log(`Não há espaço suficiente para categoria, criando nova página`);
         this.doc.addPage();
         currentPage++;
-        currentY = this.catalogConfig?.page?.marginTop || 20;
+        currentY = 15;
       }
       
       // Adicionar título da categoria
       const titleY = this.addCategoryTitle(categoryGroup.categoryName, currentY);
       console.log(`Título adicionado, novo Y: ${titleY}`);
       
-      // Adicionar produtos da categoria - SEMPRE começar nova contagem de cards por categoria
-      const result = await this.addCategoryProducts(categoryGroup.products, titleY, currentPage, true); // true = reset card count
+      // Adicionar produtos da categoria
+      const result = await this.addCategoryProducts(categoryGroup.products, titleY, currentPage, true);
       currentY = result.finalY;
       currentPage = result.currentPage;
       
       console.log(`=== CATEGORIA ${categoryGroup.categoryName} FINALIZADA ===`);
       console.log(`currentY final: ${currentY}, página final: ${currentPage}`);
     }
-    
     
     // Download do PDF
     this.doc.save(`catalogo-produtos-${new Date().toISOString().split('T')[0]}.pdf`);
@@ -198,23 +186,12 @@ export class CatalogPDFGenerator {
     const templates: LayoutTemplate[] = JSON.parse(savedTemplates);
     const templateMap = new Map(templates.map((t: LayoutTemplate) => [t.id, t]));
     
-    // Usar configurações personalizadas se disponíveis
-    if (this.catalogConfig) {
-      console.log('Usando configurações personalizadas:', this.catalogConfig);
-      
-      // Configurar o documento baseado nas configurações
-      this.doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-    } else {
-      this.doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-    }
+    // SEMPRE usar A4 retrato com valores fixos
+    this.doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
     
     // Verificar se temos produtos para gerar
     if (!products || products.length === 0) {
@@ -233,7 +210,7 @@ export class CatalogPDFGenerator {
     this.doc.addPage();
     
     let currentPage = 1;
-    let currentY = this.catalogConfig?.page?.marginTop || 20;
+    let currentY = 15; // Margem superior fixa de 15mm
     
     for (const categoryGroup of organizedProducts) {
       console.log(`=== INICIANDO CATEGORIA: ${categoryGroup.categoryName} ===`);
@@ -263,13 +240,13 @@ export class CatalogPDFGenerator {
       
       // Verificar se há espaço para o título da categoria
       const pageHeight = this.doc.internal.pageSize.height;
-      const bottomMargin = this.catalogConfig?.page?.marginBottom || 20;
+      const bottomMargin = 15; // Margem inferior fixa de 15mm
       
-      if (currentY > pageHeight - bottomMargin - 80) { // Espaço para título + pelo menos um card
+      if (currentY > pageHeight - bottomMargin - 60) { // Espaço para título + pelo menos um card
         console.log(`Não há espaço suficiente para categoria, criando nova página`);
         this.doc.addPage();
         currentPage++;
-        currentY = this.catalogConfig?.page?.marginTop || 20;
+        currentY = 15;
       }
       
       // Adicionar título da categoria
@@ -392,90 +369,82 @@ export class CatalogPDFGenerator {
   }
 
   private async addCategoryProducts(products: Product[], startY: number, startPage: number, resetCardCount: boolean = false) {
-    const pageWidth = this.doc.internal.pageSize.width;
-    const pageHeight = this.doc.internal.pageSize.height;
-    const margin = this.catalogConfig?.page?.marginLeft || 15;
-    const bottomMargin = this.catalogConfig?.page?.marginBottom || 30;
+    const pageWidth = this.doc.internal.pageSize.width; // 210mm para A4
+    const pageHeight = this.doc.internal.pageSize.height; // 297mm para A4
+    const margin = 10; // Margem lateral fixa de 10mm
+    const bottomMargin = 15; // Margem inferior fixa de 15mm
     
-    // Usar configurações do catálogo se disponível
-    let cardWidth, cardHeight, maxCardsPerPage, rows, columns;
+    // Layout fixo: 2 colunas x 3 linhas = 6 produtos por página
+    const rows = 3;
+    const columns = 2;
+    const maxCardsPerPage = 6;
     
-    if (this.catalogConfig?.layout) {
-      rows = this.catalogConfig.layout.rows;
-      columns = this.catalogConfig.layout.columns;
-      maxCardsPerPage = rows * columns;
-      
-      // Calcular dimensões dos cards baseado no espaço disponível e configurações
-      const availableWidth = pageWidth - (margin * 2);
-      const availableHeight = pageHeight - startY - bottomMargin;
-      
-      const cardSpacing = this.catalogConfig.layout.cardSpacing || 5;
-      const verticalSpacing = this.catalogConfig.layout.rowSpacing || 10;
-      
-      // Calcular largura e altura dos cards para caber perfeitamente
-      cardWidth = (availableWidth - (cardSpacing * (columns - 1))) / columns;
-      cardHeight = Math.min(
-        (availableHeight - (verticalSpacing * (rows - 1))) / rows,
-        80 // Altura máxima para evitar cards muito altos
-      );
-      
-      console.log('Layout PDF com configurações:', {
-        rows,
-        columns,
-        maxCardsPerPage,
-        cardWidth: cardWidth.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-        cardHeight: cardHeight.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-        pageWidth: pageWidth.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-        pageHeight: pageHeight.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-        availableWidth: availableWidth.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-        availableHeight: availableHeight.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
-        startY,
-        cardSpacing,
-        verticalSpacing
-      });
-    } else {
-      // Layout padrão: 8 produtos por página (4 linhas x 2 colunas)
-      cardWidth = (pageWidth - margin * 3) / 2;
-      cardHeight = 65;
-      rows = 4;
-      columns = 2;
-      maxCardsPerPage = 8;
-    }
+    // Calcular dimensões dos cards baseado no espaço disponível
+    const availableWidth = pageWidth - (margin * 2); // 190mm
+    const availableHeight = pageHeight - startY - bottomMargin;
+    
+    const cardSpacing = 5; // 5mm entre cards
+    const verticalSpacing = 8; // 8mm entre linhas
+    
+    // Calcular largura e altura dos cards
+    const cardWidth = (availableWidth - (cardSpacing * (columns - 1))) / columns; // ~92.5mm
+    const cardHeight = Math.min(
+      (availableHeight - (verticalSpacing * (rows - 1))) / rows,
+      70 // Altura máxima de 70mm por card
+    );
+    
+    console.log('Layout PDF fixo:', {
+      rows,
+      columns,
+      maxCardsPerPage,
+      cardWidth: cardWidth.toFixed(2),
+      cardHeight: cardHeight.toFixed(2),
+      pageWidth,
+      pageHeight,
+      availableWidth,
+      availableHeight: availableHeight.toFixed(2),
+      startY,
+      cardSpacing,
+      verticalSpacing
+    });
     
     let currentY = startY;
     let currentPage = startPage;
-    let cardsOnCurrentPage = resetCardCount ? 0 : 0; // Sempre resetar para nova categoria
+    let cardsOnCurrentPage = 0;
     
-    console.log(`Iniciando categoria com startY: ${startY}, página: ${startPage}, resetCardCount: ${resetCardCount}`);
-    
-    const cardSpacing = this.catalogConfig?.layout?.cardSpacing || 5;
-    const verticalSpacing = this.catalogConfig?.layout?.rowSpacing || 10;
+    console.log(`Iniciando categoria com startY: ${startY}, página: ${startPage}`);
     
     for (let i = 0; i < products.length; i++) {
       const product = products[i];
       
-      // Calcular posição baseada no grid ANTES de verificar se precisa de nova página
+      // Calcular posição baseada no grid
       const row = Math.floor(cardsOnCurrentPage / columns);
       const col = cardsOnCurrentPage % columns;
+      
+      const cardSpacing = 5;
+      const verticalSpacing = 8;
+      const margin = 10;
       
       const x = margin + col * (cardWidth + cardSpacing);
       const y = currentY + row * (cardHeight + verticalSpacing);
       
+      const bottomMargin = 15;
+      
       // Verificar se o card vai ultrapassar a página
       if (y + cardHeight > pageHeight - bottomMargin) {
-        console.log(`Card ${i + 1} ultrapassaria a página (y: ${y.toFixed(1)} + height: ${cardHeight} > limit: ${pageHeight - bottomMargin}), criando nova página`);
+        console.log(`Card ${i + 1} ultrapassaria a página, criando nova página`);
         this.doc.addPage();
         currentPage++;
-        currentY = this.catalogConfig?.page?.marginTop || 20;
+        currentY = 15;
         cardsOnCurrentPage = 0;
         
         // Recalcular posição na nova página
-        const newRow = Math.floor(cardsOnCurrentPage / columns);
-        const newCol = cardsOnCurrentPage % columns;
+        const newRow = 0;
+        const newCol = 0;
         const newX = margin + newCol * (cardWidth + cardSpacing);
         const newY = currentY + newRow * (cardHeight + verticalSpacing);
         
-        console.log(`NOVA PÁGINA - Produto ${i + 1} (${product.name}): linha ${newRow + 1}, coluna ${newCol + 1}, posição (${newX.toFixed(1)}, ${newY.toFixed(1)}), card ${cardsOnCurrentPage + 1}/${maxCardsPerPage}, currentY base: ${currentY}`);
+        console.log(`NOVA PÁGINA - Produto ${i + 1} (${product.name}): posição (${newX.toFixed(1)}, ${newY.toFixed(1)})`);
         
         await this.addProductCard(product, newX, newY, cardWidth, cardHeight);
       } else {
