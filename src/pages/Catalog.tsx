@@ -263,10 +263,10 @@ const Catalog = () => {
       const getProductsPerPage = (columns: number) => {
         switch (columns) {
           case 3: return 9;  // 3 colunas x 3 linhas = 9 produtos
-          case 4: return 9;  // 3 colunas x 3 linhas = 9 produtos  
+          case 4: return 12; // 4 colunas x 3 linhas = 12 produtos  
           case 5: return 15; // 5 colunas x 3 linhas = 15 produtos
-          case 6: return 15; // 5 colunas x 3 linhas = 15 produtos
-          default: return 9;
+          case 6: return 18; // 6 colunas x 3 linhas = 18 produtos
+          default: return 12;
         }
       };
       
