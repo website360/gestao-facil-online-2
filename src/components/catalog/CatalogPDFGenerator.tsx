@@ -78,7 +78,11 @@ export class CatalogPDFGenerator {
   private userType: string = 'admin'; // Default to admin for backward compatibility
 
   constructor(userType: string = 'admin') {
-    this.doc = new jsPDF();
+    this.doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
     this.userType = userType;
     this.loadCustomLayout();
     this.loadCatalogConfiguration();
@@ -118,15 +122,18 @@ export class CatalogPDFGenerator {
       // Configurar o documento baseado nas configurações
       const { page } = this.catalogConfig;
       const orientation = page.orientation === 'landscape' ? 'l' : 'p';
-      const format = page.paperSize === 'Custom' ? [page.customWidth, page.customHeight] : page.paperSize.toLowerCase();
       
       this.doc = new jsPDF({
         orientation,
         unit: 'mm',
-        format
+        format: 'a4'
       });
     } else {
-      this.doc = new jsPDF();
+      this.doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
     }
     
     // Verificar se temos produtos para gerar
@@ -201,15 +208,18 @@ export class CatalogPDFGenerator {
       // Configurar o documento baseado nas configurações
       const { page } = this.catalogConfig;
       const orientation = page.orientation === 'landscape' ? 'l' : 'p';
-      const format = page.paperSize === 'Custom' ? [page.customWidth, page.customHeight] : page.paperSize.toLowerCase();
       
       this.doc = new jsPDF({
         orientation,
         unit: 'mm',
-        format
+        format: 'a4'
       });
     } else {
-      this.doc = new jsPDF();
+      this.doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
     }
     
     // Verificar se temos produtos para gerar
@@ -290,7 +300,11 @@ export class CatalogPDFGenerator {
   }
 
   async generatePreview(products: Product[]) {
-    this.doc = new jsPDF();
+    this.doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
     
     if (!this.customLayout || this.customLayout.elements.length === 0) {
       console.warn('Nenhum layout personalizado encontrado');
