@@ -120,11 +120,8 @@ export class CatalogPDFGenerator {
       console.log('Usando configurações personalizadas:', this.catalogConfig);
       
       // Configurar o documento baseado nas configurações
-      const { page } = this.catalogConfig;
-      const orientation = page.orientation === 'landscape' ? 'l' : 'p';
-      
       this.doc = new jsPDF({
-        orientation,
+        orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
@@ -206,11 +203,8 @@ export class CatalogPDFGenerator {
       console.log('Usando configurações personalizadas:', this.catalogConfig);
       
       // Configurar o documento baseado nas configurações
-      const { page } = this.catalogConfig;
-      const orientation = page.orientation === 'landscape' ? 'l' : 'p';
-      
       this.doc = new jsPDF({
-        orientation,
+        orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
