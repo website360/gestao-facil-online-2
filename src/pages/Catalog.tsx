@@ -248,7 +248,7 @@ const Catalog = () => {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#F2F8FF'
+         backgroundColor: '#FFFFFF'
       });
 
       // Criar PDF com folha A4 e margem de 1cm
@@ -272,15 +272,12 @@ const Catalog = () => {
       
       const productsPerPage = getProductsPerPage(columnsCount);
       
-      // Calcular escalas que respeitam largura e altura
-      const widthScaleAll = availableWidth / canvas.width;
-      const heightScaleAll = availableHeight / canvas.height;
-      const baseScale = Math.min(widthScaleAll, heightScaleAll);
-      const scaledCanvasHeight = canvas.height * baseScale;
+      // Escala assumindo usar 100% da largura disponível (mantendo proporção)
+      const scaledHeightAtFullWidth = availableWidth / (canvas.width / canvas.height);
       const domToCanvas = canvas.width / catalogContainer.clientWidth;
       
-      // Se tudo cabe em uma página (com escala que respeita a altura)
-      if (scaledCanvasHeight <= availableHeight) {
+      // Se ao usar a largura total a altura couber na página, usar 1 página; caso contrário, paginar por linhas
+      if (scaledHeightAtFullWidth <= availableHeight) {
         const imgData = canvas.toDataURL('image/png');
         
         // Priorizar ocupar toda a largura disponível
