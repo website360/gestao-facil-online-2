@@ -694,77 +694,80 @@ const Catalog = () => {
         <div id="catalog-products-grid" className={getGridClasses()}>
           {products.map((product) => {
             return (
-              <Card key={product.id} className="glass hover:shadow-lg transition-all">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg line-clamp-2">{product.name}</CardTitle>
-                      <CardDescription className="mt-1">
-                        Código: {product.internal_code}
-                      </CardDescription>
-                    </div>
+              <Card key={product.id} className="bg-white hover:shadow-lg transition-all border border-gray-200">
+                <CardContent className="p-4">
+                  {/* Título e Código */}
+                  <div className="mb-3">
+                    <h3 className="text-base font-bold text-gray-900 line-clamp-2 mb-1">
+                      {product.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Código: {product.internal_code}
+                    </p>
                   </div>
                   
                   {/* Foto do produto */}
-                  <div className="w-full aspect-square mb-3 bg-gray-100 rounded-lg overflow-hidden">
-                    <Avatar className="w-full h-full rounded-lg">
-                      <AvatarImage 
-                        src={product.photo_url || ''} 
+                  <div className="w-full aspect-square mb-4 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
+                    {product.photo_url ? (
+                      <img 
+                        src={product.photo_url} 
                         alt={product.name}
-                        className="object-cover w-full h-full"
+                        className="object-contain w-full h-full p-2"
                       />
-                      <AvatarFallback className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
-                        <Package className="h-8 w-8 text-gray-400" />
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="space-y-3">
-                    {/* Preço */}
-                    {showPrice && (
-                      <div className="flex justify-between items-center">
-                        <div className="flex flex-col">
-                          {discountPercentage > 0 ? (
-                            <div className="flex flex-col">
-                              <span className="text-lg text-gray-500 line-through">
-                                {formatCurrency(product.price)}
-                              </span>
-                              <span className="text-2xl font-bold text-green-600">
-                                {formatCurrency(calculateDiscountedPrice(product.price))}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-2xl font-bold text-green-600">
-                              {formatCurrency(product.price)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                    ) : (
+                      <Package className="h-12 w-12 text-gray-300" />
                     )}
-                    
-                    {/* Badge de estoque */}
-                    <div className="flex flex-wrap gap-2">
-                      {product.categories && (
-                        <Badge variant="outline">
-                          {product.categories.name}
-                        </Badge>
-                      )}
-                      {/* Mostrar estoque para admin, gerente e vendedor interno */}
-                      {(userType === 'admin' || userType === 'seller_internal') && (
-                        <Badge variant={getStockBadgeVariant(product.stock)}>
-                          {getStockStatusText(product.stock)}
-                        </Badge>
+                  </div>
+                  
+                  {/* Preço */}
+                  {showPrice && (
+                    <div className="mb-3">
+                      {discountPercentage > 0 ? (
+                        <div className="flex flex-col">
+                          <span className="text-base text-gray-500 line-through">
+                            {formatCurrency(product.price)}
+                          </span>
+                          <span className="text-2xl font-bold text-green-600">
+                            {formatCurrency(calculateDiscountedPrice(product.price))}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-2xl font-bold text-green-600">
+                          {formatCurrency(product.price)}
+                        </span>
                       )}
                     </div>
-                    
-                    {product.observation && (
-                       <div className="text-sm text-gray-600 mt-2 p-2 bg-gray-50 rounded-md">
-                         <strong>Observação:</strong> {product.observation}
-                       </div>
-                     )}
+                  )}
+                  
+                  {/* Categoria e Badge de estoque */}
+                  <div className="flex flex-col gap-2 mb-3">
+                    {product.categories && (
+                      <span className="text-sm text-gray-700">
+                        {product.categories.name}
+                      </span>
+                    )}
+                    {/* Mostrar estoque para admin, gerente e vendedor interno */}
+                    {(userType === 'admin' || userType === 'seller_internal') && (
+                      <Badge 
+                        className={`w-fit ${
+                          getStockBadgeVariant(product.stock) === 'default' 
+                            ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                            : getStockBadgeVariant(product.stock) === 'destructive'
+                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                        }`}
+                      >
+                        {getStockStatusText(product.stock)}
+                      </Badge>
+                    )}
                   </div>
+                  
+                  {/* Observações */}
+                  {product.observation && (
+                    <div className="text-xs text-gray-700 mt-2 pt-2 border-t border-gray-100">
+                      <strong className="font-semibold">Observação:</strong> {product.observation}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
