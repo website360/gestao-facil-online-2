@@ -738,7 +738,7 @@ const Catalog = () => {
                     <div className="mb-2">
                       {discountPercentage > 0 ? (
                         <div className="flex flex-col">
-                          <span className="text-sm text-gray-500 line-through decoration-2 decoration-gray-500">
+                          <span className="relative inline-block text-sm text-gray-500 after:absolute after:left-0 after:right-0 after:top-1/2 after:h-[1px] after:-translate-y-1/2 after:bg-gray-500 after:content-['']">
                             {formatCurrency(product.price)}
                           </span>
                           <span className="text-xl font-bold text-green-600">
