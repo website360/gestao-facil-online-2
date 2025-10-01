@@ -250,15 +250,30 @@ const Catalog = () => {
       styleEl.textContent = `
         #catalog-products-grid .line-clamp-2 { -webkit-line-clamp: unset !important; display: block !important; overflow: visible !important; }
         #catalog-products-grid .catalog-title { line-height: 1.2 !important; }
-        #catalog-products-grid .catalog-stock-badge { white-space: nowrap !important; }
-        #catalog-products-grid .line-through { 
+        #catalog-products-grid .catalog-stock-badge { 
+          white-space: nowrap !important; 
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          line-height: 1 !important;
+          padding: 2px 6px !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+        #catalog-products-grid .line-through {
           position: relative !important;
-          text-decoration: line-through !important; 
-          text-decoration-thickness: 2px !important; 
-          text-decoration-color: rgb(107, 114, 128) !important;
-          -webkit-text-decoration: line-through !important;
-          -webkit-text-decoration-thickness: 2px !important;
-          -webkit-text-decoration-color: rgb(107, 114, 128) !important;
+          display: inline-block !important;
+          text-decoration: none !important;
+        }
+        #catalog-products-grid .line-through::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          height: 2px;
+          background: rgb(107, 114, 128);
         }
       `;
       document.head.appendChild(styleEl);
