@@ -282,6 +282,7 @@ const Catalog = () => {
           display: inline-block !important;
           text-decoration: none !important;
           line-height: 1.1 !important;
+          top: 10px !important;
         }
         #catalog-products-grid .line-through::after {
           content: '';
