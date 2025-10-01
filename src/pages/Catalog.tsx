@@ -763,7 +763,7 @@ const Catalog = () => {
                     {/* Mostrar estoque para admin, gerente e vendedor interno */}
                     {(userType === 'admin' || userType === 'seller_internal') && (
                       <Badge 
-                        className={`catalog-stock-badge relative z-10 inline-flex items-center justify-center h-5 w-fit whitespace-nowrap text-[10px] px-2 leading-none pb-[2px] pt-[8px] ${
+                        className={`catalog-stock-badge relative z-10 inline-flex items-center justify-center h-5 -translate-y-1.5 w-fit whitespace-nowrap text-[10px] px-2 leading-none ${
                           getStockBadgeVariant(product.stock) === 'default' 
                             ? 'bg-blue-500 text-white hover:bg-blue-600' 
                             : getStockBadgeVariant(product.stock) === 'destructive'
