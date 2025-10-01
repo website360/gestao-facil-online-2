@@ -254,14 +254,14 @@ const Catalog = () => {
         #catalog-products-grid .catalog-stock-badge {
           display: inline-flex !important;
           justify-content: flex-start !important;
-          align-items: center !important;
+          align-items: flex-start !important; /* força o texto mais alto dentro do badge */
           white-space: nowrap !important;
           text-align: left !important;
           font-size: 11px !important;
           font-weight: 600 !important;
           line-height: 1 !important;
-          padding: 4px 10px !important;
-          min-height: 24px !important;
+          padding: 2px 10px 0px 10px !important; /* sobe o texto */
+          min-height: 22px !important;
           height: auto !important;
           border-radius: 9999px !important;
           overflow: visible !important;
@@ -286,7 +286,7 @@ const Catalog = () => {
           position: absolute;
           left: 0;
           right: 0;
-          top: 52%;
+          top: 54%; /* corta mais centralizado */
           transform: translateY(-50%);
           height: 2px;
           background: rgb(107, 114, 128);
