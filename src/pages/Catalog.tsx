@@ -270,9 +270,9 @@ const Catalog = () => {
           position: absolute;
           left: 0;
           right: 0;
-          top: 56%;
+          top: 50%;
           transform: translateY(-50%);
-          height: 1.5px;
+          height: 2px;
           background: rgb(107, 114, 128);
         }
       `;
@@ -319,11 +319,20 @@ const Catalog = () => {
         const imgData = canvas.toDataURL('image/png');
         
         // Priorizar ocupar toda a largura disponível
-        const finalWidth = availableWidth;
-        const finalHeight = availableWidth / (canvas.width / canvas.height);
+        const drawWidth = availableWidth;
+        const drawHeight = availableWidth / (canvas.width / canvas.height);
         
-        // Centralizar horizontal e verticalmente dentro das margens
-        const offsetX = margin + (availableWidth - finalWidth) / 2;
+        // Se a altura calculada for maior que disponível, ajustar pela altura
+        const finalDrawHeight = Math.min(drawHeight, availableHeight);
+        const finalDrawWidth = finalDrawHeight * (canvas.width / canvas.height);
+        
+        // Sempre usar toda a largura disponível se possível
+        const useFullWidth = finalDrawWidth >= availableWidth * 0.95; // 95% da largura
+        const finalWidth = useFullWidth ? availableWidth : finalDrawWidth;
+        const finalHeight = useFullWidth ? availableWidth / (canvas.width / canvas.height) : finalDrawHeight;
+        
+        // Centralizar apenas verticalmente (horizontalmente usar margem padrão)
+        const offsetX = margin;
         const offsetY = margin + (availableHeight - finalHeight) / 2;
         
         pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
@@ -411,11 +420,20 @@ const Catalog = () => {
               const pageImgData = pageCanvas.toDataURL('image/png');
               
               // Priorizar ocupar toda a largura disponível
-              const finalWidth = availableWidth;
-              const finalHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
+              const drawWidth = availableWidth;
+              const drawHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
               
-              // Centralizar horizontal e verticalmente dentro das margens
-              const offsetX = margin + (availableWidth - finalWidth) / 2;
+              // Se a altura calculada for maior que disponível, ajustar pela altura
+              const finalDrawHeight = Math.min(drawHeight, availableHeight);
+              const finalDrawWidth = finalDrawHeight * (pageCanvas.width / pageCanvas.height);
+              
+              // Sempre usar toda a largura disponível se possível
+              const useFullWidth = finalDrawWidth >= availableWidth * 0.95; // 95% da largura
+              const finalWidth = useFullWidth ? availableWidth : finalDrawWidth;
+              const finalHeight = useFullWidth ? availableWidth / (pageCanvas.width / pageCanvas.height) : finalDrawHeight;
+              
+              // Centralizar apenas verticalmente (horizontalmente usar margem padrão)
+              const offsetX = margin;
               const offsetY = margin + (availableHeight - finalHeight) / 2;
               
               if (pageNumber > 0) {
@@ -457,11 +475,20 @@ const Catalog = () => {
             const pageImgData = pageCanvas.toDataURL('image/png');
             
             // Priorizar ocupar toda a largura disponível
-            const finalWidth = availableWidth;
-            const finalHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
+            const drawWidth = availableWidth;
+            const drawHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
             
-            // Centralizar horizontal e verticalmente dentro das margens
-            const offsetX = margin + (availableWidth - finalWidth) / 2;
+            // Se a altura calculada for maior que disponível, ajustar pela altura
+            const finalDrawHeight = Math.min(drawHeight, availableHeight);
+            const finalDrawWidth = finalDrawHeight * (pageCanvas.width / pageCanvas.height);
+            
+            // Sempre usar toda a largura disponível se possível
+            const useFullWidth = finalDrawWidth >= availableWidth * 0.95; // 95% da largura
+            const finalWidth = useFullWidth ? availableWidth : finalDrawWidth;
+            const finalHeight = useFullWidth ? availableWidth / (pageCanvas.width / pageCanvas.height) : finalDrawHeight;
+            
+            // Centralizar apenas verticalmente (horizontalmente usar margem padrão)
+            const offsetX = margin;
             const offsetY = margin + (availableHeight - finalHeight) / 2;
             
             if (pageNumber > 0) {
