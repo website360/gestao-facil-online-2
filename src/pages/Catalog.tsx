@@ -323,8 +323,8 @@ const Catalog = () => {
       `;
       document.head.appendChild(styleEl);
 
-      // Criar PDF com folha A4 e margem de 1cm
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      // Criar PDF com folha A4 e margem de 1cm (com compressão para reduzir memória)
+      const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
@@ -385,22 +385,33 @@ const Catalog = () => {
 
         document.body.appendChild(pageContainer);
 
-        // Aguardar imagens carregarem
+        // Forçar CORS nas imagens e aguardar carregamento
         const images = pageContainer.querySelectorAll('img');
+        images.forEach((img) => {
+          try {
+            const el = img as HTMLImageElement;
+            if (el && el.src && !el.src.startsWith('data:')) {
+              el.setAttribute('crossorigin', 'anonymous');
+              const src = (el.currentSrc || el.src);
+              el.src = src; // reatribui para forçar reload com CORS
+            }
+          } catch (_) {}
+        });
+
         await Promise.all(
           Array.from(images).map(img => {
-            if (img.complete) return Promise.resolve();
+            if ((img as HTMLImageElement).complete) return Promise.resolve();
             return new Promise(resolve => {
-              img.onload = resolve;
-              img.onerror = resolve;
-              setTimeout(resolve, 2000); // timeout de segurança
+              (img as HTMLImageElement).onload = resolve;
+              (img as HTMLImageElement).onerror = resolve;
+              setTimeout(resolve, 2000);
             });
           })
         );
 
         // Capturar esta página
         const canvas = await html2canvas(pageContainer, {
-          scale: 2,
+          scale: 1.5,
           useCORS: true,
           logging: false,
           backgroundColor: '#FFFFFF',
@@ -420,7 +431,7 @@ const Catalog = () => {
           pdf.addPage();
         }
 
-        const imgData = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL('image/jpeg', 0.85);
         
         // Calcular dimensões
         let finalWidth = availableWidth;
@@ -435,7 +446,7 @@ const Catalog = () => {
         const offsetX = margin;
         const offsetY = margin;
 
-        pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
+        pdf.addImage(imgData, 'JPEG', offsetX, offsetY, finalWidth, finalHeight);
 
         // Aguardar um pouco para não travar o navegador
         await new Promise(resolve => setTimeout(resolve, 100));
