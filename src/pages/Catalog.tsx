@@ -254,14 +254,14 @@ const Catalog = () => {
         #catalog-products-grid .catalog-stock-badge {
           display: inline-flex !important;
           justify-content: flex-start !important; /* alinhado à esquerda */
-          align-items: center !important;        /* centralizado verticalmente */
+          align-items: center !important;        /* centraliza verticalmente */
           white-space: nowrap !important;
           text-align: left !important;
           font-size: 11px !important;
           font-weight: 600 !important;
-          line-height: 1 !important;
-          padding: 3px 10px !important;         /* padding simétrico */
-          min-height: 22px !important;
+          line-height: 1.1 !important;           /* melhora o centramento no html2canvas */
+          padding: 6px 12px !important;          /* aumenta a área interna */
+          min-height: 26px !important;           /* evita corte superior/inferior */
           height: auto !important;
           border-radius: 9999px !important;
           overflow: visible !important;
@@ -269,10 +269,11 @@ const Catalog = () => {
           -webkit-font-smoothing: antialiased !important;
           -moz-osx-font-smoothing: grayscale !important;
           transform: translateZ(0) !important;
+          gap: 0 !important;
         }
         /* Garantir que conteúdo interno siga o mesmo line-height */
         #catalog-products-grid .catalog-stock-badge * {
-          line-height: 1 !important;
+          line-height: 1.1 !important;
         }
         /* Preço antigo riscado - PDF only */
         #catalog-products-grid .line-through {
