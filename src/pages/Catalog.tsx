@@ -250,40 +250,45 @@ const Catalog = () => {
       styleEl.textContent = `
         #catalog-products-grid .line-clamp-2 { -webkit-line-clamp: unset !important; display: block !important; overflow: visible !important; }
         #catalog-products-grid .catalog-title { line-height: 1.2 !important; }
-        #catalog-products-grid .catalog-stock-badge { 
-          white-space: nowrap !important; 
+        /* Badge de estoque - PDF only */
+        #catalog-products-grid .catalog-stock-badge {
           display: inline-flex !important;
-          align-items: center !important;
           justify-content: flex-start !important;
+          align-items: center !important;
+          white-space: nowrap !important;
           text-align: left !important;
-          font-size: 10px !important;
-          line-height: 12px !important;
-          padding: 5px 10px 4px 10px !important;
-          min-height: 22px !important;
+          font-size: 11px !important;
+          font-weight: 600 !important;
+          line-height: 1 !important;
+          padding: 4px 10px !important;
+          min-height: 24px !important;
           height: auto !important;
-          overflow: visible !important;
           border-radius: 9999px !important;
+          overflow: visible !important;
           box-sizing: border-box !important;
-          vertical-align: middle !important;
-          word-break: keep-all !important;
-          letter-spacing: 0 !important;
           -webkit-font-smoothing: antialiased !important;
+          -moz-osx-font-smoothing: grayscale !important;
           transform: translateZ(0) !important;
         }
+        /* Garantir que conteúdo interno siga o mesmo line-height */
+        #catalog-products-grid .catalog-stock-badge * {
+          line-height: 1 !important;
+        }
+        /* Preço antigo riscado - PDF only */
         #catalog-products-grid .line-through {
           position: relative !important;
           display: inline-block !important;
           text-decoration: none !important;
-          line-height: 1.2 !important;
+          line-height: 1.1 !important;
         }
         #catalog-products-grid .line-through::after {
           content: '';
           position: absolute;
           left: 0;
           right: 0;
-          top: 56%;
+          top: 52%;
           transform: translateY(-50%);
-          height: 1.5px;
+          height: 2px;
           background: rgb(107, 114, 128);
           pointer-events: none;
         }
