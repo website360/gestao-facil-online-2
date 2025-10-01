@@ -282,14 +282,13 @@ const Catalog = () => {
           display: inline-block !important;
           text-decoration: none !important;
           line-height: 1.1 !important;
-          top: 10px !important;
         }
         #catalog-products-grid .line-through::after {
           content: '';
           position: absolute;
           left: 0;
           right: 0;
-          top: 54%; /* corta mais centralizado */
+          top: calc(54% + 10px) !important; /* desloca a barra 10px para baixo apenas no PDF */
           transform: translateY(-50%);
           height: 2px;
           background: rgb(107, 114, 128);
