@@ -297,6 +297,35 @@ const Catalog = () => {
       document.head.appendChild(styleEl);
       cleanupFns.push(() => styleEl.remove());
 
+      // Envolver o texto do badge em span para ajustar posição no PDF
+      const stockBadges = catalogContainer.querySelectorAll('.catalog-stock-badge');
+      stockBadges.forEach((badge) => {
+        if ((badge as HTMLElement).querySelector('.pdf-stock-text')) return;
+        const wrapper = document.createElement('span');
+        wrapper.className = 'pdf-stock-text';
+        while (badge.firstChild) {
+          wrapper.appendChild(badge.firstChild);
+        }
+        badge.appendChild(wrapper);
+        cleanupFns.push(() => {
+          if (wrapper.parentNode === badge) {
+            while (wrapper.firstChild) {
+              badge.insertBefore(wrapper.firstChild, wrapper);
+            }
+            wrapper.remove();
+          }
+        });
+      });
+
+      // Estilo para subir o texto do estoque 10px apenas no PDF
+      const adjustEl = document.createElement('style');
+      adjustEl.id = 'pdf-capture-stock-adjust';
+      adjustEl.textContent = `
+        #catalog-products-grid .pdf-stock-text { position: relative !important; top: -10px !important; display: inline-block !important; }
+      `;
+      document.head.appendChild(adjustEl);
+      cleanupFns.push(() => adjustEl.remove());
+
       // Capturar a imagem do container completo
       const canvas = await html2canvas(catalogContainer, {
         scale: 2,
