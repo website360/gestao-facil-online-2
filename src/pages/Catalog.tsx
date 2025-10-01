@@ -255,13 +255,20 @@ const Catalog = () => {
           display: inline-flex !important;
           align-items: center !important;
           justify-content: center !important;
-          line-height: 1.2 !important;
           font-size: 10px !important;
-          padding: 3px 8px !important;
-          min-height: 20px !important;
+          line-height: 1 !important;
+          padding: 2px 6px !important;
+          min-height: 18px !important;
           height: auto !important;
           overflow: visible !important;
           box-sizing: border-box !important;
+          vertical-align: middle !important;
+          word-break: keep-all !important;
+        }
+        /* Ajuste fino do texto do badge apenas no PDF */
+        #catalog-products-grid .catalog-stock-badge span { 
+          position: relative !important; 
+          top: -1px !important; 
         }
         #catalog-products-grid .line-through {
           position: relative !important;
