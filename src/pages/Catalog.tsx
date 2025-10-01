@@ -243,14 +243,28 @@ const Catalog = () => {
         return;
       }
 
+      // Preparar estilo para evitar corte de textos durante captura
+      const cleanupFns: Array<() => void> = [];
+      const styleEl = document.createElement('style');
+      styleEl.id = 'pdf-capture-style';
+      styleEl.textContent = `
+        #catalog-products-grid .line-clamp-2 { -webkit-line-clamp: unset !important; display: block !important; overflow: visible !important; }
+        #catalog-products-grid .catalog-title { line-height: 1.2 !important; }
+        #catalog-products-grid .catalog-stock-badge { white-space: nowrap !important; }
+      `;
+      document.head.appendChild(styleEl);
+      cleanupFns.push(() => styleEl.remove());
+
       // Capturar a imagem do container completo
       const canvas = await html2canvas(catalogContainer, {
         scale: 2,
         useCORS: true,
         logging: false,
-         backgroundColor: '#FFFFFF'
+        backgroundColor: '#FFFFFF'
       });
 
+      // Limpar estilos temporários após captura
+      cleanupFns.forEach(fn => fn());
       // Criar PDF com folha A4 e margem de 1cm
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth(); // 210mm
@@ -695,10 +709,10 @@ const Catalog = () => {
           {products.map((product) => {
             return (
               <Card key={product.id} className="bg-white hover:shadow-lg transition-all border border-gray-200">
-                <CardContent className="p-4">
+                <CardContent className="p-4 overflow-visible">
                   {/* Título e Código */}
-                  <div className="mb-3 min-h-[54px]">
-                    <h3 className="text-sm font-bold text-gray-900 line-clamp-2 mb-1 leading-tight">
+                  <div className="mb-3 min-h-[54px] relative z-10">
+                    <h3 className="catalog-title text-sm font-bold text-gray-900 line-clamp-2 mb-1 leading-tight">
                       {product.name}
                     </h3>
                     <p className="text-xs text-gray-500">
@@ -749,7 +763,7 @@ const Catalog = () => {
                     {/* Mostrar estoque para admin, gerente e vendedor interno */}
                     {(userType === 'admin' || userType === 'seller_internal') && (
                       <Badge 
-                        className={`w-fit whitespace-nowrap text-[10px] px-1.5 py-0.5 leading-tight ${
+                        className={`catalog-stock-badge relative z-10 w-fit whitespace-nowrap text-[10px] px-1.5 py-0.5 leading-tight ${
                           getStockBadgeVariant(product.stock) === 'default' 
                             ? 'bg-blue-500 text-white hover:bg-blue-600' 
                             : getStockBadgeVariant(product.stock) === 'destructive'
