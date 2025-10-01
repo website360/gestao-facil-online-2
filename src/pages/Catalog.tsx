@@ -253,14 +253,14 @@ const Catalog = () => {
         /* Badge de estoque - PDF only */
         #catalog-products-grid .catalog-stock-badge {
           display: inline-flex !important;
-          justify-content: flex-start !important;
-          align-items: flex-start !important; /* força o texto mais alto dentro do badge */
+          justify-content: flex-start !important; /* alinhado à esquerda */
+          align-items: center !important;        /* centralizado verticalmente */
           white-space: nowrap !important;
           text-align: left !important;
           font-size: 11px !important;
           font-weight: 600 !important;
           line-height: 1 !important;
-          padding: 2px 10px 0px 10px !important; /* sobe o texto */
+          padding: 3px 10px !important;         /* padding simétrico */
           min-height: 22px !important;
           height: auto !important;
           border-radius: 9999px !important;
