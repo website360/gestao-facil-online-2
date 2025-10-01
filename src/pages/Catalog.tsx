@@ -507,7 +507,6 @@ const Catalog = () => {
             pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
           }
         }
-        }
       }
       
       // Gerar nome do arquivo com data atual
