@@ -327,6 +327,18 @@ const Catalog = () => {
       document.head.appendChild(adjustEl);
       cleanupFns.push(() => adjustEl.remove());
 
+      // Pré-calcular linhas e posições com os estilos de PDF aplicados (para evitar desalinhamento)
+      const containerRect = catalogContainer.getBoundingClientRect();
+      const productRows: Array<{cards: Element[], top: number, height: number}> = [];
+      const cardsArrayPre = Array.from(productCards) as Element[];
+      for (let i = 0; i < cardsArrayPre.length; i += columnsCount) {
+        const rowCards = cardsArrayPre.slice(i, i + columnsCount);
+        const rects = rowCards.map(card => card.getBoundingClientRect());
+        const rowTop = Math.min(...rects.map(r => r.top)) - containerRect.top;
+        const rowBottom = Math.max(...rects.map(r => r.bottom)) - containerRect.top;
+        productRows.push({ cards: rowCards, top: rowTop, height: rowBottom - rowTop });
+      }
+
       // Capturar a imagem do container completo
       const canvas = await html2canvas(catalogContainer, {
         scale: 2,
@@ -385,23 +397,9 @@ const Catalog = () => {
         
         pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
       } else {
-        // Calcular quantas linhas de produtos temos
-        const containerRect = catalogContainer.getBoundingClientRect();
-        const productRows: Array<{cards: Element[], top: number, height: number}> = [];
-        
-        // Agrupar produtos por linha com base no número de colunas selecionado (determinístico)
-        const cardsArray = Array.from(productCards) as Element[];
-        for (let i = 0; i < cardsArray.length; i += columnsCount) {
-          const rowCards = cardsArray.slice(i, i + columnsCount);
-          const rects = rowCards.map(card => card.getBoundingClientRect());
-          const rowTop = Math.min(...rects.map(r => r.top)) - containerRect.top;
-          const rowBottom = Math.max(...rects.map(r => r.bottom)) - containerRect.top;
-          productRows.push({
-            cards: rowCards,
-            top: rowTop,
-            height: rowBottom - rowTop
-          });
-        }
+        // Usar posições e linhas pré-calculadas antes da captura para manter alinhamento com o canvas
+        // productRows já contém as linhas com top/height relativos ao container
+
 
         // Gerar páginas respeitando 3 linhas completas por página
         const ROWS_PER_PAGE = 3;
@@ -421,15 +419,18 @@ const Catalog = () => {
             const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
 
             const pageCanvas = document.createElement('canvas');
+            const bleed = Math.max(2, Math.round(2 * domToCanvas));
+            const srcY = Math.max(0, Math.floor(pageStartY * domToCanvas) - bleed);
+            const srcH = Math.min(canvas.height - srcY, Math.round(pageHeight * domToCanvas) + bleed * 2);
             pageCanvas.width = canvas.width;
-            pageCanvas.height = Math.round(pageHeight * domToCanvas);
+            pageCanvas.height = srcH;
             const pageCtx = pageCanvas.getContext('2d');
 
             if (pageCtx) {
               pageCtx.drawImage(
                 canvas,
-                0, Math.round(pageStartY * domToCanvas), canvas.width, Math.round(pageHeight * domToCanvas),
-                0, 0, canvas.width, Math.round(pageHeight * domToCanvas)
+                0, srcY, canvas.width, srcH,
+                0, 0, canvas.width, srcH
               );
 
               const pageImgData = pageCanvas.toDataURL('image/png');
@@ -467,16 +468,21 @@ const Catalog = () => {
           const pageStartY = firstRow.top;
           const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
 
+          // Preparar corte com bleed para evitar cortes ao paginar
+
+          const bleed = Math.max(2, Math.round(2 * domToCanvas));
+          const srcY = Math.max(0, Math.floor(pageStartY * domToCanvas) - bleed);
+          const srcH = Math.min(canvas.height - srcY, Math.round(pageHeight * domToCanvas) + bleed * 2);
           const pageCanvas = document.createElement('canvas');
           pageCanvas.width = canvas.width;
-          pageCanvas.height = Math.round(pageHeight * domToCanvas);
+          pageCanvas.height = srcH;
           const pageCtx = pageCanvas.getContext('2d');
-
+          
           if (pageCtx) {
             pageCtx.drawImage(
               canvas,
-              0, Math.round(pageStartY * domToCanvas), canvas.width, Math.round(pageHeight * domToCanvas),
-              0, 0, canvas.width, Math.round(pageHeight * domToCanvas)
+              0, srcY, canvas.width, srcH,
+              0, 0, canvas.width, srcH
             );
 
             const pageImgData = pageCanvas.toDataURL('image/png');
