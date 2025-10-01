@@ -14,6 +14,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Search, ShoppingBag, Package, Filter, AlertCircle, Printer } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { PDFProgressModal } from '@/components/catalog/PDFProgressModal';
 
 interface Product {
   id: string;
@@ -77,6 +78,15 @@ const Catalog = () => {
   const [discountPercentage, setDiscountPercentage] = useState<number>(0);
   const [minStock, setMinStock] = useState<number>(0);
   const [maxStock, setMaxStock] = useState<number>(999999);
+
+  // Estado para progresso do PDF
+  const [pdfProgress, setPdfProgress] = useState({
+    isGenerating: false,
+    progress: 0,
+    currentPage: 0,
+    totalPages: 0,
+    status: 'Iniciando...'
+  });
 
   useEffect(() => {
     fetchCategories();
@@ -227,8 +237,6 @@ const Catalog = () => {
 
   const generatePDF = async () => {
     try {
-      toast.loading('Gerando PDF do catálogo...');
-      
       // Buscar o elemento que contém os produtos
       const catalogContainer = document.getElementById('catalog-products-grid');
       if (!catalogContainer) {
@@ -237,31 +245,46 @@ const Catalog = () => {
       }
 
       // Obter todos os cards de produtos
-      const productCards = catalogContainer.children;
+      const productCards = Array.from(catalogContainer.children) as Element[];
       if (productCards.length === 0) {
         toast.error('Nenhum produto encontrado para impressão');
         return;
       }
 
+      // Configurar produtos por página baseado nas colunas selecionadas
+      const ROWS_PER_PAGE = 3;
+      const productsPerPage = columnsCount * ROWS_PER_PAGE;
+      const totalPages = Math.ceil(productCards.length / productsPerPage);
+
+      // Iniciar modal de progresso
+      setPdfProgress({
+        isGenerating: true,
+        progress: 0,
+        currentPage: 0,
+        totalPages,
+        status: 'Preparando documento...'
+      });
+
+      // Aguardar um frame para o modal renderizar
+      await new Promise(resolve => requestAnimationFrame(resolve));
+
       // Preparar estilo para evitar corte de textos durante captura
-      const cleanupFns: Array<() => void> = [];
       const styleEl = document.createElement('style');
       styleEl.id = 'pdf-capture-style';
       styleEl.textContent = `
-        #catalog-products-grid .line-clamp-2 { -webkit-line-clamp: unset !important; display: block !important; overflow: visible !important; }
-        #catalog-products-grid .catalog-title { line-height: 1.2 !important; }
-        /* Badge de estoque - PDF only */
-        #catalog-products-grid .catalog-stock-badge {
+        .pdf-page-container .line-clamp-2 { -webkit-line-clamp: unset !important; display: block !important; overflow: visible !important; }
+        .pdf-page-container .catalog-title { line-height: 1.2 !important; }
+        .pdf-page-container .catalog-stock-badge {
           display: inline-flex !important;
-          justify-content: flex-start !important; /* alinhado à esquerda */
-          align-items: center !important;        /* centraliza verticalmente */
+          justify-content: flex-start !important;
+          align-items: center !important;
           white-space: nowrap !important;
           text-align: left !important;
           font-size: 11px !important;
           font-weight: 600 !important;
-          line-height: 1.1 !important;           /* melhora o centramento no html2canvas */
-          padding: 6px 12px !important;          /* aumenta a área interna */
-          min-height: 26px !important;           /* evita corte superior/inferior */
+          line-height: 1.1 !important;
+          padding: 6px 12px !important;
+          min-height: 26px !important;
           height: auto !important;
           border-radius: 9999px !important;
           overflow: visible !important;
@@ -270,245 +293,166 @@ const Catalog = () => {
           -moz-osx-font-smoothing: grayscale !important;
           transform: translateZ(0) !important;
           gap: 0 !important;
-          margin-top: 6px !important;            /* margem superior apenas no PDF */
+          margin-top: 6px !important;
         }
-        /* Garantir que conteúdo interno siga o mesmo line-height */
-        #catalog-products-grid .catalog-stock-badge * {
+        .pdf-page-container .catalog-stock-badge * {
           line-height: 1.1 !important;
         }
-        /* Preço antigo riscado - PDF only */
-        #catalog-products-grid .line-through {
+        .pdf-page-container .line-through {
           position: relative !important;
           display: inline-block !important;
           text-decoration: none !important;
           line-height: 1.1 !important;
         }
-        #catalog-products-grid .line-through::after {
+        .pdf-page-container .line-through::after {
           content: '';
           position: absolute;
           left: 0;
-          top: calc(54% + 8px) !important; /* desloca a barra 8px para baixo apenas no PDF */
+          top: calc(54% + 8px) !important;
           transform: translateY(-50%);
           width: 30%;
           height: 1px;
           background: rgb(156, 163, 175);
           pointer-events: none;
         }
+        .pdf-page-container .pdf-stock-text { 
+          position: relative !important; 
+          top: -8px !important; 
+          display: inline-block !important; 
+        }
       `;
       document.head.appendChild(styleEl);
-      cleanupFns.push(() => styleEl.remove());
 
-      // Envolver o texto do badge em span para ajustar posição no PDF
-      const stockBadges = catalogContainer.querySelectorAll('.catalog-stock-badge');
-      stockBadges.forEach((badge) => {
-        if ((badge as HTMLElement).querySelector('.pdf-stock-text')) return;
-        const wrapper = document.createElement('span');
-        wrapper.className = 'pdf-stock-text';
-        while (badge.firstChild) {
-          wrapper.appendChild(badge.firstChild);
-        }
-        badge.appendChild(wrapper);
-        cleanupFns.push(() => {
-          if (wrapper.parentNode === badge) {
-            while (wrapper.firstChild) {
-              badge.insertBefore(wrapper.firstChild, wrapper);
-            }
-            wrapper.remove();
-          }
-        });
-      });
-
-      // Estilo para subir o texto do estoque 8px apenas no PDF
-      const adjustEl = document.createElement('style');
-      adjustEl.id = 'pdf-capture-stock-adjust';
-      adjustEl.textContent = `
-        #catalog-products-grid .pdf-stock-text { position: relative !important; top: -8px !important; display: inline-block !important; }
-      `;
-      document.head.appendChild(adjustEl);
-      cleanupFns.push(() => adjustEl.remove());
-
-      // Pré-calcular linhas e posições com os estilos de PDF aplicados (para evitar desalinhamento)
-      const containerRect = catalogContainer.getBoundingClientRect();
-      const productRows: Array<{cards: Element[], top: number, height: number}> = [];
-      const cardsArrayPre = Array.from(productCards) as Element[];
-      for (let i = 0; i < cardsArrayPre.length; i += columnsCount) {
-        const rowCards = cardsArrayPre.slice(i, i + columnsCount);
-        const rects = rowCards.map(card => card.getBoundingClientRect());
-        const rowTop = Math.min(...rects.map(r => r.top)) - containerRect.top;
-        const rowBottom = Math.max(...rects.map(r => r.bottom)) - containerRect.top;
-        productRows.push({ cards: rowCards, top: rowTop, height: rowBottom - rowTop });
-      }
-
-      // Capturar a imagem do container completo
-      const canvas = await html2canvas(catalogContainer, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#FFFFFF'
-      });
-
-      // Limpar estilos temporários após captura
-      cleanupFns.forEach(fn => fn());
       // Criar PDF com folha A4 e margem de 1cm
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth(); // 210mm
-      const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
-      const margin = 10; // 1cm de margem
-      const availableWidth = pageWidth - (margin * 2); // 190mm
-      const availableHeight = pageHeight - (margin * 2); // 277mm
-      
-      // Configurar produtos por página baseado nas colunas selecionadas
-      const getProductsPerPage = (columns: number) => {
-        switch (columns) {
-          case 3: return 9;  // 3 colunas x 3 linhas = 9 produtos
-          case 4: return 12; // 4 colunas x 3 linhas = 12 produtos  
-          case 5: return 15; // 5 colunas x 3 linhas = 15 produtos
-          case 6: return 18; // 6 colunas x 3 linhas = 18 produtos
-          default: return 12;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const availableWidth = pageWidth - (margin * 2);
+      const availableHeight = pageHeight - (margin * 2);
+
+      // Processar produtos em páginas
+      for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+        const startIdx = pageIndex * productsPerPage;
+        const endIdx = Math.min(startIdx + productsPerPage, productCards.length);
+        const pageProducts = productCards.slice(startIdx, endIdx);
+
+        // Atualizar progresso
+        setPdfProgress(prev => ({
+          ...prev,
+          currentPage: pageIndex + 1,
+          progress: ((pageIndex) / totalPages) * 100,
+          status: `Processando página ${pageIndex + 1} de ${totalPages}...`
+        }));
+
+        // Aguardar um frame para atualizar a UI
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        // Criar container temporário para esta página
+        const pageContainer = document.createElement('div');
+        pageContainer.className = 'pdf-page-container';
+        pageContainer.style.cssText = `
+          position: fixed;
+          left: -9999px;
+          top: 0;
+          width: ${catalogContainer.clientWidth}px;
+          display: grid;
+          grid-template-columns: repeat(${columnsCount}, minmax(0, 1fr));
+          gap: 1rem;
+          background: white;
+          padding: 1rem;
+        `;
+
+        // Clonar os produtos para esta página
+        pageProducts.forEach(card => {
+          const clone = card.cloneNode(true) as HTMLElement;
+          
+          // Processar badges de estoque
+          const stockBadges = clone.querySelectorAll('.catalog-stock-badge');
+          stockBadges.forEach((badge) => {
+            if (!(badge as HTMLElement).querySelector('.pdf-stock-text')) {
+              const wrapper = document.createElement('span');
+              wrapper.className = 'pdf-stock-text';
+              while (badge.firstChild) {
+                wrapper.appendChild(badge.firstChild);
+              }
+              badge.appendChild(wrapper);
+            }
+          });
+          
+          pageContainer.appendChild(clone);
+        });
+
+        document.body.appendChild(pageContainer);
+
+        // Aguardar imagens carregarem
+        const images = pageContainer.querySelectorAll('img');
+        await Promise.all(
+          Array.from(images).map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise(resolve => {
+              img.onload = resolve;
+              img.onerror = resolve;
+              setTimeout(resolve, 2000); // timeout de segurança
+            });
+          })
+        );
+
+        // Capturar esta página
+        const canvas = await html2canvas(pageContainer, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#FFFFFF',
+          onclone: (clonedDoc) => {
+            const clonedContainer = clonedDoc.querySelector('.pdf-page-container');
+            if (clonedContainer) {
+              (clonedContainer as HTMLElement).style.left = '0';
+            }
+          }
+        });
+
+        // Remover container temporário
+        document.body.removeChild(pageContainer);
+
+        // Adicionar página ao PDF
+        if (pageIndex > 0) {
+          pdf.addPage();
         }
-      };
-      
-      const productsPerPage = getProductsPerPage(columnsCount);
-      
-      // Escala assumindo usar 100% da largura disponível (mantendo proporção)
-      const scaledHeightAtFullWidth = availableWidth / (canvas.width / canvas.height);
-      const domToCanvas = canvas.width / catalogContainer.clientWidth;
-      
-      // Se ao usar a largura total a altura couber na página, usar 1 página; caso contrário, paginar por linhas
-      if (scaledHeightAtFullWidth <= availableHeight) {
+
         const imgData = canvas.toDataURL('image/png');
         
-        // Priorizar ocupar toda a largura disponível
-        const drawWidth = availableWidth;
-        const drawHeight = availableWidth / (canvas.width / canvas.height);
-        
-        // Se a altura calculada for maior que disponível, ajustar pela altura
-        const finalDrawHeight = Math.min(drawHeight, availableHeight);
-        const finalDrawWidth = finalDrawHeight * (canvas.width / canvas.height);
-        
-        // Sempre usar toda a largura disponível se possível
-        const useFullWidth = finalDrawWidth >= availableWidth * 0.95; // 95% da largura
-        const finalWidth = useFullWidth ? availableWidth : finalDrawWidth;
-        const finalHeight = useFullWidth ? availableWidth / (canvas.width / canvas.height) : finalDrawHeight;
-        
-        // Centralizar apenas verticalmente (horizontalmente usar margem padrão)
+        // Calcular dimensões
+        let finalWidth = availableWidth;
+        let finalHeight = availableWidth / (canvas.width / canvas.height);
+
+        // Se a altura ultrapassar o limite, redimensionar pela altura
+        if (finalHeight > availableHeight) {
+          finalHeight = availableHeight;
+          finalWidth = availableHeight * (canvas.width / canvas.height);
+        }
+
         const offsetX = margin;
-        const offsetY = margin + (availableHeight - finalHeight) / 2;
-        
+        const offsetY = margin;
+
         pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
-      } else {
-        // Usar posições e linhas pré-calculadas antes da captura para manter alinhamento com o canvas
-        // productRows já contém as linhas com top/height relativos ao container
 
-
-        // Gerar páginas respeitando 3 linhas completas por página
-        const ROWS_PER_PAGE = 3;
-        let currentPageRows: typeof productRows = [];
-        let pageNumber = 0;
-        
-        for (let i = 0; i < productRows.length; i++) {
-          const row = productRows[i];
-          // Adicionar linha à página atual
-          currentPageRows.push(row);
-
-          // Quando atingir exatamente 3 linhas, gerar a página
-          if (currentPageRows.length === ROWS_PER_PAGE) {
-            const firstRow = currentPageRows[0];
-            const lastRow = currentPageRows[currentPageRows.length - 1];
-            const pageStartY = firstRow.top;
-            const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
-
-            const pageCanvas = document.createElement('canvas');
-            const bleed = Math.max(2, Math.round(2 * domToCanvas));
-            const srcY = Math.max(0, Math.floor(pageStartY * domToCanvas) - bleed);
-            const srcH = Math.min(canvas.height - srcY, Math.round(pageHeight * domToCanvas) + bleed * 2);
-            pageCanvas.width = canvas.width;
-            pageCanvas.height = srcH;
-            const pageCtx = pageCanvas.getContext('2d');
-
-            if (pageCtx) {
-              pageCtx.drawImage(
-                canvas,
-                0, srcY, canvas.width, srcH,
-                0, 0, canvas.width, srcH
-              );
-
-              const pageImgData = pageCanvas.toDataURL('image/png');
-
-              // Calcular dimensões respeitando limites de largura E altura
-              let finalWidth = availableWidth;
-              let finalHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
-
-              // Se a altura ultrapassar o limite, redimensionar pela altura
-              if (finalHeight > availableHeight) {
-                finalHeight = availableHeight;
-                finalWidth = availableHeight * (pageCanvas.width / pageCanvas.height);
-              }
-
-              // Posicionar no topo da página para evitar corte/encavalamento
-              const offsetX = margin;
-              const offsetY = margin;
-
-              if (pageNumber > 0) {
-                pdf.addPage();
-              }
-              pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
-              pageNumber++;
-            }
-
-            // Reiniciar para próxima página
-            currentPageRows = [];
-          }
-        }
-        
-        // Gerar última página se houver linhas restantes (1 ou 2 linhas)
-        if (currentPageRows.length > 0) {
-          const firstRow = currentPageRows[0];
-          const lastRow = currentPageRows[currentPageRows.length - 1];
-          const pageStartY = firstRow.top;
-          const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
-
-          // Preparar corte com bleed para evitar cortes ao paginar
-
-          const bleed = Math.max(2, Math.round(2 * domToCanvas));
-          const srcY = Math.max(0, Math.floor(pageStartY * domToCanvas) - bleed);
-          const srcH = Math.min(canvas.height - srcY, Math.round(pageHeight * domToCanvas) + bleed * 2);
-          const pageCanvas = document.createElement('canvas');
-          pageCanvas.width = canvas.width;
-          pageCanvas.height = srcH;
-          const pageCtx = pageCanvas.getContext('2d');
-          
-          if (pageCtx) {
-            pageCtx.drawImage(
-              canvas,
-              0, srcY, canvas.width, srcH,
-              0, 0, canvas.width, srcH
-            );
-
-            const pageImgData = pageCanvas.toDataURL('image/png');
-
-            // Calcular dimensões respeitando limites de largura E altura
-            let finalWidth = availableWidth;
-            let finalHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
-
-            // Se a altura ultrapassar o limite, redimensionar pela altura
-            if (finalHeight > availableHeight) {
-              finalHeight = availableHeight;
-              finalWidth = availableHeight * (pageCanvas.width / pageCanvas.height);
-            }
-
-            // Posicionar no topo da página
-            const offsetX = margin;
-            const offsetY = margin;
-
-            if (pageNumber > 0) {
-              pdf.addPage();
-            }
-            pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
-          }
-        }
+        // Aguardar um pouco para não travar o navegador
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-      
+
+      // Limpar estilos
+      styleEl.remove();
+
+      // Atualizar para 100%
+      setPdfProgress(prev => ({
+        ...prev,
+        progress: 100,
+        status: 'Finalizando PDF...'
+      }));
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       // Gerar nome do arquivo com data atual
       const today = new Date();
       const dateStr = today.toISOString().split('T')[0];
@@ -517,12 +461,26 @@ const Catalog = () => {
       // Fazer download
       pdf.save(fileName);
       
-      toast.dismiss();
+      // Fechar modal de progresso
+      setPdfProgress({
+        isGenerating: false,
+        progress: 0,
+        currentPage: 0,
+        totalPages: 0,
+        status: ''
+      });
+
       toast.success('PDF do catálogo gerado com sucesso!');
       
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      toast.dismiss();
+      setPdfProgress({
+        isGenerating: false,
+        progress: 0,
+        currentPage: 0,
+        totalPages: 0,
+        status: ''
+      });
       toast.error('Erro ao gerar PDF do catálogo');
     }
   };
@@ -836,6 +794,15 @@ const Catalog = () => {
           </Card>
         )}
       </div>
+
+      {/* Modal de progresso do PDF */}
+      <PDFProgressModal
+        isOpen={pdfProgress.isGenerating}
+        progress={pdfProgress.progress}
+        currentPage={pdfProgress.currentPage}
+        totalPages={pdfProgress.totalPages}
+        status={pdfProgress.status}
+      />
     </div>
   );
 };
