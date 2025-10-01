@@ -697,11 +697,11 @@ const Catalog = () => {
               <Card key={product.id} className="bg-white hover:shadow-lg transition-all border border-gray-200">
                 <CardContent className="p-4">
                   {/* Título e Código */}
-                  <div className="mb-3 min-h-[60px]">
-                    <h3 className="text-base font-bold text-gray-900 line-clamp-2 mb-1 leading-tight">
+                  <div className="mb-3 min-h-[54px]">
+                    <h3 className="text-sm font-bold text-gray-900 line-clamp-2 mb-1 leading-tight">
                       {product.name}
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs text-gray-500">
                       Código: {product.internal_code}
                     </p>
                   </div>
@@ -721,18 +721,18 @@ const Catalog = () => {
                   
                   {/* Preço */}
                   {showPrice && (
-                    <div className="mb-3">
+                    <div className="mb-2">
                       {discountPercentage > 0 ? (
                         <div className="flex flex-col">
-                          <span className="text-base text-gray-500 line-through">
+                          <span className="text-sm text-gray-500 line-through">
                             {formatCurrency(product.price)}
                           </span>
-                          <span className="text-2xl font-bold text-green-600">
+                          <span className="text-xl font-bold text-green-600">
                             {formatCurrency(calculateDiscountedPrice(product.price))}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-2xl font-bold text-green-600">
+                        <span className="text-xl font-bold text-green-600">
                           {formatCurrency(product.price)}
                         </span>
                       )}
@@ -740,16 +740,16 @@ const Catalog = () => {
                   )}
                   
                   {/* Categoria e Badge de estoque */}
-                  <div className="flex flex-col gap-2 mb-3">
+                  <div className="flex flex-col gap-1.5 mb-2">
                     {product.categories && (
-                      <span className="text-sm text-gray-700">
+                      <span className="text-xs text-gray-700">
                         {product.categories.name}
                       </span>
                     )}
                     {/* Mostrar estoque para admin, gerente e vendedor interno */}
                     {(userType === 'admin' || userType === 'seller_internal') && (
                       <Badge 
-                        className={`w-fit whitespace-nowrap text-xs px-2 py-1 ${
+                        className={`w-fit whitespace-nowrap text-[10px] px-1.5 py-0.5 leading-tight ${
                           getStockBadgeVariant(product.stock) === 'default' 
                             ? 'bg-blue-500 text-white hover:bg-blue-600' 
                             : getStockBadgeVariant(product.stock) === 'destructive'
