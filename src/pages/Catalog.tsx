@@ -317,11 +317,11 @@ const Catalog = () => {
         });
       });
 
-      // Estilo para subir o texto do estoque 10px apenas no PDF
+      // Estilo para subir o texto do estoque 8px apenas no PDF
       const adjustEl = document.createElement('style');
       adjustEl.id = 'pdf-capture-stock-adjust';
       adjustEl.textContent = `
-        #catalog-products-grid .pdf-stock-text { position: relative !important; top: -10px !important; display: inline-block !important; }
+        #catalog-products-grid .pdf-stock-text { position: relative !important; top: -8px !important; display: inline-block !important; }
       `;
       document.head.appendChild(adjustEl);
       cleanupFns.push(() => adjustEl.remove());
