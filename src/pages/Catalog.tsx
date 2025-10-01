@@ -434,18 +434,15 @@ const Catalog = () => {
 
               const pageImgData = pageCanvas.toDataURL('image/png');
 
-              // Priorizar ocupar toda a largura disponível
-              const drawWidth = availableWidth;
-              const drawHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
+              // Calcular dimensões respeitando limites de largura E altura
+              let finalWidth = availableWidth;
+              let finalHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
 
-              // Se a altura calculada for maior que disponível, ajustar pela altura
-              const finalDrawHeight = Math.min(drawHeight, availableHeight);
-              const finalDrawWidth = finalDrawHeight * (pageCanvas.width / pageCanvas.height);
-
-              // Sempre usar toda a largura disponível se possível
-              const useFullWidth = finalDrawWidth >= availableWidth * 0.95; // 95% da largura
-              const finalWidth = useFullWidth ? availableWidth : finalDrawWidth;
-              const finalHeight = useFullWidth ? availableWidth / (pageCanvas.width / pageCanvas.height) : finalDrawHeight;
+              // Se a altura ultrapassar o limite, redimensionar pela altura
+              if (finalHeight > availableHeight) {
+                finalHeight = availableHeight;
+                finalWidth = availableHeight * (pageCanvas.width / pageCanvas.height);
+              }
 
               // Posicionar no topo da página para evitar corte/encavalamento
               const offsetX = margin;
@@ -484,18 +481,15 @@ const Catalog = () => {
 
             const pageImgData = pageCanvas.toDataURL('image/png');
 
-            // Priorizar ocupar toda a largura disponível
-            const drawWidth = availableWidth;
-            const drawHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
+            // Calcular dimensões respeitando limites de largura E altura
+            let finalWidth = availableWidth;
+            let finalHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
 
-            // Se a altura calculada for maior que disponível, ajustar pela altura
-            const finalDrawHeight = Math.min(drawHeight, availableHeight);
-            const finalDrawWidth = finalDrawHeight * (pageCanvas.width / pageCanvas.height);
-
-            // Sempre usar toda a largura disponível se possível
-            const useFullWidth = finalDrawWidth >= availableWidth * 0.95; // 95% da largura
-            const finalWidth = useFullWidth ? availableWidth : finalDrawWidth;
-            const finalHeight = useFullWidth ? availableWidth / (pageCanvas.width / pageCanvas.height) : finalDrawHeight;
+            // Se a altura ultrapassar o limite, redimensionar pela altura
+            if (finalHeight > availableHeight) {
+              finalHeight = availableHeight;
+              finalWidth = availableHeight * (pageCanvas.width / pageCanvas.height);
+            }
 
             // Posicionar no topo da página
             const offsetX = margin;
