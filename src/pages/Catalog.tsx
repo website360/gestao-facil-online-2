@@ -257,27 +257,31 @@ const Catalog = () => {
           justify-content: flex-start !important;
           text-align: left !important;
           font-size: 10px !important;
-          line-height: 1.3 !important;
-          padding: 4px 10px 3px 10px !important;
+          line-height: 12px !important;
+          padding: 5px 10px 4px 10px !important;
           min-height: 22px !important;
           height: auto !important;
           overflow: visible !important;
+          border-radius: 9999px !important;
           box-sizing: border-box !important;
           vertical-align: middle !important;
           word-break: keep-all !important;
           letter-spacing: 0 !important;
+          -webkit-font-smoothing: antialiased !important;
+          transform: translateZ(0) !important;
         }
         #catalog-products-grid .line-through {
           position: relative !important;
           display: inline-block !important;
           text-decoration: none !important;
+          line-height: 1.2 !important;
         }
         #catalog-products-grid .line-through::after {
           content: '';
           position: absolute;
           left: 0;
           right: 0;
-          top: 58%;
+          top: 56%;
           transform: translateY(-50%);
           height: 1.5px;
           background: rgb(107, 114, 128);
