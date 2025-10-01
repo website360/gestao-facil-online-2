@@ -257,14 +257,15 @@ const Catalog = () => {
           justify-content: flex-start !important;
           text-align: left !important;
           font-size: 10px !important;
-          line-height: 1.15 !important;
-          padding: 2px 8px 3px 8px !important;
-          min-height: 20px !important;
+          line-height: 1.3 !important;
+          padding: 4px 10px 3px 10px !important;
+          min-height: 22px !important;
           height: auto !important;
           overflow: visible !important;
           box-sizing: border-box !important;
           vertical-align: middle !important;
           word-break: keep-all !important;
+          letter-spacing: 0 !important;
         }
         #catalog-products-grid .line-through {
           position: relative !important;
