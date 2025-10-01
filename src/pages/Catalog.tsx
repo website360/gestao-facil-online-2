@@ -251,7 +251,15 @@ const Catalog = () => {
         #catalog-products-grid .line-clamp-2 { -webkit-line-clamp: unset !important; display: block !important; overflow: visible !important; }
         #catalog-products-grid .catalog-title { line-height: 1.2 !important; }
         #catalog-products-grid .catalog-stock-badge { white-space: nowrap !important; }
-        #catalog-products-grid .line-through { text-decoration: line-through !important; text-decoration-thickness: 1px !important; text-decoration-color: rgb(107, 114, 128) !important; }
+        #catalog-products-grid .line-through { 
+          position: relative !important;
+          text-decoration: line-through !important; 
+          text-decoration-thickness: 2px !important; 
+          text-decoration-color: rgb(107, 114, 128) !important;
+          -webkit-text-decoration: line-through !important;
+          -webkit-text-decoration-thickness: 2px !important;
+          -webkit-text-decoration-color: rgb(107, 114, 128) !important;
+        }
       `;
       document.head.appendChild(styleEl);
       cleanupFns.push(() => styleEl.remove());
@@ -764,7 +772,7 @@ const Catalog = () => {
                     {/* Mostrar estoque para admin, gerente e vendedor interno */}
                     {(userType === 'admin' || userType === 'seller_internal') && (
                       <Badge 
-                        className={`catalog-stock-badge relative z-10 inline-flex items-center justify-center h-5 w-fit whitespace-nowrap text-[10px] px-2 leading-none ${
+                        className={`catalog-stock-badge ${
                           getStockBadgeVariant(product.stock) === 'default' 
                             ? 'bg-blue-500 text-white hover:bg-blue-600' 
                             : getStockBadgeVariant(product.stock) === 'destructive'
@@ -772,7 +780,7 @@ const Catalog = () => {
                             : 'bg-yellow-500 text-white hover:bg-yellow-600'
                         }`}
                       >
-                        <span className="relative -translate-y-1.5 inline-block">{getStockStatusText(product.stock)}</span>
+                        {getStockStatusText(product.stock)}
                       </Badge>
                     )}
                   </div>
