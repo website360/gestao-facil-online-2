@@ -389,48 +389,15 @@ const Catalog = () => {
         const containerRect = catalogContainer.getBoundingClientRect();
         const productRows: Array<{cards: Element[], top: number, height: number}> = [];
         
-        // Agrupar produtos por linha baseado na posição Y
-        const cardsArray = Array.from(productCards);
-        const cardPositions = cardsArray.map(card => {
-          const rect = card.getBoundingClientRect();
-          return {
-            card,
-            top: rect.top - containerRect.top,
-            bottom: rect.bottom - containerRect.top,
-            height: rect.height
-          };
-        });
-
-        // Agrupar por linhas (produtos com Y similar)
-        let currentRowY = -1;
-        let currentRow: typeof cardPositions = [];
-        
-        cardPositions.forEach(cardPos => {
-          if (currentRowY === -1 || Math.abs(cardPos.top - currentRowY) < 20) {
-            if (currentRowY === -1) currentRowY = cardPos.top;
-            currentRow.push(cardPos);
-          } else {
-            // Nova linha
-            if (currentRow.length > 0) {
-              const rowTop = Math.min(...currentRow.map(c => c.top));
-              const rowBottom = Math.max(...currentRow.map(c => c.bottom));
-              productRows.push({
-                cards: currentRow.map(c => c.card),
-                top: rowTop,
-                height: rowBottom - rowTop
-              });
-            }
-            currentRow = [cardPos];
-            currentRowY = cardPos.top;
-          }
-        });
-        
-        // Adicionar última linha
-        if (currentRow.length > 0) {
-          const rowTop = Math.min(...currentRow.map(c => c.top));
-          const rowBottom = Math.max(...currentRow.map(c => c.bottom));
+        // Agrupar produtos por linha com base no número de colunas selecionado (determinístico)
+        const cardsArray = Array.from(productCards) as Element[];
+        for (let i = 0; i < cardsArray.length; i += columnsCount) {
+          const rowCards = cardsArray.slice(i, i + columnsCount);
+          const rects = rowCards.map(card => card.getBoundingClientRect());
+          const rowTop = Math.min(...rects.map(r => r.top)) - containerRect.top;
+          const rowBottom = Math.max(...rects.map(r => r.bottom)) - containerRect.top;
           productRows.push({
-            cards: currentRow.map(c => c.card),
+            cards: rowCards,
             top: rowTop,
             height: rowBottom - rowTop
           });
@@ -443,104 +410,103 @@ const Catalog = () => {
         
         for (let i = 0; i < productRows.length; i++) {
           const row = productRows[i];
-          
-          // Verificar se já temos 3 linhas na página atual
-          if (currentPageRows.length >= ROWS_PER_PAGE) {
-            // Gerar página atual com exatamente 3 linhas
+          // Adicionar linha à página atual
+          currentPageRows.push(row);
+
+          // Quando atingir exatamente 3 linhas, gerar a página
+          if (currentPageRows.length === ROWS_PER_PAGE) {
             const firstRow = currentPageRows[0];
             const lastRow = currentPageRows[currentPageRows.length - 1];
             const pageStartY = firstRow.top;
             const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
-            
+
             const pageCanvas = document.createElement('canvas');
             pageCanvas.width = canvas.width;
             pageCanvas.height = Math.round(pageHeight * domToCanvas);
             const pageCtx = pageCanvas.getContext('2d');
-            
+
             if (pageCtx) {
               pageCtx.drawImage(
                 canvas,
                 0, Math.round(pageStartY * domToCanvas), canvas.width, Math.round(pageHeight * domToCanvas),
                 0, 0, canvas.width, Math.round(pageHeight * domToCanvas)
               );
-              
+
               const pageImgData = pageCanvas.toDataURL('image/png');
-              
+
               // Priorizar ocupar toda a largura disponível
               const drawWidth = availableWidth;
               const drawHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
-              
+
               // Se a altura calculada for maior que disponível, ajustar pela altura
               const finalDrawHeight = Math.min(drawHeight, availableHeight);
               const finalDrawWidth = finalDrawHeight * (pageCanvas.width / pageCanvas.height);
-              
+
               // Sempre usar toda a largura disponível se possível
               const useFullWidth = finalDrawWidth >= availableWidth * 0.95; // 95% da largura
               const finalWidth = useFullWidth ? availableWidth : finalDrawWidth;
               const finalHeight = useFullWidth ? availableWidth / (pageCanvas.width / pageCanvas.height) : finalDrawHeight;
-              
-              // Centralizar apenas verticalmente (horizontalmente usar margem padrão)
+
+              // Posicionar no topo da página para evitar corte/encavalamento
               const offsetX = margin;
-              const offsetY = margin + (availableHeight - finalHeight) / 2;
-              
+              const offsetY = margin;
+
               if (pageNumber > 0) {
                 pdf.addPage();
               }
               pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
               pageNumber++;
             }
-            
-            // Iniciar nova página com a linha atual
-            currentPageRows = [row];
-          } else {
-            // Adicionar linha à página atual
-            currentPageRows.push(row);
+
+            // Reiniciar para próxima página
+            currentPageRows = [];
           }
         }
         
-        // Gerar última página se houver linhas restantes
+        // Gerar última página se houver linhas restantes (1 ou 2 linhas)
         if (currentPageRows.length > 0) {
           const firstRow = currentPageRows[0];
           const lastRow = currentPageRows[currentPageRows.length - 1];
           const pageStartY = firstRow.top;
           const pageHeight = (lastRow.top + lastRow.height) - pageStartY;
-          
+
           const pageCanvas = document.createElement('canvas');
           pageCanvas.width = canvas.width;
           pageCanvas.height = Math.round(pageHeight * domToCanvas);
           const pageCtx = pageCanvas.getContext('2d');
-          
+
           if (pageCtx) {
             pageCtx.drawImage(
               canvas,
               0, Math.round(pageStartY * domToCanvas), canvas.width, Math.round(pageHeight * domToCanvas),
               0, 0, canvas.width, Math.round(pageHeight * domToCanvas)
             );
-            
+
             const pageImgData = pageCanvas.toDataURL('image/png');
-            
+
             // Priorizar ocupar toda a largura disponível
             const drawWidth = availableWidth;
             const drawHeight = availableWidth / (pageCanvas.width / pageCanvas.height);
-            
+
             // Se a altura calculada for maior que disponível, ajustar pela altura
             const finalDrawHeight = Math.min(drawHeight, availableHeight);
             const finalDrawWidth = finalDrawHeight * (pageCanvas.width / pageCanvas.height);
-            
+
             // Sempre usar toda a largura disponível se possível
             const useFullWidth = finalDrawWidth >= availableWidth * 0.95; // 95% da largura
             const finalWidth = useFullWidth ? availableWidth : finalDrawWidth;
             const finalHeight = useFullWidth ? availableWidth / (pageCanvas.width / pageCanvas.height) : finalDrawHeight;
-            
-            // Centralizar apenas verticalmente (horizontalmente usar margem padrão)
+
+            // Posicionar no topo da página
             const offsetX = margin;
-            const offsetY = margin + (availableHeight - finalHeight) / 2;
-            
+            const offsetY = margin;
+
             if (pageNumber > 0) {
               pdf.addPage();
             }
             pdf.addImage(pageImgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
           }
+        }
         }
       }
       
