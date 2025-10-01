@@ -174,6 +174,22 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
       item.products?.name.toLowerCase() === code.trim().toLowerCase()
     );
     if (item) {
+      // Verificar se o produto já foi conferido e validado
+      const existingConference = conferenceItems.find(ci => ci.sale_item_id === item.id);
+      if (existingConference && existingConference.is_correct) {
+        setFoundItem(null);
+        setCodeMessage('⚠️ Este produto já foi conferido e validado');
+        setQuantityInput('');
+        toast.warning('Este produto já foi conferido e validado');
+        
+        // Limpar o campo após 2 segundos
+        setTimeout(() => {
+          setCodeInput('');
+          setCodeMessage('');
+        }, 2000);
+        return;
+      }
+      
       setFoundItem(item);
       setCodeMessage(`Produto encontrado: ${item.products?.name}`);
       setQuantityInput('');
@@ -190,6 +206,21 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
   };
   const handleQuantitySubmit = async () => {
     if (!foundItem || !quantityInput) return;
+    
+    // Verificar novamente se o produto já foi conferido corretamente
+    const existingConference = conferenceItems.find(ci => ci.sale_item_id === foundItem.id);
+    if (existingConference && existingConference.is_correct) {
+      toast.warning('Este produto já foi conferido e validado');
+      setCodeInput('');
+      setFoundItem(null);
+      setQuantityInput('');
+      setCodeMessage('');
+      setTimeout(() => {
+        codeInputRef.current?.focus();
+      }, 100);
+      return;
+    }
+    
     const conferredQty = parseInt(quantityInput);
     const expectedQty = foundItem.quantity;
     const isCorrect = conferredQty === expectedQty;
@@ -213,8 +244,8 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
       return;
     }
     try {
-      const existingConference = conferenceItems.find(ci => ci.sale_item_id === foundItem.id);
       if (existingConference) {
+        // Atualizar conferência existente (caso tenha sido incorreta anteriormente)
         const { error } = await supabase
           .from('conference_items')
           .update({
