@@ -255,10 +255,13 @@ const Catalog = () => {
           display: inline-flex !important;
           align-items: center !important;
           justify-content: center !important;
-          line-height: 1 !important;
-          padding: 2px 6px !important;
+          line-height: 1.2 !important;
+          font-size: 10px !important;
+          padding: 3px 8px !important;
+          min-height: 20px !important;
           height: auto !important;
           overflow: visible !important;
+          box-sizing: border-box !important;
         }
         #catalog-products-grid .line-through {
           position: relative !important;
@@ -270,10 +273,11 @@ const Catalog = () => {
           position: absolute;
           left: 0;
           right: 0;
-          top: 50%;
+          top: 58%;
           transform: translateY(-50%);
-          height: 2px;
+          height: 1.5px;
           background: rgb(107, 114, 128);
+          pointer-events: none;
         }
       `;
       document.head.appendChild(styleEl);
