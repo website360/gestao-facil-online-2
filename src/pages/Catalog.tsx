@@ -270,6 +270,7 @@ const Catalog = () => {
           -moz-osx-font-smoothing: grayscale !important;
           transform: translateZ(0) !important;
           gap: 0 !important;
+          margin-top: 6px !important;            /* margem superior apenas no PDF */
         }
         /* Garantir que conteúdo interno siga o mesmo line-height */
         #catalog-products-grid .catalog-stock-badge * {
