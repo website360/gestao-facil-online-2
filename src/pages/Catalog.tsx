@@ -251,6 +251,7 @@ const Catalog = () => {
         #catalog-products-grid .line-clamp-2 { -webkit-line-clamp: unset !important; display: block !important; overflow: visible !important; }
         #catalog-products-grid .catalog-title { line-height: 1.2 !important; }
         #catalog-products-grid .catalog-stock-badge { white-space: nowrap !important; }
+        #catalog-products-grid .line-through { text-decoration: line-through !important; text-decoration-thickness: 1px !important; text-decoration-color: rgb(107, 114, 128) !important; }
       `;
       document.head.appendChild(styleEl);
       cleanupFns.push(() => styleEl.remove());
@@ -738,7 +739,7 @@ const Catalog = () => {
                     <div className="mb-2">
                       {discountPercentage > 0 ? (
                         <div className="flex flex-col">
-                          <span className="relative inline-block text-sm text-gray-500 after:absolute after:left-0 after:right-0 after:top-1/2 after:h-[1px] after:-translate-y-1/2 after:bg-gray-500 after:content-['']">
+                          <span className="text-sm text-gray-500 line-through">
                             {formatCurrency(product.price)}
                           </span>
                           <span className="text-xl font-bold text-green-600">
