@@ -697,8 +697,8 @@ const Catalog = () => {
               <Card key={product.id} className="bg-white hover:shadow-lg transition-all border border-gray-200">
                 <CardContent className="p-4">
                   {/* Título e Código */}
-                  <div className="mb-3">
-                    <h3 className="text-base font-bold text-gray-900 line-clamp-2 mb-1">
+                  <div className="mb-3 min-h-[60px]">
+                    <h3 className="text-base font-bold text-gray-900 line-clamp-2 mb-1 leading-tight">
                       {product.name}
                     </h3>
                     <p className="text-sm text-gray-500">
@@ -749,7 +749,7 @@ const Catalog = () => {
                     {/* Mostrar estoque para admin, gerente e vendedor interno */}
                     {(userType === 'admin' || userType === 'seller_internal') && (
                       <Badge 
-                        className={`w-fit ${
+                        className={`w-fit whitespace-nowrap text-xs px-2 py-1 ${
                           getStockBadgeVariant(product.stock) === 'default' 
                             ? 'bg-blue-500 text-white hover:bg-blue-600' 
                             : getStockBadgeVariant(product.stock) === 'destructive'
