@@ -286,10 +286,10 @@ const Catalog = () => {
         #catalog-products-grid .line-through::after {
           content: '';
           position: absolute;
-          left: 0;
-          right: 0;
+          left: 50%;
           top: calc(54% + 8px) !important; /* desloca a barra 8px para baixo apenas no PDF */
-          transform: translateY(-50%);
+          transform: translateX(-50%) translateY(-50%);
+          width: 30%;
           height: 1px;
           background: rgb(156, 163, 175);
           pointer-events: none;
