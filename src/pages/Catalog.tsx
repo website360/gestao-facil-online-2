@@ -733,9 +733,9 @@ const Catalog = () => {
           {products.map((product) => {
             return (
               <Card key={product.id} className="bg-white hover:shadow-lg transition-all border border-gray-200">
-                <CardContent className="p-4 overflow-visible">
+                <CardContent className="p-4">
                   {/* Título e Código */}
-                  <div className="mb-3 min-h-[54px] relative z-10">
+                  <div className="mb-3 min-h-[54px]">
                     <h3 className="catalog-title text-sm font-bold text-gray-900 line-clamp-2 mb-1 leading-tight">
                       {product.name}
                     </h3>
