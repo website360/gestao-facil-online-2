@@ -436,18 +436,17 @@ const Catalog = () => {
           });
         }
 
-        // Gerar páginas respeitando o limite de produtos por página
-        let cardsPerPage = 0;
+        // Gerar páginas respeitando 3 linhas completas por página
+        const ROWS_PER_PAGE = 3;
         let currentPageRows: typeof productRows = [];
         let pageNumber = 0;
         
         for (let i = 0; i < productRows.length; i++) {
           const row = productRows[i];
-          const cardsInRow = row.cards.length;
           
-          // Verificar se adicionar esta linha ultrapassaria o limite de produtos por página
-          if (cardsPerPage + cardsInRow > productsPerPage && currentPageRows.length > 0) {
-            // Gerar página atual
+          // Verificar se já temos 3 linhas na página atual
+          if (currentPageRows.length >= ROWS_PER_PAGE) {
+            // Gerar página atual com exatamente 3 linhas
             const firstRow = currentPageRows[0];
             const lastRow = currentPageRows[currentPageRows.length - 1];
             const pageStartY = firstRow.top;
@@ -491,13 +490,11 @@ const Catalog = () => {
               pageNumber++;
             }
             
-            // Iniciar nova página
+            // Iniciar nova página com a linha atual
             currentPageRows = [row];
-            cardsPerPage = cardsInRow;
           } else {
             // Adicionar linha à página atual
             currentPageRows.push(row);
-            cardsPerPage += cardsInRow;
           }
         }
         
