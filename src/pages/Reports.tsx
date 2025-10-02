@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Download, BarChart3, History, Truck, User } from 'lucide-react';
+import { FileText, Download, BarChart3, History, Truck, User, Package } from 'lucide-react';
 import SalesByDateClientReport from '@/components/reports/SalesByDateClientReport';
 import SalesBySalespersonReport from '@/components/reports/SalesBySalespersonReport';
 import ProductStockHistoryReport from '@/components/reports/ProductStockHistoryReport';
 import ShippingReport from '@/components/reports/ShippingReport';
+import { SalesByProductReport } from '@/components/reports/SalesByProductReport';
 
 const Reports = () => {
   return (
@@ -26,7 +27,7 @@ const Reports = () => {
         </div>
 
         <Tabs defaultValue="sales-by-date-client" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-3 md:mb-6 h-auto p-1 gap-1">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-3 md:mb-6 h-auto p-1 gap-1">
             <TabsTrigger value="sales-by-date-client" className="flex flex-col items-center gap-1 py-2 px-1 text-xs lg:text-sm min-h-[3.5rem] lg:min-h-[auto] lg:flex-row lg:gap-2">
               <FileText className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" />
               <span className="text-center leading-tight break-words">Vendas por Data</span>
@@ -34,6 +35,10 @@ const Reports = () => {
             <TabsTrigger value="sales-by-salesperson" className="flex flex-col items-center gap-1 py-2 px-1 text-xs lg:text-sm min-h-[3.5rem] lg:min-h-[auto] lg:flex-row lg:gap-2">
               <User className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" />
               <span className="text-center leading-tight break-words">Vendas por Vendedor</span>
+            </TabsTrigger>
+            <TabsTrigger value="sales-by-product" className="flex flex-col items-center gap-1 py-2 px-1 text-xs lg:text-sm min-h-[3.5rem] lg:min-h-[auto] lg:flex-row lg:gap-2">
+              <Package className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" />
+              <span className="text-center leading-tight break-words">Vendas por Produto</span>
             </TabsTrigger>
             <TabsTrigger value="stock-history" className="flex flex-col items-center gap-1 py-2 px-1 text-xs lg:text-sm min-h-[3.5rem] lg:min-h-[auto] lg:flex-row lg:gap-2">
               <History className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" />
@@ -75,6 +80,23 @@ const Reports = () => {
               </CardHeader>
               <CardContent className="p-3 md:p-4 lg:p-6 overflow-x-auto">
                 <SalesBySalespersonReport />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sales-by-product">
+            <Card className="glass overflow-hidden">
+              <CardHeader className="p-3 md:p-4 lg:p-6">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg lg:text-xl break-words">
+                  <Package className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+                  <span>Relatório de Vendas por Produto</span>
+                </CardTitle>
+                <CardDescription className="text-xs md:text-sm lg:text-base break-words">
+                  Análise detalhada de vendas por produto com ticket médio
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 md:p-4 lg:p-6 overflow-x-auto">
+                <SalesByProductReport />
               </CardContent>
             </Card>
           </TabsContent>
