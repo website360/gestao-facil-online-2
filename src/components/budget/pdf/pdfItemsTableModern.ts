@@ -48,7 +48,7 @@ export const addModernItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: 
   }
 
   if (tableConfig.showColumns.unitPrice) {
-    doc.text('VALOR UNIT.', xPos + 5, yPosition + 8);
+    doc.text('PREÇO UN', xPos + 5, yPosition + 8);
     xPos += priceWidth;
   }
 
@@ -56,6 +56,10 @@ export const addModernItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: 
     doc.text('DESC.', xPos + 5, yPosition + 8);
     xPos += discountWidth;
   }
+
+  // Nova coluna: Preço Un Desc
+  doc.text('PREÇO UN DESC', xPos + 5, yPosition + 8);
+  xPos += 25;
 
   if (tableConfig.showColumns.total) {
     doc.text('TOTAL', pageWidth - 50, yPosition + 8, { align: 'right' });
@@ -89,7 +93,7 @@ export const addModernItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: 
       }
       
       if (tableConfig.showColumns.unitPrice) {
-        doc.text('VALOR UNIT.', xPosHeader + 5, yPosition + 8);
+        doc.text('PREÇO UN', xPosHeader + 5, yPosition + 8);
         xPosHeader += priceWidth;
       }
       
@@ -97,6 +101,10 @@ export const addModernItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: 
         doc.text('DESC.', xPosHeader + 5, yPosition + 8);
         xPosHeader += discountWidth;
       }
+      
+      // Nova coluna: Preço Un Desc
+      doc.text('PREÇO UN DESC', xPosHeader + 5, yPosition + 8);
+      xPosHeader += 25;
       
       if (tableConfig.showColumns.total) {
         doc.text('TOTAL', pageWidth - 50, yPosition + 8, { align: 'right' });
@@ -153,6 +161,12 @@ export const addModernItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: 
       doc.text(`${discount}%`, xPosContent + 5, yPosition + 10);
       xPosContent += discountWidth;
     }
+
+    // Nova coluna: Preço Un Desc (preço unitário com desconto aplicado)
+    const discountPerc = item.discount_percentage || 0;
+    const priceWithDiscount = item.unit_price * (1 - discountPerc / 100);
+    doc.text(formatCurrency(priceWithDiscount), xPosContent + 5, yPosition + 10);
+    xPosContent += 25;
 
     // Total
     if (tableConfig.showColumns.total) {

@@ -33,14 +33,18 @@ export const addItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: number
   }
   
   if (showColumns.unitPrice !== false) {
-    doc.text("Valor Unit.", currentX, headerVerticalCenter, { align: "center" });
-    currentX += (columnWidths.unitPrice || 12) * 2;
+    doc.text("Preço Un", currentX, headerVerticalCenter, { align: "center" });
+    currentX += (columnWidths.unitPrice || 10) * 2;
   }
   
   if (showColumns.discount !== false) {
     doc.text("Desc.", currentX, headerVerticalCenter, { align: "center" });
-    currentX += (columnWidths.discount || 8) * 2;
+    currentX += (columnWidths.discount || 7) * 2;
   }
+  
+  // Nova coluna: Preço Un Desc
+  doc.text("Preço Un Desc", currentX, headerVerticalCenter, { align: "center" });
+  currentX += 24;
   
   if (showColumns.total !== false) {
     doc.text('Total', pageWidth - 20, headerVerticalCenter, { align: 'right' });
@@ -81,14 +85,18 @@ export const addItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: number
       }
       
       if (showColumns.unitPrice !== false) {
-        doc.text("Valor Unit.", currentXNew, headerVerticalCenterNew, { align: "center" });
-        currentXNew += (columnWidths.unitPrice || 12) * 2;
+        doc.text("Preço Un", currentXNew, headerVerticalCenterNew, { align: "center" });
+        currentXNew += (columnWidths.unitPrice || 10) * 2;
       }
       
       if (showColumns.discount !== false) {
         doc.text("Desc.", currentXNew, headerVerticalCenterNew, { align: "center" });
-        currentXNew += (columnWidths.discount || 8) * 2;
+        currentXNew += (columnWidths.discount || 7) * 2;
       }
+      
+      // Nova coluna: Preço Un Desc
+      doc.text("Preço Un Desc", currentXNew, headerVerticalCenterNew, { align: "center" });
+      currentXNew += 24;
       
       if (showColumns.total !== false) {
         doc.text('Total', pageWidth - 20, headerVerticalCenterNew, { align: 'right' });
@@ -135,14 +143,20 @@ export const addItemsTable = (doc: jsPDF, budget: LocalBudget, yPosition: number
     
     if (showColumns.unitPrice !== false) {
       doc.text(formatCurrency(item.unit_price), currentXData, rowVerticalCenter, { align: "center" });
-      currentXData += (columnWidths.unitPrice || 12) * 2;
+      currentXData += (columnWidths.unitPrice || 10) * 2;
     }
     
     if (showColumns.discount !== false) {
       const discountText = (item.discount_percentage || 0) > 0 ? `${(item.discount_percentage || 0)}%` : "—";
       doc.text(discountText, currentXData, rowVerticalCenter, { align: "center" });
-      currentXData += (columnWidths.discount || 8) * 2;
+      currentXData += (columnWidths.discount || 7) * 2;
     }
+    
+    // Nova coluna: Preço Un Desc (preço unitário com desconto aplicado)
+    const discountPerc = item.discount_percentage || 0;
+    const priceWithDiscount = item.unit_price * (1 - discountPerc / 100);
+    doc.text(formatCurrency(priceWithDiscount), currentXData, rowVerticalCenter, { align: "center" });
+    currentXData += 24;
     
     if (showColumns.total !== false) {
       doc.text(formatCurrency(item.total_price), pageWidth - 20, rowVerticalCenter, { align: "right" });

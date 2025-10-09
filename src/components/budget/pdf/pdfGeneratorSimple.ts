@@ -199,9 +199,10 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text('PRODUTO', 20, yPosition + 6.5);
-    doc.text('QTD', 110, yPosition + 6.5);
-    doc.text('VALOR UNIT.', 135, yPosition + 6.5);
-    doc.text('DESC.', 165, yPosition + 6.5);
+    doc.text('QTD', 95, yPosition + 6.5);
+    doc.text('PREÇO UN', 115, yPosition + 6.5);
+    doc.text('DESC.', 145, yPosition + 6.5);
+    doc.text('PREÇO UN DESC', 160, yPosition + 6.5);
     doc.text('TOTAL', pageWidth - 20, yPosition + 6.5, { align: 'right' });
 
     yPosition += headerHeight;
@@ -219,9 +220,10 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
       console.log('yPosition atual:', yPosition, 'pageHeight:', pageHeight, 'espaço restante:', pageHeight - yPosition);
       
       // Calcular quebras e altura dinâmica da linha com base no nome do produto
-      const colXQty = 110;
-      const colXUnit = 135;
-      const colXDesc = 165;
+      const colXQty = 95;
+      const colXUnit = 115;
+      const colXDesc = 145;
+      const colXUnitDesc = 160;
       const nameStartX = 20;
       const nameMaxWidth = colXQty - nameStartX - 4;
 
@@ -243,9 +245,10 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text('PRODUTO', 20, yPosition + 6.5);
-        doc.text('QTD', 110, yPosition + 6.5);
-        doc.text('VALOR UNIT.', 135, yPosition + 6.5);
-        doc.text('DESC.', 165, yPosition + 6.5);
+        doc.text('QTD', 95, yPosition + 6.5);
+        doc.text('PREÇO UN', 115, yPosition + 6.5);
+        doc.text('DESC.', 145, yPosition + 6.5);
+        doc.text('PREÇO UN DESC', 160, yPosition + 6.5);
         doc.text('TOTAL', pageWidth - 20, yPosition + 6.5, { align: 'right' });
         
         yPosition += headerHeight;
@@ -276,6 +279,10 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
       
       const discount = item.discount_percentage || 0;
       doc.text(`${discount}%`, colXDesc, yPosition + 5);
+
+      // Nova coluna: Preço Un Desc (preço unitário com desconto aplicado)
+      const priceWithDiscount = item.unit_price * (1 - discount / 100);
+      doc.text(formatCurrency(priceWithDiscount), colXUnitDesc, yPosition + 5);
 
       // Cálculos
       const itemSubtotal = item.quantity * item.unit_price;
