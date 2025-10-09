@@ -213,14 +213,14 @@ export const generateSalePDF = async (sale: any) => {
 
     // Colunas da tabela
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('PRODUTO', 20, yPosition + 6.5);
-    doc.text('QTD', 95, yPosition + 6.5);
-    doc.text('PREÇO UN', 115, yPosition + 6.5);
-    doc.text('DESC.', 145, yPosition + 6.5);
-    doc.text('PREÇO UN DESC', 160, yPosition + 6.5);
-    doc.text('TOTAL', pageWidth - 20, yPosition + 6.5, { align: 'right' });
+    doc.text('PRODUTO', 18, yPosition + 6.5);
+    doc.text('QTD', 80, yPosition + 6.5, { align: 'center' });
+    doc.text('PREÇO UN', 100, yPosition + 6.5, { align: 'center' });
+    doc.text('DESC.', 128, yPosition + 6.5, { align: 'center' });
+    doc.text('PREÇO UN DESC', 150, yPosition + 6.5, { align: 'center' });
+    doc.text('TOTAL', pageWidth - 18, yPosition + 6.5, { align: 'right' });
 
     yPosition += headerHeight;
 
@@ -237,12 +237,12 @@ export const generateSalePDF = async (sale: any) => {
       console.log('yPosition atual:', yPosition, 'pageHeight:', pageHeight, 'espaço restante:', pageHeight - yPosition);
       
       // Calcular quebras e altura dinâmica da linha com base no nome do produto
-      const colXQty = 95;
-      const colXUnit = 115;
-      const colXDesc = 145;
-      const colXUnitDesc = 160;
-      const nameStartX = 20;
-      const nameMaxWidth = colXQty - nameStartX - 4;
+      const colXQty = 80;
+      const colXUnit = 100;
+      const colXDesc = 128;
+      const colXUnitDesc = 150;
+      const nameStartX = 18;
+      const nameMaxWidth = colXQty - nameStartX - 5;
 
       const productName = item.products?.name || "Produto não encontrado";
       const nameLines = doc.splitTextToSize(productName, nameMaxWidth);
@@ -259,14 +259,14 @@ export const generateSalePDF = async (sale: any) => {
         doc.rect(16, yPosition, pageWidth - 32, headerHeight, 'F');
         
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
-        doc.text('PRODUTO', 20, yPosition + 6.5);
-        doc.text('QTD', 95, yPosition + 6.5);
-        doc.text('PREÇO UN', 115, yPosition + 6.5);
-        doc.text('DESC.', 145, yPosition + 6.5);
-        doc.text('PREÇO UN DESC', 160, yPosition + 6.5);
-        doc.text('TOTAL', pageWidth - 20, yPosition + 6.5, { align: 'right' });
+        doc.text('PRODUTO', 18, yPosition + 6.5);
+        doc.text('QTD', 80, yPosition + 6.5, { align: 'center' });
+        doc.text('PREÇO UN', 100, yPosition + 6.5, { align: 'center' });
+        doc.text('DESC.', 128, yPosition + 6.5, { align: 'center' });
+        doc.text('PREÇO UN DESC', 150, yPosition + 6.5, { align: 'center' });
+        doc.text('TOTAL', pageWidth - 18, yPosition + 6.5, { align: 'right' });
         
         yPosition += headerHeight;
         console.log('Nova página criada. yPosition após cabeçalho:', yPosition);
@@ -286,20 +286,20 @@ export const generateSalePDF = async (sale: any) => {
       // Nome do produto (quebra em múltiplas linhas)
       nameLines.forEach((line: string, lineIndex: number) => {
         if (lineIndex < 4) {
-          doc.text(line, 20, yPosition + 5 + (lineIndex * 4));
+          doc.text(line, 18, yPosition + 5 + (lineIndex * 4));
         }
       });
       
       // Outras colunas
-      doc.text(item.quantity.toString(), colXQty, yPosition + 5);
-      doc.text(formatCurrency(item.unit_price), colXUnit, yPosition + 5);
+      doc.text(item.quantity.toString(), colXQty, yPosition + 5, { align: 'center' });
+      doc.text(formatCurrency(item.unit_price), colXUnit, yPosition + 5, { align: 'center' });
       
       const itemDiscountPercentage = item.discount_percentage || 0;
-      doc.text(`${itemDiscountPercentage.toFixed(1)}%`, colXDesc, yPosition + 5);
+      doc.text(`${itemDiscountPercentage.toFixed(1)}%`, colXDesc, yPosition + 5, { align: 'center' });
 
       // Nova coluna: Preço Un Desc (preço unitário com desconto aplicado)
       const priceWithDiscount = item.unit_price * (1 - itemDiscountPercentage / 100);
-      doc.text(formatCurrency(priceWithDiscount), colXUnitDesc, yPosition + 5);
+      doc.text(formatCurrency(priceWithDiscount), colXUnitDesc, yPosition + 5, { align: 'center' });
 
       // Cálculos
       const itemSubtotal = item.quantity * item.unit_price;
@@ -309,7 +309,7 @@ export const generateSalePDF = async (sale: any) => {
       subtotal += itemSubtotal;
       totalDiscount += itemDiscount;
 
-      doc.text(formatCurrency(itemTotal), pageWidth - 20, yPosition + 5, { align: 'right' });
+      doc.text(formatCurrency(itemTotal), pageWidth - 18, yPosition + 5, { align: 'right' });
 
       yPosition += rowHeight;
       console.log('Item processado. Nova yPosition:', yPosition);
