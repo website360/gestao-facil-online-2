@@ -74,22 +74,25 @@ const Index = () => {
     }
   }, [user, isClient, clientData]);
 
-  // Definir módulo inicial baseado na role do usuário
+  // Definir módulo inicial baseado na role do usuário (apenas na primeira carga)
+  const [hasSetInitialModule, setHasSetInitialModule] = useState(false);
+  
   useEffect(() => {
-    if (userProfile?.role) {
+    if (userProfile?.role && !hasSetInitialModule) {
       const restrictedRoles = ['separacao', 'conferencia', 'nota_fiscal', 'entregador'];
       
       if (restrictedRoles.includes(userProfile.role)) {
         // Roles restritas sempre vão para vendas
         setActiveModule('sales');
       } else if (userProfile.role === 'admin' || userProfile.role === 'gerente' || isVendorOrOldVendasRole(userProfile.role)) {
-        // Outras roles podem ir para dashboard se não foi especificado outro módulo
+        // Outras roles começam no dashboard, mas só na primeira vez
         if (activeModule === 'sales' && !location.search.includes('redirect=sales')) {
           setActiveModule('dashboard');
         }
       }
+      setHasSetInitialModule(true);
     }
-  }, [userProfile, location.search]);
+  }, [userProfile, hasSetInitialModule, location.search]);
 
   // Check if we need to redirect to sales after budget conversion
   useEffect(() => {
