@@ -10,19 +10,23 @@ export const useBudgetFilters = (budgets: LocalBudget[], userRole?: string) => {
   useEffect(() => {
     let filtered = budgets;
 
-    // Por padrão, excluir orçamentos convertidos (só mostra se especificamente filtrado)
-    if (statusFilter !== 'convertido') {
+    // Aplicar filtro de status primeiro
+    if (statusFilter === 'all') {
+      // Quando "Todos", sempre excluir convertidos
       filtered = filtered.filter(budget => budget.status !== 'convertido');
+    } else if (statusFilter === 'convertido') {
+      // Se filtrar especificamente por "convertido", mostrar só esses
+      filtered = filtered.filter(budget => budget.status === 'convertido');
+    } else {
+      // Para qualquer outro status específico, aplicar o filtro
+      filtered = filtered.filter(budget => budget.status === statusFilter);
     }
 
+    // Aplicar busca por nome
     if (searchTerm) {
       filtered = filtered.filter(budget =>
         budget.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(budget => budget.status === statusFilter);
     }
 
     setFilteredBudgets(filtered);
