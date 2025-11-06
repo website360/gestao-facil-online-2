@@ -14,7 +14,7 @@ interface ProductPriceStockFormProps {
   readOnly?: boolean;
 }
 
-const STOCK_UNITS = ['Peça', 'Unidade', 'Metro', 'Kit', 'Cartela', 'Rolo', 'Pacote'];
+const STOCK_UNITS = ['Peça', 'Unidade', 'Metro', 'Kit', 'Cartela', 'Rolo', 'Pacote', 'Par'];
 
 const ProductPriceStockForm = ({
   price,
