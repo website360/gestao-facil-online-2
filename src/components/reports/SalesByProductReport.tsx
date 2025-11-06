@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarIcon, Download, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -24,7 +23,6 @@ interface ProductSalesData {
 export const SalesByProductReport = () => {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<ProductSalesData[]>([]);
 
@@ -36,28 +34,21 @@ export const SalesByProductReport = () => {
 
     setLoading(true);
     try {
-      // Buscar vendas no período
-      let query = supabase
+      // Buscar apenas vendas finalizadas no período
+      const { data: salesData, error: salesError } = await supabase
         .from('sales')
         .select(`
           id,
           created_at,
-          status,
           sale_items (
             product_id,
             quantity,
             total_price
           )
         `)
+        .eq('status', 'entrega_realizada')
         .gte('created_at', format(startDate, 'yyyy-MM-dd'))
         .lte('created_at', format(endDate, 'yyyy-MM-dd') + 'T23:59:59');
-
-      // Aplicar filtro de status se não for "all"
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter as any);
-      }
-
-      const { data: salesData, error: salesError } = await query;
 
       if (salesError) throw salesError;
 
@@ -159,24 +150,6 @@ export const SalesByProductReport = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4 items-end">
-        <div className="flex-1 min-w-[200px]">
-          <label className="text-sm font-medium mb-2 block">Status</label>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="separacao">Separação</SelectItem>
-              <SelectItem value="conferencia">Conferência</SelectItem>
-              <SelectItem value="nota_fiscal">Nota Fiscal</SelectItem>
-              <SelectItem value="aguardando_entrega">Aguardando Entrega</SelectItem>
-              <SelectItem value="entrega_realizada">Entrega Realizada</SelectItem>
-              <SelectItem value="atencao">Atenção</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
         <div className="flex-1 min-w-[200px]">
           <label className="text-sm font-medium mb-2 block">Data Início</label>
           <Popover>
