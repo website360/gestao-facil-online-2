@@ -623,56 +623,6 @@ const SalesByDateClientReport = () => {
             >
               {isGenerating ? 'Gerando...' : 'Gerar Relatório'}
             </Button>
-            
-            {/* Botão de Debug temporário */}
-            <Button 
-              onClick={async () => {
-                if (!startDate || !endDate) {
-                  toast.error('Selecione as datas primeiro');
-                  return;
-                }
-                
-                console.log('=== DEBUG: Verificando anexos no banco ===');
-                
-                // Buscar todas as vendas do período
-                let query = supabase
-                  .from('sales')
-                  .select('id, status, created_at')
-                  .gte('created_at', startDate + 'T00:00:00')
-                  .lte('created_at', endDate + 'T23:59:59');
-                  
-                if (statusFilter && statusFilter !== 'all') {
-                  query = query.eq('status', statusFilter as any);
-                }
-                
-                const { data: sales } = await query;
-                const saleIds = sales?.map(s => s.id) || [];
-                
-                console.log('Vendas encontradas:', sales?.length);
-                console.log('IDs das vendas:', saleIds);
-                
-                // Buscar todos os anexos dessas vendas
-                const { data: allAttachments } = await supabase
-                  .from('sale_attachments')
-                  .select('*')
-                  .in('sale_id', saleIds);
-                  
-                console.log('Total de anexos encontrados:', allAttachments?.length);
-                console.log('Detalhes dos anexos:', allAttachments?.map(a => ({
-                  id: a.id,
-                  sale_id: a.sale_id,
-                  filename: a.stored_filename,
-                  created_at: a.created_at
-                })));
-                
-                toast.info(`Debug: ${sales?.length} vendas, ${allAttachments?.length} anexos - ver console`);
-              }}
-              variant="outline"
-              size="sm"
-              className="text-xs"
-            >
-              🔍 Debug DB
-            </Button>
           </div>
         </CardContent>
       </Card>
