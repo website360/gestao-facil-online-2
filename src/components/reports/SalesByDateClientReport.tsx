@@ -293,36 +293,40 @@ const SalesByDateClientReport = () => {
     
     // Cabeçalho
     worksheetData.push([
-      'Cliente',
-      'Vendedor', 
       'Data da Venda',
+      'Transacao',
+      'Tipo de Pagamento',
+      'Cliente',
+      'Descrição',
+      'Desconto (%)',
+      'Total Final',
+      'Vendedor',
       'Status',
       'Meio de Pagamento',
-      'Tipo de Pagamento',
       'Parcelas',
       'Prazos (dias)',
       'Datas de Vencimento',
-      'Desconto (%)',
-      'Total Final',
       'Nota Fiscal (%)',
-      'Valor Nota Fiscal',
-      'Nome dos Comprovantes'
+      'Valor da Nota',
+      'Nomes dos Comprovantes'
     ]);
 
     // Dados
     reportData.forEach((clientData) => {
       worksheetData.push([
-        clientData.client_name,
-        clientData.salesperson_name,
         clientData.sale_date,
+        'Venda Lojinha',
+        clientData.payment_type,
+        clientData.client_name,
+        'SISTEMA LOJA IMT',
+        clientData.discount_percentage + '%',
+        clientData.total_amount,
+        clientData.salesperson_name,
         clientData.status,
         clientData.payment_method,
-        clientData.payment_type,
         clientData.installments,
         clientData.due_dates,
         clientData.payment_dates,
-        clientData.discount_percentage + '%',
-        clientData.total_amount,
         clientData.invoice_percentage + '%',
         clientData.invoice_value,
         clientData.receipt_names
