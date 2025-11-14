@@ -228,6 +228,8 @@ export const SalesByProductReport = () => {
               <SelectItem value="nota_fiscal">Nota Fiscal</SelectItem>
               <SelectItem value="aguardando_entrega">Aguardando Entrega</SelectItem>
               <SelectItem value="entrega_realizada">Entrega Realizada</SelectItem>
+              <SelectItem value="finalizada">Finalizada</SelectItem>
+              <SelectItem value="atencao">Atenção</SelectItem>
             </SelectContent>
           </Select>
         </div>
