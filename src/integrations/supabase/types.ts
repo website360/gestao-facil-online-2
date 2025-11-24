@@ -1131,6 +1131,17 @@ export type Database = {
         Args: { p_client_id: string }
         Returns: boolean
       }
+      get_sales_by_product_report: {
+        Args: { p_end_date: string; p_start_date: string; p_status?: string }
+        Returns: {
+          average_ticket: number
+          category_name: string
+          internal_code: string
+          product_name: string
+          quantity_sold: number
+          total_value: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
