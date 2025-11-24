@@ -48,58 +48,50 @@ export const SalesByProductReport = () => {
         endDateISO: endDateStr
       });
 
-      // Buscar sale_items com JOIN para sales e products
-      let salesQuery = supabase
-        .from('sales')
-        .select('id')
-        .gte('created_at', startDateStr)
-        .lte('created_at', endDateStr);
-      
-      // Aplicar filtro de status se não for "todos"
-      if (statusFilter !== 'all') {
-        salesQuery = salesQuery.eq('status', statusFilter as any);
-      }
-
-      const { data: salesInPeriod, error: salesError } = await salesQuery;
-      
-      if (salesError) throw salesError;
-
-      console.log(`📊 Vendas encontradas no período: ${salesInPeriod?.length || 0}`);
-
-      if (!salesInPeriod || salesInPeriod.length === 0) {
-        setReportData([]);
-        toast.info('Nenhuma venda encontrada no período selecionado');
-        return;
-      }
-
-      // Buscar sale_items dessas vendas com produtos e categorias
-      const saleIds = salesInPeriod.map(s => s.id);
-      
-      const { data: saleItemsData, error: itemsError } = await supabase
+      // Query direta em sale_items com JOIN para sales (evita erro 400 com muitos IDs)
+      let itemsQuery = supabase
         .from('sale_items')
         .select(`
-          product_id,
           quantity,
           total_price,
           products (
             id,
             internal_code,
             name,
-            categories (
-              name
-            )
+            categories (name)
+          ),
+          sales!inner (
+            created_at,
+            status
           )
         `)
-        .in('sale_id', saleIds);
+        .gte('sales.created_at', startDateStr)
+        .lte('sales.created_at', endDateStr);
 
-      if (itemsError) throw itemsError;
+      // Aplicar filtro de status se não for "todos"
+      if (statusFilter !== 'all') {
+        itemsQuery = itemsQuery.eq('sales.status', statusFilter as any);
+      }
+
+      const { data: saleItemsData, error: itemsError } = await itemsQuery;
+
+      if (itemsError) {
+        console.error('❌ Erro ao buscar itens:', itemsError);
+        throw itemsError;
+      }
 
       console.log(`📦 Itens de venda encontrados: ${saleItemsData?.length || 0}`);
+
+      if (!saleItemsData || saleItemsData.length === 0) {
+        setReportData([]);
+        toast.info('Nenhuma venda encontrada no período selecionado');
+        return;
+      }
 
       // Agregar dados por produto
       const productMap = new Map<string, ProductSalesData>();
 
-      saleItemsData?.forEach((item: any) => {
+      saleItemsData.forEach((item: any) => {
         if (!item.products) {
           console.warn(`⚠️ Produto não encontrado para item:`, item);
           return;
