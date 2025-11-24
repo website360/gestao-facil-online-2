@@ -1120,6 +1120,13 @@ export type Database = {
         Args: { budget_id_param: string }
         Returns: Json
       }
+      clean_orphaned_stock_movements: {
+        Args: never
+        Returns: {
+          deleted_count: number
+          total_quantity: number
+        }[]
+      }
       client_has_system_access: {
         Args: { p_client_id: string }
         Returns: boolean
@@ -1145,6 +1152,20 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      validate_stock_integrity: {
+        Args: never
+        Returns: {
+          calculated_stock: number
+          difference: number
+          orphaned_movements: number
+          product_code: string
+          product_id: string
+          product_name: string
+          system_stock: number
+          total_entries: number
+          total_exits: number
+        }[]
       }
     }
     Enums: {
