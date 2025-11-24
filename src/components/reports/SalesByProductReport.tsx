@@ -36,6 +36,14 @@ export const SalesByProductReport = () => {
 
     setLoading(true);
     try {
+      const startDateStr = format(startDate, 'yyyy-MM-dd');
+      const endDateStr = format(endDate, 'yyyy-MM-dd') + 'T23:59:59';
+
+      console.log('🔍 Gerando relatório de vendas por produto:', {
+        periodo: `${startDateStr} até ${endDateStr}`,
+        statusFilter,
+      });
+
       // Buscar vendas no período com filtro de status
       let query = supabase
         .from('sales')
@@ -49,8 +57,8 @@ export const SalesByProductReport = () => {
             total_price
           )
         `)
-        .gte('created_at', format(startDate, 'yyyy-MM-dd'))
-        .lte('created_at', format(endDate, 'yyyy-MM-dd') + 'T23:59:59');
+        .gte('created_at', startDateStr)
+        .lte('created_at', endDateStr);
       
       // Aplicar filtro de status se não for "todos"
       if (statusFilter !== 'all') {
@@ -60,6 +68,9 @@ export const SalesByProductReport = () => {
       const { data: salesData, error: salesError } = await query;
 
       if (salesError) throw salesError;
+
+      console.log(`📊 Vendas encontradas: ${salesData?.length || 0}`);
+      console.log(`📦 Total de itens nas vendas: ${salesData?.reduce((acc, s) => acc + (s.sale_items?.length || 0), 0) || 0}`);
 
       // Buscar produtos e categorias
       const { data: productsData, error: productsError } = await supabase
@@ -78,12 +89,17 @@ export const SalesByProductReport = () => {
 
       // Processar dados
       const productMap = new Map<string, ProductSalesData>();
+      let totalItemsProcessed = 0;
 
       salesData?.forEach((sale) => {
         sale.sale_items?.forEach((item: any) => {
           const product = productsData?.find((p) => p.id === item.product_id);
-          if (!product) return;
+          if (!product) {
+            console.warn(`⚠️ Produto não encontrado: ${item.product_id}`);
+            return;
+          }
 
+          totalItemsProcessed++;
           const key = product.id;
           const existing = productMap.get(key);
 
@@ -103,6 +119,9 @@ export const SalesByProductReport = () => {
         });
       });
 
+      console.log(`✅ Itens processados: ${totalItemsProcessed}`);
+      console.log(`📈 Produtos únicos: ${productMap.size}`);
+
       // Calcular ticket médio
       const result = Array.from(productMap.values()).map((item) => ({
         ...item,
@@ -113,9 +132,9 @@ export const SalesByProductReport = () => {
       result.sort((a, b) => b.total_value - a.total_value);
 
       setReportData(result);
-      toast.success('Relatório gerado com sucesso!');
+      toast.success(`Relatório gerado: ${result.length} produtos encontrados`);
     } catch (error) {
-      console.error('Erro ao gerar relatório:', error);
+      console.error('❌ Erro ao gerar relatório:', error);
       toast.error('Erro ao gerar relatório');
     } finally {
       setLoading(false);
