@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import KPICard from './dashboard/KPICard';
-import AlertsPanel from './dashboard/AlertsPanel';
+import TopSellingProducts from './dashboard/TopSellingProducts';
 import DateRangeFilter from './dashboard/DateRangeFilter';
 
 interface DashboardProps {
@@ -30,7 +30,7 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [appliedDateRange, setAppliedDateRange] = useState<{startDate?: Date; endDate?: Date}>({});
   
-  const { kpis, alerts, loading, refetch } = useDashboardData(appliedDateRange);
+  const { kpis, topProducts, loading, refetch } = useDashboardData(appliedDateRange);
   
   // Verificar se é usuário de vendas para filtrar dados
   const isVendasUser = userProfile?.role === 'vendedor_externo' || userProfile?.role === 'vendedor_interno';
@@ -243,9 +243,9 @@ const Dashboard = ({ setActiveModule }: DashboardProps) => {
               />
             </div>
 
-            {/* Alerts Section - Apenas para admin/gerente */}
+            {/* Top Selling Products Section - Apenas para admin/gerente */}
             <div className="w-full">
-              <AlertsPanel alerts={alerts} loading={loading} />
+              <TopSellingProducts products={topProducts} loading={loading} />
             </div>
           </>
         )}
