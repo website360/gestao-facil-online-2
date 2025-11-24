@@ -449,6 +449,17 @@ export const useSalesManagement = () => {
 
       if (saleItemsError) throw saleItemsError;
 
+      // Deletar as movimentações de estoque relacionadas à venda ANTES de atualizar o estoque
+      const { error: deleteMovementsError } = await supabase
+        .from('stock_movements')
+        .delete()
+        .eq('reference_id', id)
+        .eq('reason', 'venda');
+
+      if (deleteMovementsError) {
+        console.error('Erro ao deletar movimentações de estoque:', deleteMovementsError);
+      }
+
       // Retornar estoque para cada produto
       if (saleItems && saleItems.length > 0) {
         for (const item of saleItems) {
@@ -476,24 +487,6 @@ export const useSalesManagement = () => {
           if (updateError) {
             console.error('Erro ao atualizar estoque:', updateError);
             throw new Error(`Erro ao retornar estoque para o produto: ${updateError.message}`);
-          }
-
-          // Registrar movimento de estoque
-          try {
-            await supabase.rpc('register_stock_movement', {
-              p_product_id: item.product_id,
-              p_user_id: user.id,
-              p_movement_type: 'entrada',
-              p_quantity: item.quantity,
-              p_previous_stock: currentStock,
-              p_new_stock: newStock,
-              p_reason: 'ajuste_manual',
-              p_reference_id: id,
-              p_notes: 'Estoque retornado devido à exclusão da venda'
-            });
-          } catch (movementError) {
-            console.error('Erro ao registrar movimento de estoque:', movementError);
-            // Não bloquear a exclusão se houver erro no movimento
           }
 
           console.log(`Estoque retornado: Produto ${item.product_id}, Quantidade: ${item.quantity}, Estoque: ${currentStock} -> ${newStock}`);
