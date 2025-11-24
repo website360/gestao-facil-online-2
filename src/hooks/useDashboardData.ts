@@ -6,6 +6,7 @@ import { useDashboardKPIs } from './dashboard/useDashboardKPIs';
 import { useDashboardCharts } from './dashboard/useDashboardCharts';
 import { useDashboardAlerts } from './dashboard/useDashboardAlerts';
 import { useDashboardRealtime } from './dashboard/useDashboardRealtime';
+import { useDashboardTopProducts } from './dashboard/useDashboardTopProducts';
 
 interface DateRange {
   startDate?: Date;
@@ -21,6 +22,7 @@ export const useDashboardData = (dateRange?: DateRange) => {
   const { kpis, fetchKPIs } = useDashboardKPIs(dateRange);
   const { salesData, budgetStatusData, fetchSalesData, fetchBudgetStatusData } = useDashboardCharts(dateRange);
   const { alerts, fetchAlerts } = useDashboardAlerts();
+  const { topProducts, fetchTopProducts } = useDashboardTopProducts(dateRange);
 
   const fetchAllData = useCallback(async () => {
     if (profileLoading) {
@@ -34,6 +36,7 @@ export const useDashboardData = (dateRange?: DateRange) => {
         fetchSalesData(),
         fetchBudgetStatusData(),
         fetchAlerts(),
+        fetchTopProducts(),
       ]);
       
       if (!hasInitialLoad) {
@@ -44,7 +47,7 @@ export const useDashboardData = (dateRange?: DateRange) => {
     } finally {
       setLoading(false);
     }
-  }, [profileLoading, fetchKPIs, fetchSalesData, fetchBudgetStatusData, fetchAlerts]);
+  }, [profileLoading, fetchKPIs, fetchSalesData, fetchBudgetStatusData, fetchAlerts, fetchTopProducts]);
 
   // Callbacks para real-time updates
   const handleBudgetChange = useCallback(() => {
@@ -57,7 +60,8 @@ export const useDashboardData = (dateRange?: DateRange) => {
     fetchKPIs();
     fetchSalesData();
     fetchAlerts();
-  }, [fetchKPIs, fetchSalesData, fetchAlerts]);
+    fetchTopProducts();
+  }, [fetchKPIs, fetchSalesData, fetchAlerts, fetchTopProducts]);
 
   const handleProductChange = useCallback(() => {
     fetchAlerts();
@@ -90,6 +94,7 @@ export const useDashboardData = (dateRange?: DateRange) => {
     salesData,
     budgetStatusData,
     alerts,
+    topProducts,
     loading,
     refetch: fetchAllData,
   };
