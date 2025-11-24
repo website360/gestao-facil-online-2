@@ -8,6 +8,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
@@ -68,7 +70,7 @@ const Catalog = () => {
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showOutOfStock, setShowOutOfStock] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [columnsCount, setColumnsCount] = useState<number>(4);
@@ -95,7 +97,7 @@ const Catalog = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [searchTerm, selectedCategory, showOutOfStock, minStock, maxStock]);
+  }, [searchTerm, selectedCategories, showOutOfStock, minStock, maxStock]);
 
   const fetchCategories = async () => {
     try {
@@ -145,8 +147,8 @@ const Catalog = () => {
       }
 
       // Apply category filter
-      if (selectedCategory && selectedCategory !== 'all') {
-        query = query.eq('category_id', selectedCategory);
+      if (selectedCategories.length > 0) {
+        query = query.in('category_id', selectedCategories);
       }
 
       // Apply stock filter
@@ -562,20 +564,61 @@ const Catalog = () => {
                   </div>
                 </div>
                 <div className="w-full md:w-80">
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="bg-white/50 border-gray-200 rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20 transition-all">
-                      <Filter className="w-4 h-4 mr-2 text-gray-500" />
-                      <SelectValue placeholder="Filtrar por categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as categorias</SelectItem>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full bg-white/50 border-gray-200 rounded-xl h-12 focus:border-blue-500 focus:ring-blue-500/20 transition-all justify-start"
+                      >
+                        <Filter className="w-4 h-4 mr-2 text-gray-500" />
+                        {selectedCategories.length === 0 
+                          ? "Filtrar por categoria" 
+                          : selectedCategories.length === 1
+                          ? categories.find(c => c.id === selectedCategories[0])?.name
+                          : `${selectedCategories.length} categorias selecionadas`}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-4 bg-white" align="start">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-semibold">Categorias</Label>
+                          {selectedCategories.length > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedCategories([])}
+                              className="h-auto p-1 text-xs"
+                            >
+                              Limpar
+                            </Button>
+                          )}
+                        </div>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {categories.map((category) => (
+                            <div key={category.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`category-${category.id}`}
+                                checked={selectedCategories.includes(category.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedCategories([...selectedCategories, category.id]);
+                                  } else {
+                                    setSelectedCategories(selectedCategories.filter(id => id !== category.id));
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor={`category-${category.id}`}
+                                className="text-sm text-gray-700 cursor-pointer flex-1"
+                              >
+                                {category.name}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="w-full md:w-64">
                   <div className="flex items-center space-x-2 h-12 px-3 bg-white/50 border border-gray-200 rounded-xl">
@@ -799,7 +842,7 @@ const Catalog = () => {
                 Nenhum produto encontrado
               </h3>
               <p className="text-gray-500">
-                {searchTerm || selectedCategory !== 'all' ? 'Tente ajustar sua busca ou filtros' : 'Não há produtos cadastrados'}
+                {searchTerm || selectedCategories.length > 0 ? 'Tente ajustar sua busca ou filtros' : 'Não há produtos cadastrados'}
               </p>
             </CardContent>
           </Card>
