@@ -1131,10 +1131,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_client_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_client_user: { Args: never; Returns: boolean }
       register_stock_movement: {
         Args: {
           p_movement_type: string
