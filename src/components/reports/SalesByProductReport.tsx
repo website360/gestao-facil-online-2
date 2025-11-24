@@ -36,93 +36,97 @@ export const SalesByProductReport = () => {
 
     setLoading(true);
     try {
+      // Formatar datas corretamente (incluir todo o dia final)
       const startDateStr = format(startDate, 'yyyy-MM-dd');
-      const endDateStr = format(endDate, 'yyyy-MM-dd') + 'T23:59:59';
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(23, 59, 59, 999);
+      const endDateStr = endDateObj.toISOString();
 
       console.log('🔍 Gerando relatório de vendas por produto:', {
-        periodo: `${startDateStr} até ${endDateStr}`,
+        periodo: `${startDateStr} até ${format(endDate, 'yyyy-MM-dd')}`,
         statusFilter,
+        endDateISO: endDateStr
       });
 
-      // Buscar vendas no período com filtro de status
-      let query = supabase
+      // Buscar sale_items com JOIN para sales e products
+      let salesQuery = supabase
         .from('sales')
-        .select(`
-          id,
-          created_at,
-          status,
-          sale_items (
-            product_id,
-            quantity,
-            total_price
-          )
-        `)
+        .select('id')
         .gte('created_at', startDateStr)
         .lte('created_at', endDateStr);
       
       // Aplicar filtro de status se não for "todos"
       if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter as any);
+        salesQuery = salesQuery.eq('status', statusFilter as any);
       }
 
-      const { data: salesData, error: salesError } = await query;
-
+      const { data: salesInPeriod, error: salesError } = await salesQuery;
+      
       if (salesError) throw salesError;
 
-      console.log(`📊 Vendas encontradas: ${salesData?.length || 0}`);
-      console.log(`📦 Total de itens nas vendas: ${salesData?.reduce((acc, s) => acc + (s.sale_items?.length || 0), 0) || 0}`);
+      console.log(`📊 Vendas encontradas no período: ${salesInPeriod?.length || 0}`);
 
-      // Buscar produtos e categorias
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
+      if (!salesInPeriod || salesInPeriod.length === 0) {
+        setReportData([]);
+        toast.info('Nenhuma venda encontrada no período selecionado');
+        return;
+      }
+
+      // Buscar sale_items dessas vendas com produtos e categorias
+      const saleIds = salesInPeriod.map(s => s.id);
+      
+      const { data: saleItemsData, error: itemsError } = await supabase
+        .from('sale_items')
         .select(`
-          id,
-          internal_code,
-          name,
-          category_id,
-          categories (
-            name
+          product_id,
+          quantity,
+          total_price,
+          products (
+            id,
+            internal_code,
+            name,
+            categories (
+              name
+            )
           )
-        `);
+        `)
+        .in('sale_id', saleIds);
 
-      if (productsError) throw productsError;
+      if (itemsError) throw itemsError;
 
-      // Processar dados
+      console.log(`📦 Itens de venda encontrados: ${saleItemsData?.length || 0}`);
+
+      // Agregar dados por produto
       const productMap = new Map<string, ProductSalesData>();
-      let totalItemsProcessed = 0;
 
-      salesData?.forEach((sale) => {
-        sale.sale_items?.forEach((item: any) => {
-          const product = productsData?.find((p) => p.id === item.product_id);
-          if (!product) {
-            console.warn(`⚠️ Produto não encontrado: ${item.product_id}`);
-            return;
-          }
+      saleItemsData?.forEach((item: any) => {
+        if (!item.products) {
+          console.warn(`⚠️ Produto não encontrado para item:`, item);
+          return;
+        }
 
-          totalItemsProcessed++;
-          const key = product.id;
-          const existing = productMap.get(key);
+        const product = item.products;
+        const key = product.id;
+        const existing = productMap.get(key);
 
-          if (existing) {
-            existing.quantity_sold += item.quantity;
-            existing.total_value += Number(item.total_price);
-          } else {
-            productMap.set(key, {
-              internal_code: product.internal_code,
-              product_name: product.name,
-              category_name: product.categories?.name || 'Sem categoria',
-              quantity_sold: item.quantity,
-              total_value: Number(item.total_price),
-              average_ticket: 0,
-            });
-          }
-        });
+        if (existing) {
+          existing.quantity_sold += item.quantity;
+          existing.total_value += Number(item.total_price);
+        } else {
+          productMap.set(key, {
+            internal_code: product.internal_code,
+            product_name: product.name,
+            category_name: product.categories?.name || 'Sem categoria',
+            quantity_sold: item.quantity,
+            total_value: Number(item.total_price),
+            average_ticket: 0,
+          });
+        }
       });
 
-      console.log(`✅ Itens processados: ${totalItemsProcessed}`);
-      console.log(`📈 Produtos únicos: ${productMap.size}`);
+      console.log(`📈 Produtos únicos processados: ${productMap.size}`);
 
-      // Calcular ticket médio
+      // Calcular ticket médio e criar array final
       const result = Array.from(productMap.values()).map((item) => ({
         ...item,
         average_ticket: item.total_value / item.quantity_sold,
@@ -131,8 +135,13 @@ export const SalesByProductReport = () => {
       // Ordenar por valor total vendido (decrescente)
       result.sort((a, b) => b.total_value - a.total_value);
 
+      // Log de validação
+      const totalQuantity = result.reduce((sum, item) => sum + item.quantity_sold, 0);
+      const totalValue = result.reduce((sum, item) => sum + item.total_value, 0);
+      console.log(`✅ TOTAIS: ${totalQuantity} unidades vendidas | ${formatCurrency(totalValue)}`);
+
       setReportData(result);
-      toast.success(`Relatório gerado: ${result.length} produtos encontrados`);
+      toast.success(`Relatório gerado: ${result.length} produtos, ${totalQuantity} unidades`);
     } catch (error) {
       console.error('❌ Erro ao gerar relatório:', error);
       toast.error('Erro ao gerar relatório');
