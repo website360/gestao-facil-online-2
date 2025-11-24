@@ -48,92 +48,37 @@ export const SalesByProductReport = () => {
         endDateISO: endDateStr
       });
 
-      // Query direta em sale_items com JOIN para sales (evita erro 400 com muitos IDs)
-      let itemsQuery = supabase
-        .from('sale_items')
-        .select(`
-          quantity,
-          total_price,
-          products (
-            id,
-            internal_code,
-            name,
-            categories (name)
-          ),
-          sales!inner (
-            created_at,
-            status
-          )
-        `)
-        .gte('sales.created_at', startDateStr)
-        .lte('sales.created_at', endDateStr);
+      // Usar RPC com função SQL para obter dados agregados diretamente do banco
+      const { data: reportArray, error: rpcError } = await supabase
+        .rpc('get_sales_by_product_report', {
+          p_start_date: startDateStr,
+          p_end_date: endDateStr,
+          p_status: statusFilter
+        });
 
-      // Aplicar filtro de status se não for "todos"
-      if (statusFilter !== 'all') {
-        itemsQuery = itemsQuery.eq('sales.status', statusFilter as any);
+      if (rpcError) {
+        console.error('❌ Erro ao chamar RPC:', rpcError);
+        throw rpcError;
       }
 
-      const { data: saleItemsData, error: itemsError } = await itemsQuery;
+      console.log('✅ Relatório gerado via RPC:', {
+        totalProdutos: reportArray?.length || 0,
+        primeiroProduto: reportArray?.[0]
+      });
 
-      if (itemsError) {
-        console.error('❌ Erro ao buscar itens:', itemsError);
-        throw itemsError;
-      }
-
-      console.log(`📦 Itens de venda encontrados: ${saleItemsData?.length || 0}`);
-
-      if (!saleItemsData || saleItemsData.length === 0) {
+      if (!reportArray || reportArray.length === 0) {
         setReportData([]);
         toast.info('Nenhuma venda encontrada no período selecionado');
         return;
       }
 
-      // Agregar dados por produto
-      const productMap = new Map<string, ProductSalesData>();
-
-      saleItemsData.forEach((item: any) => {
-        if (!item.products) {
-          console.warn(`⚠️ Produto não encontrado para item:`, item);
-          return;
-        }
-
-        const product = item.products;
-        const key = product.id;
-        const existing = productMap.get(key);
-
-        if (existing) {
-          existing.quantity_sold += item.quantity;
-          existing.total_value += Number(item.total_price);
-        } else {
-          productMap.set(key, {
-            internal_code: product.internal_code,
-            product_name: product.name,
-            category_name: product.categories?.name || 'Sem categoria',
-            quantity_sold: item.quantity,
-            total_value: Number(item.total_price),
-            average_ticket: 0,
-          });
-        }
-      });
-
-      console.log(`📈 Produtos únicos processados: ${productMap.size}`);
-
-      // Calcular ticket médio e criar array final
-      const result = Array.from(productMap.values()).map((item) => ({
-        ...item,
-        average_ticket: item.total_value / item.quantity_sold,
-      }));
-
-      // Ordenar por valor total vendido (decrescente)
-      result.sort((a, b) => b.total_value - a.total_value);
-
       // Log de validação
-      const totalQuantity = result.reduce((sum, item) => sum + item.quantity_sold, 0);
-      const totalValue = result.reduce((sum, item) => sum + item.total_value, 0);
+      const totalQuantity = reportArray.reduce((sum, item) => sum + Number(item.quantity_sold), 0);
+      const totalValue = reportArray.reduce((sum, item) => sum + Number(item.total_value), 0);
       console.log(`✅ TOTAIS: ${totalQuantity} unidades vendidas | ${formatCurrency(totalValue)}`);
 
-      setReportData(result);
-      toast.success(`Relatório gerado: ${result.length} produtos, ${totalQuantity} unidades`);
+      setReportData(reportArray);
+      toast.success(`Relatório gerado: ${reportArray.length} produtos, ${totalQuantity} unidades`);
     } catch (error) {
       console.error('❌ Erro ao gerar relatório:', error);
       toast.error('Erro ao gerar relatório');
