@@ -3,13 +3,12 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Download, BarChart3, History, Truck, User, Package, Shield } from 'lucide-react';
+import { FileText, Download, BarChart3, History, Truck, User, Package } from 'lucide-react';
 import SalesByDateClientReport from '@/components/reports/SalesByDateClientReport';
 import SalesBySalespersonReport from '@/components/reports/SalesBySalespersonReport';
 import ProductStockHistoryReport from '@/components/reports/ProductStockHistoryReport';
 import ShippingReport from '@/components/reports/ShippingReport';
 import { SalesByProductReport } from '@/components/reports/SalesByProductReport';
-import { StockAuditReport } from '@/components/reports/StockAuditReport';
 
 const Reports = () => {
   return (
@@ -28,7 +27,7 @@ const Reports = () => {
         </div>
 
         <Tabs defaultValue="sales-by-date-client" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 mb-3 md:mb-6 h-auto p-1 gap-1">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 mb-3 md:mb-6 h-auto p-1 gap-1">
             <TabsTrigger value="sales-by-date-client" className="flex flex-col items-center gap-1 py-2 px-1 text-xs lg:text-sm min-h-[3.5rem] lg:min-h-[auto] lg:flex-row lg:gap-2">
               <FileText className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" />
               <span className="text-center leading-tight break-words">Vendas por Data</span>
@@ -44,10 +43,6 @@ const Reports = () => {
             <TabsTrigger value="stock-history" className="flex flex-col items-center gap-1 py-2 px-1 text-xs lg:text-sm min-h-[3.5rem] lg:min-h-[auto] lg:flex-row lg:gap-2">
               <History className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" />
               <span className="text-center leading-tight break-words">Histórico de Estoque</span>
-            </TabsTrigger>
-            <TabsTrigger value="stock-audit" className="flex flex-col items-center gap-1 py-2 px-1 text-xs lg:text-sm min-h-[3.5rem] lg:min-h-[auto] lg:flex-row lg:gap-2">
-              <Shield className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" />
-              <span className="text-center leading-tight break-words">Auditoria</span>
             </TabsTrigger>
             <TabsTrigger value="shipping" className="flex flex-col items-center gap-1 py-2 px-1 text-xs lg:text-sm min-h-[3.5rem] lg:min-h-[auto] lg:flex-row lg:gap-2">
               <Truck className="w-3 h-3 lg:w-4 lg:h-4 flex-shrink-0" />
@@ -119,23 +114,6 @@ const Reports = () => {
               </CardHeader>
               <CardContent className="p-3 md:p-4 lg:p-6 overflow-x-auto">
                 <ProductStockHistoryReport />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="stock-audit">
-            <Card className="glass overflow-hidden">
-              <CardHeader className="p-3 md:p-4 lg:p-6">
-                <CardTitle className="flex items-center gap-2 text-base md:text-lg lg:text-xl break-words">
-                  <Shield className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
-                  <span>Auditoria de Estoque</span>
-                </CardTitle>
-                <CardDescription className="text-xs md:text-sm lg:text-base break-words">
-                  Identifique e corrija inconsistências entre o estoque do sistema e as movimentações
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-3 md:p-4 lg:p-6 overflow-x-auto">
-                <StockAuditReport />
               </CardContent>
             </Card>
           </TabsContent>
