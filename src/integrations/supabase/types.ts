@@ -1142,6 +1142,17 @@ export type Database = {
           total_value: number
         }[]
       }
+      get_top_selling_products: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          current_stock: number
+          internal_code: string
+          photo_url: string
+          product_id: string
+          product_name: string
+          quantity_sold: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
