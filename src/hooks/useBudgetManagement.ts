@@ -9,6 +9,7 @@ export interface LocalBudget {
   notes: string | null;
   discount_percentage: number | null;
   invoice_percentage: number | null;
+  taxes_amount: number | null;
   payment_method_id: string | null;
   payment_type_id: string | null;
   shipping_option_id: string | null;
