@@ -354,9 +354,27 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
       yPosition += rowHeight;
     }
     
+    // Linha do Total de Produtos (Subtotal - Desconto)
+    const totalProdutos = subtotal - totalDiscount;
+    let totalProdutosIndex = currentIndex + 1;
+    if (totalDiscount > 0) totalProdutosIndex++;
+    
+    if (totalProdutosIndex % 2 === 0) {
+      doc.setFillColor(250, 250, 250);
+      doc.rect(16, yPosition, pageWidth - 32, rowHeight, 'F');
+    }
+    
+    doc.setTextColor(darkColor.r, darkColor.g, darkColor.b);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL DE PRODUTOS', 20, yPosition + 5);
+    doc.text(formatCurrency(totalProdutos), pageWidth - 20, yPosition + 5, { align: 'right' });
+    yPosition += rowHeight;
+    
     // Linha do Frete (se houver)
     if (shippingCost > 0) {
-      const freightIndex = totalDiscount > 0 ? currentIndex + 2 : currentIndex + 1;
+      let freightIndex = currentIndex + 2;
+      if (totalDiscount > 0) freightIndex++;
+      
       if (freightIndex % 2 === 0) {
         doc.setFillColor(250, 250, 250);
         doc.rect(16, yPosition, pageWidth - 32, rowHeight, 'F');
@@ -371,7 +389,7 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
     // Linha de Impostos (se houver)
     if (taxesAmount > 0) {
       // Calcular índice correto para alternância de cor
-      let taxesIndex = currentIndex + 1;
+      let taxesIndex = currentIndex + 2; // +2 para considerar TOTAL DE PRODUTOS
       if (totalDiscount > 0) taxesIndex++;
       if (shippingCost > 0) taxesIndex++;
       
