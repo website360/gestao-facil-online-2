@@ -315,7 +315,8 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
     
     // Continuar diretamente após os produtos, sem separação
     const shippingCost = budget.shipping_cost || 0;
-    const finalTotal = subtotal - totalDiscount + shippingCost;
+    const taxesAmount = budget.taxes_amount || 0;
+    const finalTotal = subtotal - totalDiscount + shippingCost + taxesAmount;
 
     // Buscar nomes dos métodos de pagamento
     const paymentMethodName = await getPaymentMethodText(budget.payment_method_id);
@@ -364,6 +365,25 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
       doc.setFont('helvetica', 'bold');
       doc.text('FRETE', 20, yPosition + 5);
       doc.text(formatCurrency(shippingCost), pageWidth - 20, yPosition + 5, { align: 'right' });
+      yPosition += rowHeight;
+    }
+    
+    // Linha de Impostos (se houver)
+    if (taxesAmount > 0) {
+      // Calcular índice correto para alternância de cor
+      let taxesIndex = currentIndex + 1;
+      if (totalDiscount > 0) taxesIndex++;
+      if (shippingCost > 0) taxesIndex++;
+      
+      if (taxesIndex % 2 === 0) {
+        doc.setFillColor(250, 250, 250);
+        doc.rect(16, yPosition, pageWidth - 32, rowHeight, 'F');
+      }
+      
+      doc.setTextColor(darkColor.r, darkColor.g, darkColor.b);
+      doc.setFont('helvetica', 'bold');
+      doc.text('IMPOSTOS', 20, yPosition + 5);
+      doc.text(formatCurrency(taxesAmount), pageWidth - 20, yPosition + 5, { align: 'right' });
       yPosition += rowHeight;
     }
     
