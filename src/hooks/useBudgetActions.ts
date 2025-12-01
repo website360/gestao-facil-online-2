@@ -173,6 +173,7 @@ export const useBudgetActions = (fetchBudgets: () => void) => {
         payment_type_id: budgetToUse.payment_type_id,
         shipping_option_id: budgetToUse.shipping_option_id,
         shipping_cost: budgetToUse.shipping_cost || 0,
+        taxes_amount: budgetToUse.taxes_amount || 0,
         installments: budgetToUse.installments || 1,
         discount_percentage: budgetToUse.discount_percentage || 0,
         invoice_percentage: budgetToUse.invoice_percentage || 0,
