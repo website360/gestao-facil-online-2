@@ -39,6 +39,7 @@ interface Sale {
   boleto_due_dates?: number[];
   discount_percentage?: number;
   invoice_percentage?: number;
+  taxes_amount?: number;
   local_delivery_info?: string;
   clients: { name: string } | null;
   created_by_profile: { name: string } | null;
@@ -695,11 +696,17 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                          <span className="text-sm font-medium">Total dos Produtos:</span>
                          <span className="text-sm font-semibold">{formatCurrency(saleItems.reduce((sum, item) => sum + item.total_price, 0))}</span>
                        </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Frete:</span>
-                        <span className="text-sm font-semibold">{formatCurrency(saleData.shipping_cost || 0)}</span>
-                      </div>
-                      <hr className="my-2" />
+                       <div className="flex justify-between items-center">
+                         <span className="text-sm font-medium">Frete:</span>
+                         <span className="text-sm font-semibold">{formatCurrency(saleData.shipping_cost || 0)}</span>
+                       </div>
+                       {(saleData.taxes_amount ?? 0) > 0 && (
+                         <div className="flex justify-between items-center">
+                           <span className="text-sm font-medium">Impostos (R$):</span>
+                           <span className="text-sm font-semibold">{formatCurrency(saleData.taxes_amount || 0)}</span>
+                         </div>
+                       )}
+                       <hr className="my-2" />
                       <div className="flex justify-between items-center">
                         <span className="text-lg font-bold">Total Final:</span>
                         <span className="text-lg font-bold text-blue-600">{formatCurrency(saleData.total_amount)}</span>
