@@ -1,1 +1,1 @@
-web: ./node_modules/.bin/serve -s dist -l $PORT
+web: node node_modules/serve/build/main.js -s dist -l $PORT
