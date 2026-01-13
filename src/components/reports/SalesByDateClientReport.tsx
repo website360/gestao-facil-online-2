@@ -16,6 +16,7 @@ import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 
 interface SaleReportData {
+  sale_id: string;
   client_name: string;
   salesperson_name: string;
   sale_date: string;
@@ -131,99 +132,88 @@ const SalesByDateClientReport = () => {
         profilesData = profiles || [];
       }
 
-      // Agrupar vendas por cliente
-      const groupedData: { [key: string]: SaleReportData } = {};
-      let totalSalesCount = 0;
+      // Listar vendas individualmente (sem agrupar por cliente)
+      const salesList: SaleReportData[] = [];
 
       sales?.forEach((sale: any) => {
-        const clientId = sale.clients.id;
         const budget = sale.budgets;
         const saleDate = new Date(sale.created_at);
-        totalSalesCount++;
+        const saleAmount = parseFloat(sale.total_amount);
         
-        if (!groupedData[clientId]) {
-          // Determinar os prazos baseado no método de pagamento
-          let dueDates = '';
-          let paymentDates = '';
-          let installments = budget?.installments || 1;
+        // Determinar os prazos baseado no método de pagamento
+        let dueDates = '';
+        let paymentDates = '';
+        let installments = budget?.installments || 1;
+        
+        if (budget?.payment_methods?.name) {
+          const paymentMethodName = budget.payment_methods.name.toLowerCase();
           
-          if (budget?.payment_methods?.name) {
-            const paymentMethodName = budget.payment_methods.name.toLowerCase();
-            
-            if (paymentMethodName.includes('boleto')) {
-              // Se for boleto, usar prazos de boleto
-              if (budget?.boleto_due_dates?.length > 0) {
-                dueDates = budget.boleto_due_dates.map((days: number) => `${days} dias`).join(', ');
-                // Calcular datas de vencimento
-                paymentDates = budget.boleto_due_dates.map((days: number) => {
-                  const paymentDate = new Date(saleDate);
-                  paymentDate.setDate(paymentDate.getDate() + days);
-                  return paymentDate.toLocaleDateString('pt-BR');
-                }).join(', ');
-                installments = budget.boleto_installments || 1;
-              }
-            } else if (paymentMethodName.includes('cheque')) {
-              // Se for cheque, usar prazos de cheque
-              if (budget?.check_due_dates?.length > 0) {
-                dueDates = budget.check_due_dates.map((days: number) => `${days} dias`).join(', ');
-                // Calcular datas de vencimento
-                paymentDates = budget.check_due_dates.map((days: number) => {
-                  const paymentDate = new Date(saleDate);
-                  paymentDate.setDate(paymentDate.getDate() + days);
-                  return paymentDate.toLocaleDateString('pt-BR');
-                }).join(', ');
-                installments = budget.check_installments || 1;
-              }
+          if (paymentMethodName.includes('boleto')) {
+            // Se for boleto, usar prazos de boleto
+            if (budget?.boleto_due_dates?.length > 0) {
+              dueDates = budget.boleto_due_dates.map((days: number) => `${days} dias`).join(', ');
+              // Calcular datas de vencimento
+              paymentDates = budget.boleto_due_dates.map((days: number) => {
+                const paymentDate = new Date(saleDate);
+                paymentDate.setDate(paymentDate.getDate() + days);
+                return paymentDate.toLocaleDateString('pt-BR');
+              }).join(', ');
+              installments = budget.boleto_installments || 1;
+            }
+          } else if (paymentMethodName.includes('cheque')) {
+            // Se for cheque, usar prazos de cheque
+            if (budget?.check_due_dates?.length > 0) {
+              dueDates = budget.check_due_dates.map((days: number) => `${days} dias`).join(', ');
+              // Calcular datas de vencimento
+              paymentDates = budget.check_due_dates.map((days: number) => {
+                const paymentDate = new Date(saleDate);
+                paymentDate.setDate(paymentDate.getDate() + days);
+                return paymentDate.toLocaleDateString('pt-BR');
+              }).join(', ');
+              installments = budget.check_installments || 1;
             }
           }
-
-          // Determinar nome do vendedor
-          let salespersonName = 'Cliente';
-          
-          // Primeiro, verificar se a venda foi criada por um funcionário
-          const saleCreatorProfile = profilesData.find(p => p.id === sale.created_by);
-          if (saleCreatorProfile) {
-            salespersonName = saleCreatorProfile.name;
-          } 
-          // Senão, verificar se o orçamento foi criado por um funcionário
-          else if (budget?.created_by && budget.created_by !== sale.clients.id) {
-            const budgetCreatorProfile = profilesData.find(p => p.id === budget.created_by);
-            if (budgetCreatorProfile) {
-              salespersonName = budgetCreatorProfile.name;
-            } else {
-              salespersonName = 'Vendedor';
-            }
-          }
-
-          groupedData[clientId] = {
-            client_name: sale.clients.name,
-            salesperson_name: salespersonName,
-            sale_date: saleDate.toLocaleDateString('pt-BR'),
-            status: getStatusLabel(sale.status),
-            payment_method: budget?.payment_methods?.name || 'N/A',
-            payment_type: budget?.payment_types?.name || 'N/A',
-            installments: installments,
-            due_dates: dueDates,
-            payment_dates: paymentDates,
-            total_amount: 0,
-            discount_percentage: budget?.discount_percentage || 0,
-            invoice_percentage: budget?.invoice_percentage || 0,
-            invoice_value: 0,
-            receipt_names: ''
-          };
         }
 
-        const saleAmount = parseFloat(sale.total_amount);
-        groupedData[clientId].total_amount += saleAmount;
-        groupedData[clientId].invoice_value += saleAmount * (groupedData[clientId].invoice_percentage / 100);
+        // Determinar nome do vendedor
+        let salespersonName = 'Cliente';
+        
+        // Primeiro, verificar se a venda foi criada por um funcionário
+        const saleCreatorProfile = profilesData.find(p => p.id === sale.created_by);
+        if (saleCreatorProfile) {
+          salespersonName = saleCreatorProfile.name;
+        } 
+        // Senão, verificar se o orçamento foi criado por um funcionário
+        else if (budget?.created_by && budget.created_by !== sale.clients.id) {
+          const budgetCreatorProfile = profilesData.find(p => p.id === budget.created_by);
+          if (budgetCreatorProfile) {
+            salespersonName = budgetCreatorProfile.name;
+          } else {
+            salespersonName = 'Vendedor';
+          }
+        }
+
+        const invoicePercentage = budget?.invoice_percentage || 0;
+
+        // Adicionar cada venda como linha individual
+        salesList.push({
+          sale_id: sale.id,
+          client_name: sale.clients.name,
+          salesperson_name: salespersonName,
+          sale_date: saleDate.toLocaleDateString('pt-BR'),
+          status: getStatusLabel(sale.status),
+          payment_method: budget?.payment_methods?.name || 'N/A',
+          payment_type: budget?.payment_types?.name || 'N/A',
+          installments: installments,
+          due_dates: dueDates,
+          payment_dates: paymentDates,
+          total_amount: saleAmount,
+          discount_percentage: budget?.discount_percentage || 0,
+          invoice_percentage: invoicePercentage,
+          invoice_value: saleAmount * (invoicePercentage / 100),
+          receipt_names: ''
+        });
       });
-
-      const reportArray = Object.values(groupedData).sort((a, b) => 
-        a.client_name.localeCompare(b.client_name)
-      );
-
-      setReportData(reportArray);
-      setTotalSales(totalSalesCount);
 
       // Verificar quais vendas têm comprovantes anexados e obter nomes dos comprovantes
       if (sales && sales.length > 0) {
@@ -249,7 +239,7 @@ const SalesByDateClientReport = () => {
         console.log('Vendas com anexos após filtro:', salesWithAttachmentsIds.length);
         console.log('IDs das vendas com anexos:', salesWithAttachmentsIds);
 
-        // Agrupar nomes dos comprovantes por venda e adicionar ao relatório
+        // Agrupar nomes dos comprovantes por venda
         const attachmentsBySale: { [key: string]: string[] } = {};
         attachments?.forEach(att => {
           if (!attachmentsBySale[att.sale_id]) {
@@ -258,20 +248,26 @@ const SalesByDateClientReport = () => {
           attachmentsBySale[att.sale_id].push(att.stored_filename);
         });
 
-        // Atualizar dados do relatório com nomes dos comprovantes
-        Object.keys(groupedData).forEach(clientId => {
-          const clientSales = sales.filter(sale => sale.clients.id === clientId);
-          const receiptNames: string[] = [];
-          
-          clientSales.forEach(sale => {
-            if (attachmentsBySale[sale.id]) {
-              receiptNames.push(...attachmentsBySale[sale.id]);
-            }
-          });
-          
-          groupedData[clientId].receipt_names = receiptNames.join(', ');
+        // Atualizar dados do relatório com nomes dos comprovantes por venda individual
+        salesList.forEach(saleData => {
+          if (attachmentsBySale[saleData.sale_id]) {
+            saleData.receipt_names = attachmentsBySale[saleData.sale_id].join(', ');
+          }
         });
       }
+
+      // Ordenar por nome do cliente e data
+      const reportArray = salesList.sort((a, b) => {
+        const nameCompare = a.client_name.localeCompare(b.client_name);
+        if (nameCompare !== 0) return nameCompare;
+        // Converter data dd/mm/yyyy para comparação
+        const dateA = a.sale_date.split('/').reverse().join('-');
+        const dateB = b.sale_date.split('/').reverse().join('-');
+        return dateA.localeCompare(dateB);
+      });
+
+      setReportData(reportArray);
+      setTotalSales(sales?.length || 0);
 
       toast.success('Relatório gerado com sucesso!');
     } catch (error) {
