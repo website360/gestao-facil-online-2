@@ -1,1 +1,1 @@
-web: node node_modules/serve/build/main.js -s dist -l $PORT
+web: bunx serve -s dist -l $PORT
