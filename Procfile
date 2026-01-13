@@ -1,1 +1,1 @@
-web: bunx serve -s dist -l $PORT
+web: bun server.js
