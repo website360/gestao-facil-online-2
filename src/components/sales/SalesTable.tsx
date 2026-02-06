@@ -64,6 +64,7 @@ interface SalesTableProps {
   onViewDeliveryNotes: (saleId: string) => void;
   onFinalizeSale: (saleId: string) => void;
   onGenerateShippingLabel: (saleId: string) => void;
+  onReprintLabels: (saleId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -99,6 +100,7 @@ const SalesTable = ({
   onViewDeliveryNotes,
   onFinalizeSale,
   onGenerateShippingLabel,
+  onReprintLabels,
   getStatusColor,
   getStatusLabel,
   formatSaleId,
@@ -365,6 +367,7 @@ const SalesTable = ({
                 onItemSelect={onItemSelect}
                 showBulkActions={showBulkActions}
                 onGenerateShippingLabel={onGenerateShippingLabel}
+                onReprintLabels={onReprintLabels}
               />
             ))}
           </TableBody>

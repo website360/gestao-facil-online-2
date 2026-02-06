@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, FileText, Truck, Settings, Scale, PackageCheck } from 'lucide-react';
+import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, FileText, Truck, Settings, Scale, PackageCheck, Printer } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import SaleAttachmentsDropdown from './SaleAttachmentsDropdown';
 import SalePDFGenerator from './SalePDFGenerator';
@@ -61,6 +61,7 @@ interface SalesTableRowProps {
   onViewDeliveryNotes: (saleId: string) => void;
   onFinalizeSale: (saleId: string) => void;
   onGenerateShippingLabel: (saleId: string) => void;
+  onReprintLabels: (saleId: string) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -96,7 +97,8 @@ const SalesTableRow = ({
   selectedItems,
   onItemSelect,
   showBulkActions = false,
-  onGenerateShippingLabel
+  onGenerateShippingLabel,
+  onReprintLabels
 }: SalesTableRowProps) => {
   const openTrackingPage = (trackingCode: string) => {
     const url = `https://www2.correios.com.br/sistemas/rastreamento/resultado.cfm?objeto=${trackingCode}`;
@@ -699,6 +701,25 @@ const SalesTableRow = ({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Ver Volumes ({sale.total_volumes})</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Botão para reimprimir etiquetas de volumes - apenas para admin se houver volumes */}
+          {userRole === 'admin' && sale.total_volumes && sale.total_volumes > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onReprintLabels(sale.id)}
+                  className="h-8 w-8 p-0 text-cyan-600 hover:text-cyan-700"
+                >
+                  <Printer className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Reimprimir Etiquetas ({sale.total_volumes})</p>
               </TooltipContent>
             </Tooltip>
           )}
