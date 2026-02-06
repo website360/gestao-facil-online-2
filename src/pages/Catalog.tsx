@@ -239,6 +239,36 @@ const Catalog = () => {
     }
   };
 
+  const getTitleClasses = () => {
+    switch (columnsCount) {
+      case 2:
+        return "text-lg font-bold text-gray-900 line-clamp-2 mb-1 leading-tight";
+      case 3:
+        return "text-base font-bold text-gray-900 line-clamp-2 mb-1 leading-tight";
+      case 4:
+        return "text-sm font-bold text-gray-900 line-clamp-2 mb-1 leading-tight";
+      case 5:
+        return "text-xs font-bold text-gray-900 line-clamp-2 mb-1 leading-tight";
+      default:
+        return "text-sm font-bold text-gray-900 line-clamp-2 mb-1 leading-tight";
+    }
+  };
+
+  const getTitleContainerHeight = () => {
+    switch (columnsCount) {
+      case 2:
+        return "min-h-[64px]";
+      case 3:
+        return "min-h-[58px]";
+      case 4:
+        return "min-h-[54px]";
+      case 5:
+        return "min-h-[48px]";
+      default:
+        return "min-h-[54px]";
+    }
+  };
+
   const generatePDF = async () => {
     try {
       // Buscar o elemento que contém os produtos
@@ -760,8 +790,8 @@ const Catalog = () => {
               <Card key={product.id} className="bg-white hover:shadow-lg transition-all border border-gray-200">
                 <CardContent className="p-4">
                   {/* Título e Código */}
-                  <div className="mb-3 min-h-[54px]">
-                    <h3 className="catalog-title text-sm font-bold text-gray-900 line-clamp-2 mb-1 leading-tight">
+                  <div className={`mb-3 ${getTitleContainerHeight()}`}>
+                    <h3 className={`catalog-title ${getTitleClasses()}`}>
                       {product.name}
                     </h3>
                     <p className="text-xs text-gray-500">
