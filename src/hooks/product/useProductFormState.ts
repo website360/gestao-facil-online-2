@@ -22,6 +22,7 @@ export const useProductFormState = () => {
   const [length, setLength] = useState('');
   const [height, setHeight] = useState('');
   const [observation, setObservation] = useState('');
+  const [ipi, setIpi] = useState('');
 
   const resetForm = () => {
     setName('');
@@ -43,6 +44,7 @@ export const useProductFormState = () => {
     setLength('');
     setHeight('');
     setObservation('');
+    setIpi('');
   };
 
   const loadProductData = (product: Product) => {
@@ -84,6 +86,7 @@ export const useProductFormState = () => {
     setLength(product.length?.toString() || '');
     setHeight(product.height?.toString() || '');
     setObservation(product.observation || '');
+    setIpi(product.ipi?.toString() || '');
   };
 
   return {
@@ -108,6 +111,7 @@ export const useProductFormState = () => {
     length, setLength,
     height, setHeight,
     observation, setObservation,
+    ipi, setIpi,
     
     // Functions
     resetForm,

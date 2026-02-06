@@ -29,7 +29,8 @@ export const useProductForm = (editingProduct: Product | null, onSuccess: () => 
       width: formState.width,
       length: formState.length,
       height: formState.height,
-      observation: formState.observation
+      observation: formState.observation,
+      ipi: formState.ipi
     },
     editingProduct,
     onSuccess,

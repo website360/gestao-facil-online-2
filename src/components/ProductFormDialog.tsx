@@ -68,6 +68,7 @@ const ProductFormDialog = ({ showForm, editingProduct, onClose, onSuccess, readO
     length, setLength,
     height, setHeight,
     observation, setObservation,
+    ipi, setIpi,
     categories,
     suppliers,
     loading,
@@ -157,6 +158,8 @@ const ProductFormDialog = ({ showForm, editingProduct, onClose, onSuccess, readO
                   setStock={setStock}
                   stockUnit={stockUnit}
                   setStockUnit={setStockUnit}
+                  ipi={ipi}
+                  setIpi={setIpi}
                   readOnly={readOnly}
                 />
               </CardContent>
