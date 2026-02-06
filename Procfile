@@ -1,1 +1,1 @@
-web: bun server.js
+web: node server.js
