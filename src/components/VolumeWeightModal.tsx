@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Package, Scale, CheckCircle } from 'lucide-react';
 import { formatSaleId } from '@/lib/budgetFormatter';
+import VolumeLabelPrinter from './conference/VolumeLabelPrinter';
 
 interface VolumeWeightModalProps {
   isOpen: boolean;
@@ -35,8 +36,37 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
 }) => {
   const [totalVolumes, setTotalVolumes] = useState<number>(1);
   const [volumes, setVolumes] = useState<VolumeWeight[]>([]);
-  const [step, setStep] = useState<'volumes' | 'weights'>('volumes');
+  const [step, setStep] = useState<'volumes' | 'weights' | 'labels'>('volumes');
   const [saving, setSaving] = useState(false);
+  const [clientName, setClientName] = useState<string>('');
+
+  // Buscar nome do cliente quando o modal abrir
+  useEffect(() => {
+    const fetchClientName = async () => {
+      if (!saleId || !isOpen) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('sales')
+          .select(`
+            clients(name)
+          `)
+          .eq('id', saleId)
+          .single();
+
+        if (error) throw error;
+        
+        if (data?.clients) {
+          setClientName((data.clients as any).name || 'Cliente');
+        }
+      } catch (error) {
+        console.error('Erro ao buscar nome do cliente:', error);
+        setClientName('Cliente');
+      }
+    };
+
+    fetchClientName();
+  }, [saleId, isOpen]);
 
   const handleVolumeCountSubmit = () => {
     if (totalVolumes < 1) {
@@ -151,15 +181,25 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
 
       if (error) throw error;
 
-      toast.success('Volumes registrados com sucesso! Venda enviada para Nota Fiscal.');
-      onComplete();
-      onClose();
+      // Avançar para step de etiquetas
+      setStep('labels');
+      
     } catch (error) {
       console.error('Erro ao salvar volumes:', error);
       toast.error('Erro ao registrar volumes');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handlePrintComplete = () => {
+    toast.success('Etiquetas enviadas para impressão!');
+  };
+
+  const handleFinalClose = () => {
+    onComplete();
+    resetModal();
+    onClose();
   };
 
   const handleBack = () => {
@@ -172,9 +212,15 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
     setVolumes([]);
     setStep('volumes');
     setSaving(false);
+    setClientName('');
   };
 
   const handleClose = () => {
+    // Se estiver no step de etiquetas, permite fechar normalmente
+    if (step === 'labels') {
+      handleFinalClose();
+      return;
+    }
     resetModal();
     onClose();
   };
@@ -185,10 +231,15 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
-            {needsDimensions ? 'Registro de Volumes, Pesos e Dimensões' : 'Registro de Volumes e Pesos'}
-            {saleId && (
+            {step === 'labels' 
+              ? 'Impressão de Etiquetas' 
+              : needsDimensions 
+                ? 'Registro de Volumes, Pesos e Dimensões' 
+                : 'Registro de Volumes e Pesos'
+            }
+            {saleId && step !== 'labels' && (
               <Badge variant="outline" className="ml-2">
                 {formatSaleId(saleId)}
               </Badge>
@@ -384,6 +435,15 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {step === 'labels' && (
+          <VolumeLabelPrinter
+            clientName={clientName}
+            totalVolumes={totalVolumes}
+            onPrint={handlePrintComplete}
+            onClose={handleFinalClose}
+          />
         )}
       </DialogContent>
     </Dialog>
