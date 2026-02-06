@@ -39,8 +39,8 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
   const [saving, setSaving] = useState(false);
 
   const handleVolumeCountSubmit = () => {
-    if (totalVolumes < 1 || totalVolumes > 50) {
-      toast.error('O número de volumes deve estar entre 1 e 50');
+    if (totalVolumes < 1) {
+      toast.error('O número de volumes deve ser pelo menos 1');
       return;
     }
 
@@ -211,14 +211,13 @@ const VolumeWeightModal: React.FC<VolumeWeightModalProps> = ({
                   id="volume-count"
                   type="number"
                   min="1"
-                  max="50"
                   value={totalVolumes}
                   onChange={(e) => setTotalVolumes(parseInt(e.target.value) || 1)}
                   placeholder="Digite o número de volumes"
                   className="text-lg text-center"
                 />
                 <p className="text-sm text-gray-600 mt-1">
-                  Informe quantas caixas/volumes serão enviados (máximo 50)
+                  Informe quantas caixas/volumes serão enviados
                 </p>
               </div>
 
