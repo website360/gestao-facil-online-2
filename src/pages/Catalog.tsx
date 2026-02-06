@@ -226,6 +226,8 @@ const Catalog = () => {
 
   const getGridClasses = () => {
     switch (columnsCount) {
+      case 2:
+        return "grid grid-cols-1 md:grid-cols-2 gap-6";
       case 3:
         return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
       case 4:
@@ -638,6 +640,7 @@ const Catalog = () => {
                       <SelectValue placeholder="Colunas" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="2">2 Colunas</SelectItem>
                       <SelectItem value="3">3 Colunas</SelectItem>
                       <SelectItem value="4">4 Colunas</SelectItem>
                       <SelectItem value="5">5 Colunas</SelectItem>
