@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Printer, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface VolumeLabelPrinterProps {
   clientName: string;
@@ -18,16 +19,12 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   onPrint,
   onClose
 }) => {
-  const printRef = useRef<HTMLDivElement>(null);
   const currentDate = new Date().toLocaleDateString('pt-BR');
 
   const handlePrint = () => {
-    const printContent = printRef.current;
-    if (!printContent) return;
-
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert('Por favor, permita pop-ups para imprimir as etiquetas.');
+      toast.error('Por favor, permita pop-ups para imprimir as etiquetas.');
       return;
     }
 
@@ -36,40 +33,42 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
       const volumeNumber = index + 1;
       return `
         <div class="label">
-          <!-- Header com logo -->
-          <div class="header">
-            <span class="company-left">IRMÃOS</span>
-            <div class="logo">
-              <svg width="24" height="28" viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 0L24 8V20L12 28L0 20V8L12 0Z" fill="#000" opacity="0.8"/>
-                <circle cx="12" cy="10" r="3" fill="#fff"/>
-                <ellipse cx="12" cy="18" rx="6" ry="4" fill="#fff" opacity="0.5"/>
-              </svg>
+          <div class="label-inner">
+            <!-- Header com logo -->
+            <div class="header">
+              <span class="company-left">IRMÃOS</span>
+              <div class="logo">
+                <svg width="20" height="24" viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 0L24 8V20L12 28L0 20V8L12 0Z" fill="#000" opacity="0.8"/>
+                  <circle cx="12" cy="10" r="3" fill="#fff"/>
+                  <ellipse cx="12" cy="18" rx="6" ry="4" fill="#fff" opacity="0.5"/>
+                </svg>
+              </div>
+              <span class="company-right">MANTOVANI<span class="textil">TÊXTIL</span></span>
             </div>
-            <span class="company-right">MANTOVANI<span class="textil">TÊXTIL</span></span>
-          </div>
-          
-          <!-- Cliente -->
-          <div class="field-row">
-            <span class="field-label">CLIENTE</span>
-            <div class="field-box client-box">${clientName}</div>
-          </div>
-          
-          <!-- Nota Fiscal -->
-          <div class="field-row">
-            <span class="field-label">NOTA FISCAL</span>
-            <div class="field-box nf-box">${invoiceNumber || ''}</div>
-          </div>
-          
-          <!-- Volume e Data -->
-          <div class="field-row bottom-row">
-            <div class="volume-group">
-              <span class="field-label">VOLUME</span>
-              <div class="field-box volume-box">${volumeNumber}/${totalVolumes}</div>
+            
+            <!-- Cliente -->
+            <div class="field-row">
+              <span class="field-label">CLIENTE</span>
+              <div class="field-box client-box">${clientName}</div>
             </div>
-            <div class="date-group">
-              <span class="field-label">DATA</span>
-              <div class="field-box date-box">${currentDate}</div>
+            
+            <!-- Nota Fiscal -->
+            <div class="field-row">
+              <span class="field-label">NOTA FISCAL</span>
+              <div class="field-box nf-box">${invoiceNumber || ''}</div>
+            </div>
+            
+            <!-- Volume e Data -->
+            <div class="field-row bottom-row">
+              <div class="volume-group">
+                <span class="field-label">VOLUME</span>
+                <div class="field-box volume-box">${volumeNumber}/${totalVolumes}</div>
+              </div>
+              <div class="date-group">
+                <span class="field-label">DATA</span>
+                <div class="field-box date-box">${currentDate}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -101,15 +100,22 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             .label {
               width: 100mm;
               height: 60mm;
-              padding: 3mm 4mm;
+              padding: 3mm;
               page-break-after: always;
-              display: flex;
-              flex-direction: column;
               background: white;
             }
             
             .label:last-child {
               page-break-after: avoid;
+            }
+            
+            .label-inner {
+              width: 100%;
+              height: 100%;
+              border: 1px solid #ccc;
+              padding: 2mm 3mm;
+              display: flex;
+              flex-direction: column;
             }
             
             .header {
@@ -122,20 +128,20 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             }
             
             .company-left {
-              font-size: 11pt;
+              font-size: 10pt;
               font-weight: 900;
               letter-spacing: 0.5px;
             }
             
             .company-right {
-              font-size: 11pt;
+              font-size: 10pt;
               font-weight: 900;
               letter-spacing: 0.5px;
             }
             
             .textil {
               font-weight: 400;
-              font-size: 10pt;
+              font-size: 9pt;
             }
             
             .logo {
@@ -146,41 +152,53 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             
             .field-row {
               display: flex;
-              align-items: center;
+              align-items: stretch;
               margin-bottom: 1.5mm;
             }
             
             .field-label {
-              font-size: 9pt;
+              font-size: 8pt;
               font-weight: 900;
-              min-width: 22mm;
+              min-width: 20mm;
               text-transform: uppercase;
+              display: flex;
+              align-items: center;
             }
             
             .field-box {
               border: 1.5px solid #000;
               flex: 1;
-              height: 8mm;
+              min-height: 7mm;
               display: flex;
               align-items: center;
-              padding: 0 2mm;
-              font-size: 9pt;
+              padding: 1mm 2mm;
+              font-size: 8pt;
               font-weight: bold;
               text-transform: uppercase;
+              overflow: hidden;
             }
             
             .client-box {
-              height: 10mm;
-              font-size: 10pt;
+              min-height: 9mm;
+              max-height: 9mm;
+              font-size: 9pt;
+              line-height: 1.2;
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              word-break: break-word;
             }
             
             .nf-box {
-              height: 7mm;
+              min-height: 6mm;
+              max-height: 6mm;
             }
             
             .bottom-row {
               display: flex;
-              gap: 3mm;
+              gap: 2mm;
               margin-top: auto;
             }
             
@@ -190,15 +208,16 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             }
             
             .volume-group .field-label {
-              min-width: 18mm;
+              min-width: 16mm;
             }
             
             .volume-box {
-              width: 16mm;
-              height: 8mm;
+              width: 14mm;
+              min-height: 7mm;
+              max-height: 7mm;
               flex: none;
               justify-content: center;
-              font-size: 10pt;
+              font-size: 9pt;
             }
             
             .date-group {
@@ -208,21 +227,26 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             }
             
             .date-group .field-label {
-              min-width: 12mm;
+              min-width: 11mm;
             }
             
             .date-box {
               flex: 1;
-              height: 8mm;
+              min-height: 7mm;
+              max-height: 7mm;
               justify-content: center;
-              font-size: 9pt;
-              letter-spacing: 1px;
+              font-size: 8pt;
+              letter-spacing: 0.5px;
             }
             
             @media print {
               body {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+              }
+              
+              .label-inner {
+                border: none;
               }
             }
           </style>
@@ -240,7 +264,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
     setTimeout(() => {
       printWindow.print();
       onPrint();
-    }, 250);
+    }, 300);
   };
 
   return (
