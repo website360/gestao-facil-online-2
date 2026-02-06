@@ -20,6 +20,7 @@ export interface Product {
   length?: number;
   height?: number;
   supplier_id?: string;
+  ipi?: number;
   categories?: { name: string };
   created_at: string;
 }
@@ -44,4 +45,5 @@ export interface ProductFormState {
   length: string;
   height: string;
   observation: string;
+  ipi: string;
 }

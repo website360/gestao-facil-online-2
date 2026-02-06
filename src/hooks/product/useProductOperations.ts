@@ -79,6 +79,7 @@ export const useProductOperations = (
         length: formState.length ? parseFloat(formState.length) : null,
         height: formState.height ? parseFloat(formState.height) : null,
         observation: formState.observation || null,
+        ipi: formState.ipi ? parseFloat(formState.ipi.replace(',', '.')) : 0,
       };
 
       console.log('Saving product data:', productData);

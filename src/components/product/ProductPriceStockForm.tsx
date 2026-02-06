@@ -11,6 +11,8 @@ interface ProductPriceStockFormProps {
   setStock: (value: string) => void;
   stockUnit: string;
   setStockUnit: (value: string) => void;
+  ipi: string;
+  setIpi: (value: string) => void;
   readOnly?: boolean;
 }
 
@@ -23,6 +25,8 @@ const ProductPriceStockForm = ({
   setStock,
   stockUnit,
   setStockUnit,
+  ipi,
+  setIpi,
   readOnly = false
 }: ProductPriceStockFormProps) => {
   const formatPrice = (value: string) => {
@@ -68,7 +72,7 @@ const ProductPriceStockForm = ({
   return (
     <div className="space-y-4">
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <Label htmlFor="price">Preço *</Label>
           <Input
@@ -107,6 +111,17 @@ const ProductPriceStockForm = ({
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div>
+          <Label htmlFor="ipi">IPI (%)</Label>
+          <Input
+            id="ipi"
+            type="text"
+            value={ipi}
+            onChange={(e) => setIpi(e.target.value)}
+            placeholder="0,00"
+            readOnly={readOnly}
+          />
         </div>
       </div>
     </div>

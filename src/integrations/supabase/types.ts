@@ -435,6 +435,7 @@ export type Database = {
           height: number | null
           id: string
           internal_code: string
+          ipi: number | null
           length: number | null
           name: string
           observation: string | null
@@ -461,6 +462,7 @@ export type Database = {
           height?: number | null
           id?: string
           internal_code: string
+          ipi?: number | null
           length?: number | null
           name: string
           observation?: string | null
@@ -487,6 +489,7 @@ export type Database = {
           height?: number | null
           id?: string
           internal_code?: string
+          ipi?: number | null
           length?: number | null
           name?: string
           observation?: string | null
