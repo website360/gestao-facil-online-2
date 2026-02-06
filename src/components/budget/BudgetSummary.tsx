@@ -10,6 +10,18 @@ import { useDiscountPermissions } from '@/hooks/useDiscountPermissions';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
+interface BudgetItem {
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  discount_percentage: number;
+}
+
+interface Product {
+  id: string;
+  ipi?: number;
+}
+
 interface BudgetSummaryProps {
   discountPercentage: number;
   realDiscountPercentage: number;
@@ -25,6 +37,8 @@ interface BudgetSummaryProps {
   paymentMethodId?: string;
   checkDueDates?: number[];
   boletoDueDates?: number[];
+  items?: BudgetItem[];
+  products?: Product[];
   onDiscountChange: (value: number) => void;
   onInvoicePercentageChange: (value: number) => void;
   onTaxesAmountChange: (value: number) => void;
@@ -47,6 +61,8 @@ const BudgetSummary = ({
   paymentMethodId,
   checkDueDates = [],
   boletoDueDates = [],
+  items = [],
+  products = [],
   onDiscountChange,
   onInvoicePercentageChange,
   onTaxesAmountChange,
@@ -67,6 +83,45 @@ const BudgetSummary = ({
 
   // Log para debug
   console.log('BudgetSummary - maxDiscount:', maxDiscount, 'loading:', loading);
+
+  // Calcular IPI automaticamente baseado nos itens, invoice_percentage e IPI dos produtos
+  // Fórmula: Para cada item: (preço_unit × quantidade × (1 - desconto%) × nota_fiscal% × IPI_produto%)
+  useEffect(() => {
+    if (items.length === 0 || products.length === 0) return;
+
+    let totalIpi = 0;
+
+    items.forEach(item => {
+      if (!item.product_id) return;
+      
+      const product = products.find(p => p.id === item.product_id);
+      const productIpi = product?.ipi || 0;
+      
+      if (productIpi > 0 && invoicePercentage > 0) {
+        // Valor do item com desconto
+        const itemSubtotal = item.quantity * item.unit_price;
+        const itemDiscount = itemSubtotal * (item.discount_percentage / 100);
+        const itemTotal = itemSubtotal - itemDiscount;
+        
+        // Valor da nota fiscal (base para IPI)
+        const invoiceValue = itemTotal * (invoicePercentage / 100);
+        
+        // Calcular IPI sobre o valor da nota fiscal
+        const ipiValue = invoiceValue * (productIpi / 100);
+        
+        totalIpi += ipiValue;
+        
+        console.log(`IPI Calc - ${product?.id}: qty=${item.quantity}, price=${item.unit_price}, discount=${item.discount_percentage}%, invoice=${invoicePercentage}%, ipi=${productIpi}% => R$ ${ipiValue.toFixed(2)}`);
+      }
+    });
+
+    console.log('Total IPI calculated:', totalIpi);
+    
+    // Só atualizar se o valor for diferente para evitar loops infinitos
+    if (Math.abs(totalIpi - taxesAmount) > 0.01) {
+      onTaxesAmountChange(Number(totalIpi.toFixed(2)));
+    }
+  }, [items, products, invoicePercentage]);
 
   useEffect(() => {
     const fetchPaymentMethod = async () => {
@@ -159,7 +214,7 @@ const BudgetSummary = ({
 
             <div>
               <Label htmlFor="taxes">
-                Impostos (R$)
+                IPI (R$)
               </Label>
               <Input
                 id="taxes"
@@ -167,10 +222,13 @@ const BudgetSummary = ({
                 min="0"
                 step="0.01"
                 value={taxesAmount}
-                onChange={(e) => onTaxesAmountChange(Number(e.target.value))}
-                placeholder="0.00"
-                disabled={readonly}
+                readOnly
+                className="bg-muted"
+                title="Valor calculado automaticamente baseado no IPI de cada produto e na porcentagem de nota fiscal"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Calculado automaticamente
+              </p>
             </div>
           </div>
         )}
@@ -211,7 +269,7 @@ const BudgetSummary = ({
           
           {taxesAmount > 0 && (
             <div className="flex justify-between">
-              <span>Impostos:</span>
+              <span>IPI:</span>
               <span>R$ {taxesAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           )}

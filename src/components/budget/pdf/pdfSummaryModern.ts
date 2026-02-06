@@ -21,7 +21,8 @@ export const addModernFinancialSummary = (doc: jsPDF, budget: LocalBudget, yPosi
 
   const totalWithDiscounts = subtotal - totalDiscounts;
   const shippingCost = budget.shipping_cost || 0;
-  const finalTotal = totalWithDiscounts + shippingCost;
+  const taxesAmount = budget.taxes_amount || 0;
+  const finalTotal = totalWithDiscounts + shippingCost + taxesAmount;
 
   // Card moderno para resumo financeiro
   const cardWidth = 200;
@@ -68,6 +69,13 @@ export const addModernFinancialSummary = (doc: jsPDF, budget: LocalBudget, yPosi
     summaryY += 8;
     doc.text('Frete:', cardX + 10, summaryY);
     doc.text(formatCurrency(shippingCost), cardX + cardWidth - 10, summaryY, { align: 'right' });
+  }
+
+  // IPI (se houver)
+  if (taxesAmount > 0) {
+    summaryY += 8;
+    doc.text('IPI:', cardX + 10, summaryY);
+    doc.text(formatCurrency(taxesAmount), cardX + cardWidth - 10, summaryY, { align: 'right' });
   }
 
   // Linha separadora

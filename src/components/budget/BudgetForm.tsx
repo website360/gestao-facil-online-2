@@ -242,6 +242,8 @@ const BudgetForm = ({
         paymentMethodId={formData.payment_method_id}
         checkDueDates={formData.check_due_dates}
         boletoDueDates={formData.boleto_due_dates}
+        items={formData.items}
+        products={products}
         onDiscountChange={updateGeneralDiscount}
         onInvoicePercentageChange={(value) => setFormData(prev => ({ ...prev, invoice_percentage: value }))}
         onTaxesAmountChange={(value) => setFormData(prev => ({ ...prev, taxes_amount: value }))}

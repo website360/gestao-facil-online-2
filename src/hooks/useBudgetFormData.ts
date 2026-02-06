@@ -132,10 +132,10 @@ export const useBudgetFormData = () => {
           clientsData = allClientsData || [];
         }
 
-        // Fetch products
+        // Fetch products (including IPI for tax calculations)
         const { data: productsData, error: productsError } = await supabase
           .from('products')
-          .select('*')
+          .select('*, ipi')
           .order('name');
 
         if (productsError) {

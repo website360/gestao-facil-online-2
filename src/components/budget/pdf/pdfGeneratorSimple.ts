@@ -400,7 +400,7 @@ export const generateSimpleBudgetPDF = async (budget: LocalBudget, calculateBudg
       
       doc.setTextColor(darkColor.r, darkColor.g, darkColor.b);
       doc.setFont('helvetica', 'bold');
-      doc.text('IMPOSTOS', 20, yPosition + 5);
+      doc.text('IPI', 20, yPosition + 5);
       doc.text(formatCurrency(taxesAmount), pageWidth - 20, yPosition + 5, { align: 'right' });
       yPosition += rowHeight;
     }
