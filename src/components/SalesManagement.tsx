@@ -16,6 +16,7 @@ import DeliveryNotesModal from './sales/DeliveryNotesModal';
 import StatusChangeModal from './sales/StatusChangeModal';
 import FinalizeSaleModal from './sales/FinalizeSaleModal';
 import ShippingLabelConfirmModal from './ShippingLabelConfirmModal';
+import ReprintLabelsModal from './sales/ReprintLabelsModal';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { formatSaleId } from '@/lib/budgetFormatter';
@@ -68,6 +69,8 @@ const SalesManagement = () => {
   const [finalizeModalOpen, setFinalizeModalOpen] = useState(false);
   const [shippingLabelModalOpen, setShippingLabelModalOpen] = useState(false);
   const [selectedSaleForShippingLabel, setSelectedSaleForShippingLabel] = useState<string | null>(null);
+  const [reprintLabelsModalOpen, setReprintLabelsModalOpen] = useState(false);
+  const [selectedSaleForReprintLabels, setSelectedSaleForReprintLabels] = useState<string | null>(null);
 
   // Bulk selection hook
   const {
@@ -354,6 +357,11 @@ const SalesManagement = () => {
     }
   };
 
+  const handleReprintLabels = (saleId: string) => {
+    setSelectedSaleForReprintLabels(saleId);
+    setReprintLabelsModalOpen(true);
+  };
+
   // Get selected sale data for modals
   const selectedSale = selectedSaleId ? sales.find(sale => sale.id === selectedSaleId) : null;
   const selectedDeliverySale = selectedSaleForDelivery ? sales.find(sale => sale.id === selectedSaleForDelivery) : null;
@@ -402,6 +410,7 @@ const SalesManagement = () => {
         formatSaleId={formatSaleIdWithData}
         getCurrentResponsible={getCurrentResponsible}
         onGenerateShippingLabel={handleGenerateShippingLabel}
+        onReprintLabels={handleReprintLabels}
       />
 
       {/* Modals */}
@@ -515,6 +524,16 @@ const SalesManagement = () => {
         onClose={() => setShippingLabelModalOpen(false)}
         onConfirm={handleConfirmShippingLabel}
         saleId={selectedSaleForShippingLabel ? formatSaleIdWithData(sales.find(s => s.id === selectedSaleForShippingLabel) || {} as any) : ''}
+      />
+
+      {/* Modal de Reimpressão de Etiquetas de Volume */}
+      <ReprintLabelsModal
+        isOpen={reprintLabelsModalOpen}
+        onClose={() => {
+          setReprintLabelsModalOpen(false);
+          setSelectedSaleForReprintLabels(null);
+        }}
+        sale={selectedSaleForReprintLabels ? sales.find(s => s.id === selectedSaleForReprintLabels) : null}
       />
     </>
   );
