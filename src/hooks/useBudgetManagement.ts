@@ -91,14 +91,35 @@ export const useBudgetManagement = (userRole?: string) => {
   const fetchBudgets = async () => {
     setLoading(true);
     try {
-      console.log('=== FETCHING BUDGETS ===');
+      console.log('=== FETCHING BUDGETS (OPTIMIZED) ===');
       console.log('User role:', userRole);
       
-      // Criar query base
+      // Query otimizada: buscar apenas campos essenciais
       let query = supabase
         .from('budgets')
         .select(`
-          *,
+          id,
+          client_id,
+          notes,
+          discount_percentage,
+          invoice_percentage,
+          taxes_amount,
+          payment_method_id,
+          payment_type_id,
+          shipping_option_id,
+          shipping_cost,
+          local_delivery_info,
+          installments,
+          check_installments,
+          check_due_dates,
+          boleto_installments,
+          boleto_due_dates,
+          status,
+          total_amount,
+          created_at,
+          updated_at,
+          created_by,
+          stock_warnings,
           clients (
             id,
             name,
@@ -120,7 +141,13 @@ export const useBudgetManagement = (userRole?: string) => {
             system_password
           ),
           budget_items (
-            *,
+            id,
+            budget_id,
+            product_id,
+            quantity,
+            unit_price,
+            total_price,
+            discount_percentage,
             products (
               id,
               name,
@@ -134,28 +161,16 @@ export const useBudgetManagement = (userRole?: string) => {
       if (userRole === 'cliente') {
         let clientId = null;
         
-        console.log('=== CLIENTE DETECTION ===');
-        console.log('isClient:', isClient);
-        console.log('clientData:', clientData);
-        
         if (isClient && clientData) {
-          // Cliente logado via sistema customizado
-          console.log('Cliente autenticado via sistema customizado:', clientData);
           clientId = clientData.id;
         } else {
-          // Cliente logado via auth normal do Supabase
           const { data: userData } = await supabase.auth.getUser();
-          console.log('User data:', userData);
-          
           if (userData.user) {
-            console.log('Buscando cliente por email:', userData.user.email);
-            const { data: clientAuthData, error: clientError } = await supabase
+            const { data: clientAuthData } = await supabase
               .from('clients')
               .select('id')
               .eq('email', userData.user.email)
               .single();
-              
-            console.log('Cliente encontrado via auth:', clientAuthData, 'Error:', clientError);
             if (clientAuthData) {
               clientId = clientAuthData.id;
             }
@@ -163,12 +178,8 @@ export const useBudgetManagement = (userRole?: string) => {
         }
         
         if (clientId) {
-          console.log('Cliente encontrado, buscando orçamentos para clientId:', clientId);
-          // Buscar orçamentos onde o cliente é o destinatário OU o criador
           query = query.or(`client_id.eq.${clientId},created_by.eq.${clientId}`);
         } else {
-          // Se não encontrou o cliente, mostrar lista vazia mas permitir criar orçamentos
-          console.log('Cliente não encontrado');
           setBudgets([]);
           setFilteredBudgets([]);
           setLoading(false);
@@ -181,11 +192,9 @@ export const useBudgetManagement = (userRole?: string) => {
         query = query.eq('created_by', user.id);
       }
       
-      // Admin e gerente veem todos os orçamentos
-
-      console.log('Query final:', query);
       const { data: budgetsData, error: budgetsError } = await query
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(300); // Limitar a 300 registros mais recentes
 
       if (budgetsError) {
         console.error('Error fetching budgets:', budgetsError);
@@ -193,80 +202,30 @@ export const useBudgetManagement = (userRole?: string) => {
         return;
       }
 
-      console.log('Raw budgets data:', budgetsData);
-      
-      // LOGS DETALHADOS PARA DEBUG
-      console.log('=== DIAGNÓSTICO COMPLETO DOS DADOS ===');
-      console.log('Número de orçamentos:', budgetsData?.length);
+      console.log('Budgets fetched:', budgetsData?.length || 0, 'records');
       
       if (budgetsData && budgetsData.length > 0) {
-        const firstBudget = budgetsData[0];
-        console.log('=== PRIMEIRO ORÇAMENTO COMPLETO ===');
-        console.log(JSON.stringify(firstBudget, null, 2));
-        
-        console.log('=== DADOS DO CLIENTE ===');
-        console.log('Cliente existe:', !!firstBudget.clients);
-        console.log('Cliente completo:', firstBudget.clients);
-        
-        if (firstBudget.clients) {
-          console.log('Campos disponíveis:', Object.keys(firstBudget.clients));
-          console.log('client_type valor:', firstBudget.clients.client_type);
-          console.log('name valor:', firstBudget.clients.name);
-          console.log('email valor:', firstBudget.clients.email);
-          console.log('cpf valor:', firstBudget.clients.cpf);
-          console.log('cnpj valor:', firstBudget.clients.cnpj);
-        } else {
-          console.log('❌ CLIENTE É NULL/UNDEFINED!');
-        }
-      }
-
-      if (budgetsData && budgetsData.length > 0) {
-        // Testar query direta de clientes para verificar RLS
-        console.log('=== TESTANDO ACESSO DIRETO À TABELA CLIENTS ===');
-        const { data: clientsTest, error: clientsTestError } = await supabase
-          .from('clients')
-          .select(`
-            id,
-            name, 
-            email,
-            phone,
-            client_type,
-            cpf,
-            cnpj,
-            razao_social,
-            birth_date,
-            cep,
-            street,
-            number,
-            complement,
-            neighborhood,
-            city,
-            state
-          `)
-          .limit(3);
-          
-        console.log('Teste clientes direto - Dados:', clientsTest);
-        console.log('Teste clientes direto - Erro:', clientsTestError);
-
-        // Buscar perfis dos criadores separadamente
+        // Buscar perfis dos criadores em uma única query otimizada
         const creatorIds = [...new Set(budgetsData.map(budget => budget.created_by))];
-        console.log('Creator IDs:', creatorIds);
+        
+        let profilesMap = new Map<string, { id: string; name: string; email: string; role: string }>();
 
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, name, email, role')
-          .in('id', creatorIds);
+        if (creatorIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, name, email, role')
+            .in('id', creatorIds);
 
-        if (profilesError) {
-          console.error('Error fetching creator profiles:', profilesError);
-          // Continuar sem os perfis se houver erro
+          if (profilesData) {
+            profilesData.forEach(p => {
+              profilesMap.set(p.id, p);
+            });
+          }
         }
 
-        console.log('Profiles data:', profilesData);
-
-        // Combinar os dados
+        // Combinar os dados de forma otimizada
         const processedData = budgetsData.map(budget => {
-          const creatorProfile = profilesData?.find(profile => profile.id === budget.created_by) || null;
+          const creatorProfile = profilesMap.get(budget.created_by) || null;
           const filteredItems = (budget as any).budget_items?.filter((bi: any) => (bi.quantity ?? 0) > 0) || [];
           
           return {
@@ -276,8 +235,6 @@ export const useBudgetManagement = (userRole?: string) => {
           };
         });
 
-        console.log('Processed budgets data:', processedData);
-        
         setBudgets(processedData as LocalBudget[]);
         setFilteredBudgets(processedData as LocalBudget[]);
         console.log('Budgets loaded successfully:', processedData.length);
@@ -291,7 +248,6 @@ export const useBudgetManagement = (userRole?: string) => {
       toast.error('Erro inesperado ao carregar orçamentos');
     } finally {
       setLoading(false);
-      console.log('=== END FETCHING BUDGETS ===');
     }
   };
 
