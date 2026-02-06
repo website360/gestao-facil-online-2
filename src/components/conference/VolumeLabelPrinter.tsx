@@ -261,76 +261,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
           </p>
         </div>
 
-        {/* Preview das etiquetas */}
-        <div className="border rounded-lg p-4 bg-gray-50">
-          <p className="text-sm text-gray-600 mb-3 text-center">
-            Prévia das etiquetas (10cm x 6cm):
-          </p>
-          <div 
-            ref={printRef}
-            className="flex flex-wrap gap-3 justify-center max-h-80 overflow-y-auto"
-          >
-            {Array.from({ length: Math.min(totalVolumes, 4) }, (_, index) => {
-              const volumeNumber = index + 1;
-              return (
-                <div 
-                  key={volumeNumber}
-                  className="w-[220px] h-[132px] bg-white border border-gray-300 rounded p-2 flex flex-col text-[10px] shadow-sm"
-                >
-                  {/* Header */}
-                  <div className="flex items-center justify-center gap-1 mb-1 pb-1 border-b border-gray-200">
-                    <span className="font-black text-[9px]">IRMÃOS</span>
-                    <div className="w-5 h-5 bg-gray-800 rounded-sm flex items-center justify-center">
-                      <span className="text-white text-[6px]">IM</span>
-                    </div>
-                    <span className="font-black text-[9px]">MANTOVANI<span className="font-normal text-[8px]">TÊXTIL</span></span>
-                  </div>
-                  
-                  {/* Cliente */}
-                  <div className="flex items-center mb-1">
-                    <span className="font-black min-w-[50px] text-[8px]">CLIENTE</span>
-                    <div className="flex-1 border border-gray-800 h-5 px-1 flex items-center">
-                      <span className="font-bold uppercase text-[8px] truncate">{clientName}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Nota Fiscal */}
-                  <div className="flex items-center mb-1">
-                    <span className="font-black min-w-[50px] text-[8px]">NOTA FISCAL</span>
-                    <div className="flex-1 border border-gray-800 h-4 px-1 flex items-center">
-                      <span className="font-bold text-[8px]">{invoiceNumber || ''}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Volume e Data */}
-                  <div className="flex items-center gap-2 mt-auto">
-                    <div className="flex items-center">
-                      <span className="font-black min-w-[40px] text-[8px]">VOLUME</span>
-                      <div className="border border-gray-800 w-9 h-4 flex items-center justify-center">
-                        <span className="font-bold text-[9px]">{volumeNumber}/{totalVolumes}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center flex-1">
-                      <span className="font-black min-w-[25px] text-[8px]">DATA</span>
-                      <div className="flex-1 border border-gray-800 h-4 flex items-center justify-center">
-                        <span className="font-bold text-[8px]">{currentDate}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            {totalVolumes > 4 && (
-              <div className="w-[220px] h-[132px] border-2 border-dashed border-gray-300 rounded flex items-center justify-center bg-gray-100">
-                <span className="text-gray-500 text-sm">
-                  +{totalVolumes - 4} etiquetas
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row justify-center gap-3">
+        <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
           <Button
             onClick={handlePrint}
             className="bg-blue-600 hover:bg-blue-700"
