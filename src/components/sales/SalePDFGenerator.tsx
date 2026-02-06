@@ -20,7 +20,11 @@ interface SalePDFGeneratorProps {
     tracking_code?: string;
     shipping_cost?: number;
     discount_percentage?: number;
+    taxes_amount?: number;
     installments?: number;
+    payment_method_id?: string;
+    payment_type_id?: string;
+    shipping_option_id?: string;
   };
   className?: string;
 }

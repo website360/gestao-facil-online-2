@@ -322,27 +322,34 @@ export const generateSalePDF = async (sale: any) => {
     // ===========================================
     
     // Verificar se precisa de nova página para o resumo apenas se não houver espaço suficiente
-    const resumoMinimo = 50; // Espaço reduzido para resumo (era 60)
+    const resumoMinimo = 70; // Espaço para resumo completo
     
-    if (yPosition + resumoMinimo > pageHeight - 15) { // Margem reduzida para 15 (era 25)
+    if (yPosition + resumoMinimo > pageHeight - 15) {
       console.log('CRIANDO NOVA PÁGINA PARA RESUMO - yPosition:', yPosition);
       doc.addPage();
-      yPosition = 15; // Margem menor na nova página
+      yPosition = 15;
     }
     
-    // Continuar diretamente após os produtos, sem separação
+    // Valores do resumo
     const shippingCost = sale.shipping_cost || 0;
-    const discountPercentage = sale.discount_percentage || 0;
+    const taxesAmount = sale.taxes_amount || 0;
     
+    // O totalDiscount já foi calculado somando os descontos individuais dos itens
+    // Calcular o total de produtos (subtotal - descontos dos itens)
+    const totalProdutos = subtotal - totalDiscount;
+    
+    // Total final = produtos + frete + impostos
+    const finalTotal = totalProdutos + shippingCost + taxesAmount;
+
     // Debug logs para verificar os valores
     console.log('=== DEBUG DESCONTO PDF ===');
-    console.log('sale.discount_percentage:', sale.discount_percentage);
-    console.log('discountPercentage processado:', discountPercentage);
-    console.log('subtotal:', subtotal);
+    console.log('subtotal (bruto):', subtotal);
+    console.log('totalDiscount (soma dos descontos dos itens):', totalDiscount);
+    console.log('totalProdutos (subtotal - descontos):', totalProdutos);
+    console.log('shippingCost:', shippingCost);
+    console.log('taxesAmount:', taxesAmount);
+    console.log('finalTotal:', finalTotal);
     console.log('=========================');
-    
-    const globalDiscount = subtotal * (discountPercentage / 100);
-    const finalTotal = subtotal - globalDiscount + shippingCost;
 
     // Buscar nomes dos métodos de pagamento
     const paymentMethodName = await getPaymentMethodText(sale.payment_method_id);
@@ -350,9 +357,9 @@ export const generateSalePDF = async (sale: any) => {
     const shippingOptionName = await getShippingOptionText(sale.shipping_option_id);
 
     // Linha do Subtotal (mesmo estilo dos produtos)
-    const currentIndex = sale.sale_items?.length || 0;
+    let summaryRowIndex = 0;
     
-    if (currentIndex % 2 === 0) {
+    if (summaryRowIndex % 2 === 0) {
       doc.setFillColor(250, 250, 250);
       doc.rect(16, yPosition, pageWidth - 32, rowHeight, 'F');
     }
@@ -364,26 +371,39 @@ export const generateSalePDF = async (sale: any) => {
     doc.text(formatCurrency(subtotal), pageWidth - 20, yPosition + 5, { align: 'right' });
     
     yPosition += rowHeight;
+    summaryRowIndex++;
     
-    // Linha do Desconto Global (sempre mostrar se houver percentual)
-    if (discountPercentage > 0) {
-      if ((currentIndex + 1) % 2 === 0) {
+    // Linha do Desconto (mostrar se houver qualquer desconto)
+    if (totalDiscount > 0) {
+      if (summaryRowIndex % 2 === 0) {
         doc.setFillColor(250, 250, 250);
         doc.rect(16, yPosition, pageWidth - 32, rowHeight, 'F');
       }
       
       doc.setFont('helvetica', 'bold');
-      doc.text(`DESCONTO (${discountPercentage.toFixed(1)}%)`, 20, yPosition + 5);
-      doc.setTextColor(220, 38, 127); // Cor vermelha para desconto
-      doc.text(`-${formatCurrency(globalDiscount)}`, pageWidth - 20, yPosition + 5, { align: 'right' });
-      doc.setTextColor(darkColor.r, darkColor.g, darkColor.b); // Voltar cor normal
+      doc.text('DESCONTO', 20, yPosition + 5);
+      doc.setTextColor(220, 38, 38); // Cor vermelha para desconto
+      doc.text(`-${formatCurrency(totalDiscount)}`, pageWidth - 20, yPosition + 5, { align: 'right' });
+      doc.setTextColor(darkColor.r, darkColor.g, darkColor.b);
       yPosition += rowHeight;
+      summaryRowIndex++;
     }
+
+    // Linha do Total de Produtos
+    if (summaryRowIndex % 2 === 0) {
+      doc.setFillColor(250, 250, 250);
+      doc.rect(16, yPosition, pageWidth - 32, rowHeight, 'F');
+    }
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL DE PRODUTOS', 20, yPosition + 5);
+    doc.text(formatCurrency(totalProdutos), pageWidth - 20, yPosition + 5, { align: 'right' });
+    yPosition += rowHeight;
+    summaryRowIndex++;
     
     // Linha do Frete (se houver)
     if (shippingCost > 0) {
-      const freightIndex = globalDiscount > 0 ? currentIndex + 2 : currentIndex + 1;
-      if (freightIndex % 2 === 0) {
+      if (summaryRowIndex % 2 === 0) {
         doc.setFillColor(250, 250, 250);
         doc.rect(16, yPosition, pageWidth - 32, rowHeight, 'F');
       }
@@ -392,6 +412,21 @@ export const generateSalePDF = async (sale: any) => {
       doc.text('FRETE', 20, yPosition + 5);
       doc.text(formatCurrency(shippingCost), pageWidth - 20, yPosition + 5, { align: 'right' });
       yPosition += rowHeight;
+      summaryRowIndex++;
+    }
+
+    // Linha dos Impostos (se houver)
+    if (taxesAmount > 0) {
+      if (summaryRowIndex % 2 === 0) {
+        doc.setFillColor(250, 250, 250);
+        doc.rect(16, yPosition, pageWidth - 32, rowHeight, 'F');
+      }
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text('IMPOSTOS', 20, yPosition + 5);
+      doc.text(formatCurrency(taxesAmount), pageWidth - 20, yPosition + 5, { align: 'right' });
+      yPosition += rowHeight;
+      summaryRowIndex++;
     }
     
     // Linha do Total (destacada com cor de fundo azul)
