@@ -471,6 +471,9 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
+          {/* Botão para baixar PDF da venda - disponível para nota fiscal */}
+          <SalePDFGenerator sale={sale} />
+
           {/* Ícone de anexos - disponível para nota fiscal */}
           <SaleAttachmentsDropdown saleId={sale.id} className="h-8 w-8 p-0" saleStatus={sale.status} />
         </div>
