@@ -163,38 +163,43 @@ export const useSalesManagement = () => {
       console.log('Fetching sales from database...');
       setLoading(true);
       
+      // Query otimizada: buscar apenas os campos necessários para a listagem
       const { data: salesData, error: salesError } = await supabase
         .from('sales')
         .select(`
-          *,
-          clients(
-            id,
-            name,
-            email,
-            phone,
-            client_type,
-            cpf,
-            cnpj,
-            razao_social,
-            cep,
-            street,
-            number,
-            complement,
-            neighborhood,
-            city,
-            state
-          ),
-          budgets(created_by),
-          sale_items(
-            *,
-            products(
-              id,
-              name,
-              price
-            )
-          )
+          id,
+          client_id,
+          budget_id,
+          created_by,
+          status,
+          total_amount,
+          notes,
+          created_at,
+          updated_at,
+          separation_user_id,
+          separation_completed_at,
+          conference_user_id,
+          conference_completed_at,
+          invoice_user_id,
+          invoice_completed_at,
+          delivery_user_id,
+          delivery_completed_at,
+          payment_method_id,
+          payment_type_id,
+          shipping_option_id,
+          shipping_cost,
+          tracking_code,
+          invoice_number,
+          total_volumes,
+          total_weight_kg,
+          separation_percentage,
+          separation_complete,
+          ready_for_shipping_label,
+          clients(name),
+          budgets(created_by)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500); // Limitar a 500 registros mais recentes
 
       if (salesError) {
         console.error('Error fetching sales:', salesError);
@@ -209,9 +214,9 @@ export const useSalesManagement = () => {
         return;
       }
 
-      // Buscar informações de shipping_options separadamente
+      // Buscar informações de shipping_options em uma única query
       const shippingOptionIds = [...new Set(salesData.map(sale => sale.shipping_option_id).filter(Boolean))];
-      let shippingOptionsData: any[] = [];
+      let shippingOptionsMap = new Map<string, { name: string; delivery_visible: boolean }>();
       
       if (shippingOptionIds.length > 0) {
         const { data: shippingData, error: shippingError } = await supabase
@@ -219,13 +224,14 @@ export const useSalesManagement = () => {
           .select('id, name, delivery_visible')
           .in('id', shippingOptionIds);
           
-        if (shippingError) {
-          console.error('Error fetching shipping options:', shippingError);
-        } else {
-          shippingOptionsData = shippingData || [];
+        if (!shippingError && shippingData) {
+          shippingData.forEach(opt => {
+            shippingOptionsMap.set(opt.id, { name: opt.name, delivery_visible: opt.delivery_visible });
+          });
         }
       }
 
+      // Buscar profiles em uma única query
       const allUserIds = [...new Set([
         ...salesData.map(sale => sale.created_by),
         ...salesData.map(sale => sale.separation_user_id).filter(Boolean),
@@ -234,65 +240,45 @@ export const useSalesManagement = () => {
         ...salesData.map(sale => sale.delivery_user_id).filter(Boolean)
       ])];
       
-      console.log('Fetching profiles for users:', allUserIds);
+      let profilesMap = new Map<string, { name: string }>();
       
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .in('id', allUserIds);
+      if (allUserIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', allUserIds);
 
-      if (profilesError) {
-        console.error('Erro ao buscar profiles:', profilesError);
-        // Não pare a execução mesmo se houver erro nos perfis
+        if (profilesData) {
+          profilesData.forEach(p => {
+            profilesMap.set(p.id, { name: p.name });
+          });
+        }
       }
 
-      console.log('Profiles data:', profilesData?.length || 0, 'records');
-      console.log('Profiles found:', profilesData);
+      // Processar vendas de forma síncrona (sem queries adicionais por venda)
+      const enrichedSales = salesData.map((sale) => {
+        const shippingOption = shippingOptionsMap.get(sale.shipping_option_id || '');
 
-      const enrichedSales = await Promise.all(salesData.map(async (sale) => {
-        let conference_complete = false;
-        let conference_percentage = 0;
-        let separation_complete = false;
-        let separation_percentage = 0;
-        
-        if (sale.status === 'conferencia' || sale.status === 'nota_fiscal') {
-          const conferenceStatus = await checkConferenceStatus(sale.id);
-          conference_complete = conferenceStatus.complete;
-          conference_percentage = conferenceStatus.percentage;
-        }
-
-        if (sale.status === 'separacao' || sale.status === 'conferencia' || sale.status === 'nota_fiscal' || sale.status === 'aguardando_entrega' || sale.status === 'entrega_realizada' || sale.status === 'finalizada') {
-          const separationStatus = await checkSeparationStatus(sale.id);
-          separation_complete = separationStatus.complete;
-          separation_percentage = separationStatus.percentage;
-        }
-
-        // Encontrar a opção de frete para esta venda
-        const shippingOption = shippingOptionsData.find(option => option.id === sale.shipping_option_id);
-
-        const enrichedSale = {
+        return {
           ...sale,
           clients: sale.clients ? { name: (sale.clients as any).name } : null,
           budgets: sale.budgets ? { created_by: (sale.budgets as any).created_by } : null,
           shipping_option_visible: shippingOption?.delivery_visible || false,
           shipping_option_name: shippingOption?.name || null,
-          created_by_profile: profilesData?.find(p => p.id === sale.created_by) || null,
-          separation_user_profile: profilesData?.find(p => p.id === sale.separation_user_id) || null,
-          conference_user_profile: profilesData?.find(p => p.id === sale.conference_user_id) || null,
-          invoice_user_profile: profilesData?.find(p => p.id === sale.invoice_user_id) || null,
-          delivery_user_profile: profilesData?.find(p => p.id === sale.delivery_user_id) || null,
-          conference_complete,
-          conference_percentage,
-          separation_complete,
-          separation_percentage
+          created_by_profile: profilesMap.get(sale.created_by) || null,
+          separation_user_profile: sale.separation_user_id ? profilesMap.get(sale.separation_user_id) : null,
+          conference_user_profile: sale.conference_user_id ? profilesMap.get(sale.conference_user_id) : null,
+          invoice_user_profile: sale.invoice_user_id ? profilesMap.get(sale.invoice_user_id) : null,
+          delivery_user_profile: sale.delivery_user_id ? profilesMap.get(sale.delivery_user_id) : null,
+          // Usar os valores já salvos na tabela sales (evitar queries N+1)
+          conference_complete: sale.conference_completed_at !== null,
+          conference_percentage: sale.conference_completed_at ? 100 : 0,
+          separation_complete: sale.separation_complete || false,
+          separation_percentage: sale.separation_percentage || 0
         };
-
-        await fixMissingHistoryData(enrichedSale);
-        return enrichedSale;
-      }));
+      });
 
       console.log('Enriched sales:', enrichedSales.length, 'records');
-      console.log('Sample enriched sale:', enrichedSales[0]);
       setSales(enrichedSales);
     } catch (error: any) {
       console.error('Erro ao buscar vendas:', error);
