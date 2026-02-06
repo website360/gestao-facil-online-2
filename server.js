@@ -1,3 +1,4 @@
+import http from "http";
 import { readFileSync, existsSync } from "fs";
 import { join, extname } from "path";
 
@@ -21,43 +22,44 @@ const mimeTypes = {
   ".eot": "application/vnd.ms-fontobject",
 };
 
-Bun.serve({
-  port: PORT,
-  fetch(req) {
-    const url = new URL(req.url);
-    let pathname = url.pathname;
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url, `http://localhost:${PORT}`);
+  let pathname = url.pathname;
 
-    // Try exact file first
-    let filePath = join(DIST_DIR, pathname);
-    
-    // If no extension, try index.html (SPA routing)
-    if (!extname(pathname) || !existsSync(filePath)) {
-      filePath = join(DIST_DIR, "index.html");
+  // Try exact file first
+  let filePath = join(DIST_DIR, pathname);
+  
+  // If no extension or file doesn't exist, serve index.html (SPA routing)
+  if (!extname(pathname) || !existsSync(filePath)) {
+    filePath = join(DIST_DIR, "index.html");
+  }
+
+  try {
+    if (existsSync(filePath)) {
+      const ext = extname(filePath);
+      const contentType = mimeTypes[ext] || "application/octet-stream";
+      const file = readFileSync(filePath);
+      res.writeHead(200, { "Content-Type": contentType });
+      res.end(file);
+      return;
     }
+  } catch (e) {
+    // Fall through to 404
+  }
 
-    try {
-      if (existsSync(filePath)) {
-        const ext = extname(filePath);
-        const contentType = mimeTypes[ext] || "application/octet-stream";
-        const file = Bun.file(filePath);
-        return new Response(file, {
-          headers: { "Content-Type": contentType },
-        });
-      }
-    } catch (e) {
-      // Fall through to 404
-    }
+  // Fallback to index.html for SPA
+  const indexPath = join(DIST_DIR, "index.html");
+  if (existsSync(indexPath)) {
+    const file = readFileSync(indexPath);
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.end(file);
+    return;
+  }
 
-    // Fallback to index.html for SPA
-    const indexPath = join(DIST_DIR, "index.html");
-    if (existsSync(indexPath)) {
-      return new Response(Bun.file(indexPath), {
-        headers: { "Content-Type": "text/html" },
-      });
-    }
-
-    return new Response("Not Found", { status: 404 });
-  },
+  res.writeHead(404);
+  res.end("Not Found");
 });
 
-console.log(`Server running on port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
