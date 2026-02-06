@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Package, CheckCircle, Scan } from 'lucide-react';
 import { formatSaleId } from '@/lib/budgetFormatter';
@@ -65,12 +66,18 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
     status: 'idle',
     message: ''
   });
+  
+  // Estado para confirmação de item individual
+  const [itemToConfirm, setItemToConfirm] = useState<SaleItem | null>(null);
+  const [showItemConfirmModal, setShowItemConfirmModal] = useState(false);
+
   useEffect(() => {
     if (isOpen && saleId) {
       fetchSaleData();
       fetchSaleItems();
     }
   }, [isOpen, saleId]);
+
   const fetchSaleData = async () => {
     if (!saleId) return;
     try {
@@ -163,39 +170,22 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
         message: `Produto encontrado: ${foundItem.products?.name}`
       });
 
-      // Marcar automaticamente como separado
-      const newSeparatedItems = new Set([...separatedItems, foundItem.id]);
-      setSeparatedItems(newSeparatedItems);
-
-      // Salvar progresso na base de dados
-      try {
-        await supabase
-          .from('separation_items')
-          .upsert({
-            sale_id: saleId,
-            sale_item_id: foundItem.id,
-            separated_quantity: foundItem.quantity,
-            total_quantity: foundItem.quantity
-          }, {
-            onConflict: 'sale_id,sale_item_id'
+      // Verificar se o item já está separado
+      if (separatedItems.has(foundItem.id)) {
+        toast.info('Este item já foi separado');
+        setTimeout(() => {
+          setCodeInput('');
+          setCodeVerification({
+            status: 'idle',
+            message: ''
           });
-
-        // Atualizar percentagem na tabela sales
-        const totalItems = saleItems.length;
-        const separatedCount = newSeparatedItems.size;
-        const percentage = Math.round((separatedCount / totalItems) * 100);
-        
-        await supabase
-          .from('sales')
-          .update({
-            separation_percentage: percentage,
-            separation_complete: separatedCount === totalItems
-          })
-          .eq('id', saleId);
-
-      } catch (error) {
-        console.error('Erro ao salvar progresso da separação:', error);
+        }, 1500);
+        return;
       }
+
+      // Abrir modal de confirmação para o item encontrado
+      setItemToConfirm(foundItem);
+      setShowItemConfirmModal(true);
 
       // Limpar o campo após a validação
       setTimeout(() => {
@@ -225,29 +215,36 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
     setCodeInput(value);
     handleCodeVerification(value);
   };
-  const handleItemToggle = async (itemId: string) => {
-    const newSeparatedItems = new Set(separatedItems);
+  const handleItemToggle = (itemId: string) => {
     const item = saleItems.find(i => i.id === itemId);
     if (!item || !saleId) return;
 
-    if (newSeparatedItems.has(itemId)) {
-      newSeparatedItems.delete(itemId);
+    // Se o item já está separado, desmarcar diretamente (sem confirmação)
+    if (separatedItems.has(itemId)) {
+      handleUnseparateItem(itemId);
     } else {
-      newSeparatedItems.add(itemId);
+      // Se não está separado, abrir modal de confirmação
+      setItemToConfirm(item);
+      setShowItemConfirmModal(true);
     }
-    
+  };
+
+  const handleUnseparateItem = async (itemId: string) => {
+    const item = saleItems.find(i => i.id === itemId);
+    if (!item || !saleId) return;
+
+    const newSeparatedItems = new Set(separatedItems);
+    newSeparatedItems.delete(itemId);
     setSeparatedItems(newSeparatedItems);
 
     // Salvar progresso na base de dados
     try {
-      const separatedQuantity = newSeparatedItems.has(itemId) ? item.quantity : 0;
-      
       const { error } = await supabase
         .from('separation_items')
         .upsert({
           sale_id: saleId,
           sale_item_id: itemId,
-          separated_quantity: separatedQuantity,
+          separated_quantity: 0,
           total_quantity: item.quantity
         }, {
           onConflict: 'sale_id,sale_item_id'
@@ -272,6 +269,57 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
       console.error('Erro ao salvar progresso da separação:', error);
       toast.error('Erro ao salvar progresso');
     }
+  };
+
+  const handleConfirmItemSeparation = async () => {
+    if (!itemToConfirm || !saleId) return;
+
+    const newSeparatedItems = new Set([...separatedItems, itemToConfirm.id]);
+    setSeparatedItems(newSeparatedItems);
+
+    // Salvar progresso na base de dados
+    try {
+      const { error } = await supabase
+        .from('separation_items')
+        .upsert({
+          sale_id: saleId,
+          sale_item_id: itemToConfirm.id,
+          separated_quantity: itemToConfirm.quantity,
+          total_quantity: itemToConfirm.quantity
+        }, {
+          onConflict: 'sale_id,sale_item_id'
+        });
+
+      if (error) throw error;
+
+      // Atualizar percentagem na tabela sales
+      const totalItems = saleItems.length;
+      const separatedCount = newSeparatedItems.size;
+      const percentage = Math.round((separatedCount / totalItems) * 100);
+      
+      await supabase
+        .from('sales')
+        .update({
+          separation_percentage: percentage,
+          separation_complete: separatedCount === totalItems
+        })
+        .eq('id', saleId);
+
+      toast.success(`${itemToConfirm.quantity} ${itemToConfirm.products?.stock_unit || 'unidade(s)'} de ${itemToConfirm.products?.name} separado(s)`);
+
+    } catch (error) {
+      console.error('Erro ao salvar progresso da separação:', error);
+      toast.error('Erro ao salvar progresso');
+    }
+
+    // Fechar modal e limpar estado
+    setShowItemConfirmModal(false);
+    setItemToConfirm(null);
+  };
+
+  const handleCancelItemConfirmation = () => {
+    setShowItemConfirmModal(false);
+    setItemToConfirm(null);
   };
   const handleFinalizeSeparation = () => {
     if (separatedItems.size === 0) {
@@ -452,7 +500,7 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
           </div>
         </div>
 
-        {/* Modal de Confirmação */}
+        {/* Modal de Confirmação de Finalização */}
         <SeparationConfirmModal
           open={showConfirmModal}
           onOpenChange={setShowConfirmModal}
@@ -460,6 +508,29 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
           itemCount={saleItems.length}
           loading={saving}
         />
+
+        {/* Modal de Confirmação de Item Individual */}
+        <AlertDialog open={showItemConfirmModal} onOpenChange={setShowItemConfirmModal}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Separação</AlertDialogTitle>
+              <AlertDialogDescription className="text-base">
+                Confirma que separou <strong className="text-foreground">{itemToConfirm?.quantity} {itemToConfirm?.products?.stock_unit || 'unidade(s)'}</strong> do produto <strong className="text-foreground">{itemToConfirm?.products?.name}</strong>?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleCancelItemConfirmation}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleConfirmItemSeparation}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Sim, Confirmo
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>;
 };
