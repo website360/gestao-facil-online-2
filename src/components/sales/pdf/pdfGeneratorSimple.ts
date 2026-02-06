@@ -322,7 +322,7 @@ export const generateSalePDF = async (sale: any) => {
     // ===========================================
     
     // Verificar se precisa de nova página para o resumo apenas se não houver espaço suficiente
-    const resumoMinimo = 70; // Espaço para resumo completo
+    const resumoMinimo = 50;
     
     if (yPosition + resumoMinimo > pageHeight - 15) {
       console.log('CRIANDO NOVA PÁGINA PARA RESUMO - yPosition:', yPosition);
@@ -332,22 +332,16 @@ export const generateSalePDF = async (sale: any) => {
     
     // Valores do resumo
     const shippingCost = sale.shipping_cost || 0;
-    const taxesAmount = sale.taxes_amount || 0;
     
     // O totalDiscount já foi calculado somando os descontos individuais dos itens
-    // Calcular o total de produtos (subtotal - descontos dos itens)
-    const totalProdutos = subtotal - totalDiscount;
-    
-    // Total final = produtos + frete + impostos
-    const finalTotal = totalProdutos + shippingCost + taxesAmount;
+    // Total final = subtotal - descontos + frete
+    const finalTotal = subtotal - totalDiscount + shippingCost;
 
     // Debug logs para verificar os valores
     console.log('=== DEBUG DESCONTO PDF ===');
     console.log('subtotal (bruto):', subtotal);
     console.log('totalDiscount (soma dos descontos dos itens):', totalDiscount);
-    console.log('totalProdutos (subtotal - descontos):', totalProdutos);
     console.log('shippingCost:', shippingCost);
-    console.log('taxesAmount:', taxesAmount);
     console.log('finalTotal:', finalTotal);
     console.log('=========================');
 
@@ -356,7 +350,7 @@ export const generateSalePDF = async (sale: any) => {
     const paymentTypeName = await getPaymentTypeText(sale.payment_type_id);
     const shippingOptionName = await getShippingOptionText(sale.shipping_option_id);
 
-    // Linha do Subtotal (mesmo estilo dos produtos)
+    // Linha do Subtotal
     let summaryRowIndex = 0;
     
     if (summaryRowIndex % 2 === 0) {
@@ -388,18 +382,6 @@ export const generateSalePDF = async (sale: any) => {
       yPosition += rowHeight;
       summaryRowIndex++;
     }
-
-    // Linha do Total de Produtos
-    if (summaryRowIndex % 2 === 0) {
-      doc.setFillColor(250, 250, 250);
-      doc.rect(16, yPosition, pageWidth - 32, rowHeight, 'F');
-    }
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('TOTAL DE PRODUTOS', 20, yPosition + 5);
-    doc.text(formatCurrency(totalProdutos), pageWidth - 20, yPosition + 5, { align: 'right' });
-    yPosition += rowHeight;
-    summaryRowIndex++;
     
     // Linha do Frete (se houver)
     if (shippingCost > 0) {
@@ -411,20 +393,6 @@ export const generateSalePDF = async (sale: any) => {
       doc.setFont('helvetica', 'bold');
       doc.text('FRETE', 20, yPosition + 5);
       doc.text(formatCurrency(shippingCost), pageWidth - 20, yPosition + 5, { align: 'right' });
-      yPosition += rowHeight;
-      summaryRowIndex++;
-    }
-
-    // Linha dos Impostos (se houver)
-    if (taxesAmount > 0) {
-      if (summaryRowIndex % 2 === 0) {
-        doc.setFillColor(250, 250, 250);
-        doc.rect(16, yPosition, pageWidth - 32, rowHeight, 'F');
-      }
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('IMPOSTOS', 20, yPosition + 5);
-      doc.text(formatCurrency(taxesAmount), pageWidth - 20, yPosition + 5, { align: 'right' });
       yPosition += rowHeight;
       summaryRowIndex++;
     }
