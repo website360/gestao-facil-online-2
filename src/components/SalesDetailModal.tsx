@@ -702,7 +702,7 @@ const SalesDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sal
                        </div>
                        {(saleData.taxes_amount ?? 0) > 0 && (
                          <div className="flex justify-between items-center">
-                           <span className="text-sm font-medium">Impostos (R$):</span>
+                           <span className="text-sm font-medium">IPI (R$):</span>
                            <span className="text-sm font-semibold">{formatCurrency(saleData.taxes_amount || 0)}</span>
                          </div>
                        )}
