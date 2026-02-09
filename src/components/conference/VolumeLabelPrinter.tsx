@@ -38,11 +38,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             <div class="header">
               <span class="company-left">IRMÃOS</span>
               <div class="logo">
-                <svg width="20" height="24" viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 0L24 8V20L12 28L0 20V8L12 0Z" fill="#000000"/>
-                  <circle cx="12" cy="10" r="3" fill="#fff"/>
-                  <ellipse cx="12" cy="18" rx="6" ry="4" fill="#fff"/>
-                </svg>
+                <img src="${window.location.origin}/lovable-uploads/1f183d06-f80b-44da-9040-12f4a7ffc5bd.png" alt="Logo" />
               </div>
               <span class="company-right">MANTOVANI<span class="textil">TÊXTIL</span></span>
             </div>
@@ -164,6 +160,12 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               display: flex;
               align-items: center;
               justify-content: center;
+            }
+            
+            .logo img {
+              height: 20px;
+              width: auto;
+              object-fit: contain;
             }
             
             .field-row {
