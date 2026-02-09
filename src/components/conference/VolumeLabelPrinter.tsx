@@ -39,9 +39,9 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               <span class="company-left">IRMÃOS</span>
               <div class="logo">
                 <svg width="20" height="24" viewBox="0 0 24 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 0L24 8V20L12 28L0 20V8L12 0Z" fill="#000" opacity="0.8"/>
+                  <path d="M12 0L24 8V20L12 28L0 20V8L12 0Z" fill="#000000"/>
                   <circle cx="12" cy="10" r="3" fill="#fff"/>
-                  <ellipse cx="12" cy="18" rx="6" ry="4" fill="#fff" opacity="0.5"/>
+                  <ellipse cx="12" cy="18" rx="6" ry="4" fill="#fff"/>
                 </svg>
               </div>
               <span class="company-right">MANTOVANI<span class="textil">TÊXTIL</span></span>
@@ -83,22 +83,26 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
           <style>
             @page {
               size: 100mm 60mm;
-              margin: 0;
-              padding: 0;
+              margin: 0 !important;
+              padding: 0 !important;
             }
             
             * {
               margin: 0;
               padding: 0;
               box-sizing: border-box;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color-adjust: exact !important;
             }
             
             html, body {
               width: 100mm;
               font-family: 'Arial Black', 'Arial', sans-serif;
               background: white;
-              margin: 0;
-              padding: 0;
+              margin: 0 !important;
+              padding: 0 !important;
+              color: #000000 !important;
             }
             
             .label {
@@ -111,6 +115,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               break-after: page;
               break-inside: avoid;
               overflow: hidden;
+              margin: 0 !important;
             }
             
             .label:last-child {
@@ -121,7 +126,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             .label-inner {
               width: 100%;
               height: 100%;
-              border: 1px solid #ccc;
+              border: 1px solid #000;
               padding: 2mm 3mm;
               display: flex;
               flex-direction: column;
@@ -140,12 +145,14 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               font-size: 10pt;
               font-weight: 900;
               letter-spacing: 0.5px;
+              color: #000000 !important;
             }
             
             .company-right {
               font-size: 10pt;
               font-weight: 900;
               letter-spacing: 0.5px;
+              color: #000000 !important;
             }
             
             .textil {
@@ -172,10 +179,11 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               text-transform: uppercase;
               display: flex;
               align-items: center;
+              color: #000000 !important;
             }
             
             .field-box {
-              border: 1.5px solid #000;
+              border: 2px solid #000000 !important;
               flex: 1;
               min-height: 7mm;
               display: flex;
@@ -185,6 +193,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               font-weight: bold;
               text-transform: uppercase;
               overflow: hidden;
+              color: #000000 !important;
             }
             
             .client-box {
@@ -250,12 +259,17 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             
             @media print {
               html, body {
-                width: 100mm;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                width: 100mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
               }
               
               .label {
+                margin: 0 !important;
+                padding: 3mm !important;
                 page-break-after: always !important;
                 break-after: page !important;
               }
@@ -267,6 +281,12 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               
               .label-inner {
                 border: none;
+              }
+              
+              * {
+                color: #000000 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
               }
             }
           </style>
