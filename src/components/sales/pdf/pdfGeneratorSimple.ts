@@ -8,10 +8,32 @@ export const generateSalePDF = async (sale: any) => {
   
   try {
     console.log('=== GERANDO PDF SIMPLES VENDA ===');
-    console.log('Sale completa:', JSON.stringify(sale, null, 2));
-    console.log('Cliente direto:', sale.clients);
-    console.log('Tipo do cliente:', typeof sale.clients);
-    console.log('Keys do cliente:', sale.clients ? Object.keys(sale.clients) : 'null');
+    
+    // Sempre buscar sale_items com products do banco para garantir dados completos
+    if (!sale.sale_items || sale.sale_items.length === 0) {
+      console.log('sale_items não encontrados no objeto, buscando do banco...');
+      const { data: items, error: itemsError } = await supabase
+        .from('sale_items')
+        .select('*, products(name, internal_code)')
+        .eq('sale_id', sale.id);
+      
+      if (itemsError) {
+        console.error('Erro ao buscar sale_items:', itemsError);
+      } else {
+        sale.sale_items = items || [];
+        console.log('sale_items carregados do banco:', sale.sale_items.length);
+      }
+    } else if (sale.sale_items.length > 0 && !sale.sale_items[0]?.products) {
+      // sale_items existem mas sem products - recarregar
+      console.log('sale_items sem products, recarregando...');
+      const { data: items } = await supabase
+        .from('sale_items')
+        .select('*, products(name, internal_code)')
+        .eq('sale_id', sale.id);
+      if (items) sale.sale_items = items;
+    }
+    
+    console.log('Total de itens para PDF:', sale.sale_items?.length);
     
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
