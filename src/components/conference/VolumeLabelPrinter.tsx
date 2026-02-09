@@ -84,6 +84,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             @page {
               size: 100mm 60mm;
               margin: 0;
+              padding: 0;
             }
             
             * {
@@ -92,21 +93,29 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               box-sizing: border-box;
             }
             
-            body {
+            html, body {
+              width: 100mm;
               font-family: 'Arial Black', 'Arial', sans-serif;
               background: white;
+              margin: 0;
+              padding: 0;
             }
             
             .label {
               width: 100mm;
               height: 60mm;
               padding: 3mm;
-              page-break-after: always;
               background: white;
+              page-break-after: always;
+              page-break-inside: avoid;
+              break-after: page;
+              break-inside: avoid;
+              overflow: hidden;
             }
             
             .label:last-child {
-              page-break-after: avoid;
+              page-break-after: auto;
+              break-after: auto;
             }
             
             .label-inner {
@@ -240,9 +249,20 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             }
             
             @media print {
-              body {
+              html, body {
+                width: 100mm;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+              }
+              
+              .label {
+                page-break-after: always !important;
+                break-after: page !important;
+              }
+              
+              .label:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
               }
               
               .label-inner {
