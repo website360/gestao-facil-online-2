@@ -85,7 +85,7 @@ const SalesManagement = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'separacao': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'separacao': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
       case 'conferencia': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'nota_fiscal': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'aguardando_entrega': return 'bg-orange-100 text-orange-800 border-orange-200';
