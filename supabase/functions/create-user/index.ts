@@ -169,22 +169,56 @@ serve(async (req) => {
       email_confirm: true
     })
 
+    let userId: string | undefined
+
     if (createError) {
-      console.error('Error creating user:', createError)
-      return new Response(JSON.stringify({ error: createError.message }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      // Se o email já existe, buscar o usuário existente e atualizar
+      if (createError.message?.includes('already been registered')) {
+        console.log('User already exists, looking up by email...')
+        const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+        
+        if (listError) {
+          console.error('Error listing users:', listError)
+          return new Response(JSON.stringify({ error: 'Erro ao buscar usuário existente' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        const existingUser = existingUsers.users.find(u => u.email === email)
+        if (!existingUser) {
+          return new Response(JSON.stringify({ error: 'Usuário com este email já existe mas não foi encontrado' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        userId = existingUser.id
+        console.log('Found existing user:', userId)
+
+        // Atualizar senha e metadata do usuário existente
+        await supabaseAdmin.auth.admin.updateUserById(userId, {
+          password,
+          user_metadata: { name }
+        })
+      } else {
+        console.error('Error creating user:', createError)
+        return new Response(JSON.stringify({ error: createError.message }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+    } else {
+      userId = newUser.user?.id
+      console.log('User created successfully:', userId)
     }
 
-    console.log('User created successfully:', newUser.user?.id)
-
     // Atualizar o perfil do usuário com o role correto
-    if (newUser.user) {
+    if (userId) {
       const { error: profileUpdateError } = await supabaseAdmin
         .from('profiles')
         .upsert({
-          id: newUser.user.id,
+          id: userId,
           name,
           email,
           role
@@ -192,7 +226,6 @@ serve(async (req) => {
 
       if (profileUpdateError) {
         console.error('Error updating profile:', profileUpdateError)
-        // Não falhar aqui, pois o usuário já foi criado
       } else {
         console.log('Profile updated successfully')
       }
@@ -201,8 +234,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true, 
       user: {
-        id: newUser.user?.id,
-        email: newUser.user?.email,
+        id: userId,
+        email: email,
         name: name,
         role: role
       }
