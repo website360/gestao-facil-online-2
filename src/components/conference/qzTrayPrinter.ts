@@ -13,8 +13,6 @@ export async function connectQZTray(): Promise<boolean> {
   }
 
   try {
-    // Allow unsigned connections (community/demo mode)
-    // QZ Tray uses callback-style promises (RSVP pattern), not native Promises
     qz.security.setCertificatePromise(function(resolve: (cert: string) => void) {
       resolve('');
     });
@@ -38,7 +36,6 @@ export async function connectQZTray(): Promise<boolean> {
 
 export async function isQZTrayAvailable(): Promise<boolean> {
   if (qz.websocket.isActive()) return true;
-  
   try {
     await qz.websocket.connect();
     return true;
@@ -52,7 +49,6 @@ export async function findPrinters(): Promise<string[]> {
     const connected = await connectQZTray();
     if (!connected) return [];
   }
-  
   try {
     const printers = await qz.printers.find();
     return Array.isArray(printers) ? printers : [printers];
@@ -63,9 +59,8 @@ export async function findPrinters(): Promise<string[]> {
 
 export async function findDatamaxPrinter(): Promise<string | null> {
   const printers = await findPrinters();
-  // Look for Datamax printer
-  const datamax = printers.find(p => 
-    p.toLowerCase().includes('datamax') || 
+  const datamax = printers.find(p =>
+    p.toLowerCase().includes('datamax') ||
     p.toLowerCase().includes('e-4204') ||
     p.toLowerCase().includes('honeywell')
   );
@@ -76,6 +71,16 @@ export async function findDatamaxPrinter(): Promise<string | null> {
  * Generate DPL commands for a single volume label.
  * Datamax E-4204B at 203 DPI (8 dots/mm)
  * Label: 100mm x 60mm = 800 x 480 dots
+ *
+ * DPL text record format:
+ *   1<font><rotation><height_mult><width_mult><RRRR><CCCCC><data>
+ *   font: 0-8 bitmap
+ *   rotation: 1=0°, 2=90°CW, 3=180°, 4=90°CCW
+ *   height_mult: 1-9 (1=normal)
+ *   width_mult: 1-9 (1=normal)
+ *   RRRR: 4-digit row, CCCCC: 5-digit column
+ *
+ * Returns array of strings, one per DPL line.
  */
 function generateDPLLabel(
   clientName: string,
@@ -83,110 +88,126 @@ function generateDPLLabel(
   volumeNumber: number,
   totalVolumes: number,
   date: string
-): string {
+): string[] {
   const STX = '\x02';
-  const CR = '\n';
+  const lines: string[] = [];
 
-  // Label: 100mm x 60mm = 800 x 480 dots at 203 DPI (8 dots/mm)
-  // DPL text record format: 1<font><rotation><RRRR><CCCCC><data>
-  // font: 0-8 bitmap, 9 scalable
-  // rotation: 1=0°, 2=90°CW, 3=180°, 4=90°CCW
-  // RRRR: 4-digit row (0-479), CCCCC: 5-digit column (0-799)
-  // Line record: 1X1100WWWWHHHHRRRRCCCCC
-
-  let cmd = '';
-  
   // Start label format
-  cmd += STX + 'L' + CR;
-  cmd += 'D11' + CR;     // Density
-  cmd += 'H15' + CR;     // Heat
-  cmd += 'S2' + CR;      // Speed
-  cmd += 'q800' + CR;    // Label width in dots
-  cmd += 'Q480,24' + CR; // Label height, gap
+  lines.push(STX + 'L');
+  lines.push('D11');      // Density
+  lines.push('H15');      // Heat
+  lines.push('S2');       // Speed
+  lines.push('q800');     // Label width in dots
+  lines.push('Q0480,024'); // Label height, gap
 
   // === OUTER BORDER ===
-  cmd += '1X1100' + '0780' + '0003' + '0008' + '00008' + CR; // top
-  cmd += '1X1100' + '0780' + '0003' + '0468' + '00008' + CR; // bottom
-  cmd += '1X1100' + '0003' + '0463' + '0008' + '00008' + CR; // left
-  cmd += '1X1100' + '0003' + '0463' + '0008' + '00785' + CR; // right
+  // Line record: 1X1100WWWWHHHHRRRRCCCCC
+  lines.push('1X1100' + '0780' + '0003' + '0008' + '00008'); // top
+  lines.push('1X1100' + '0780' + '0003' + '0468' + '00008'); // bottom
+  lines.push('1X1100' + '0003' + '0463' + '0008' + '00008'); // left
+  lines.push('1X1100' + '0003' + '0463' + '0008' + '00785'); // right
 
   // === HEADER: IRMAOS MANTOVANI TEXTIL ===
-  // Font 4 (18x28 bold). 23 chars * 18 = 414 dots. Center: (800-414)/2 = 193
-  cmd += '141' + '0020' + '00193' + 'IRMAOS MANTOVANI TEXTIL' + CR;
+  // Font 4, rotation 1, height mult 1, width mult 1
+  lines.push('14111' + '0020' + '00193' + 'IRMAOS MANTOVANI TEXTIL');
 
   // Separator line below header
-  cmd += '1X1100' + '0760' + '0002' + '0055' + '00020' + CR;
+  lines.push('1X1100' + '0760' + '0002' + '0055' + '00020');
 
   // === CLIENTE label ===
-  // Font 6 (14x22 bold)
-  cmd += '161' + '0072' + '00015' + 'CLIENTE' + CR;
+  // Font 6, rotation 1, h1, w1
+  lines.push('16111' + '0072' + '00015' + 'CLIENTE');
 
-  // Client box (row 68 to 128, col 150 to 785)
-  cmd += '1X1100' + '0635' + '0002' + '0068' + '00150' + CR; // top
-  cmd += '1X1100' + '0635' + '0002' + '0128' + '00150' + CR; // bottom
-  cmd += '1X1100' + '0002' + '0062' + '0068' + '00150' + CR; // left
-  cmd += '1X1100' + '0002' + '0062' + '0068' + '00783' + CR; // right
+  // Client box
+  lines.push('1X1100' + '0635' + '0002' + '0068' + '00150'); // top
+  lines.push('1X1100' + '0635' + '0002' + '0128' + '00150'); // bottom
+  lines.push('1X1100' + '0002' + '0062' + '0068' + '00150'); // left
+  lines.push('1X1100' + '0002' + '0062' + '0068' + '00783'); // right
 
-  // Client name (font 2, 18x28) - truncate to fit box
+  // Client name - font 2, rotation 1, h1, w1
   const clientText = clientName.toUpperCase().substring(0, 30);
-  cmd += '121' + '0090' + '00160' + clientText + CR;
+  lines.push('12111' + '0090' + '00160' + clientText);
 
   // === NOTA FISCAL label ===
-  cmd += '161' + '0150' + '00015' + 'NOTA FISCAL' + CR;
+  lines.push('16111' + '0150' + '00015' + 'NOTA FISCAL');
 
-  // NF box (row 145 to 200, col 150 to 785)
-  cmd += '1X1100' + '0635' + '0002' + '0145' + '00150' + CR; // top
-  cmd += '1X1100' + '0635' + '0002' + '0200' + '00150' + CR; // bottom
-  cmd += '1X1100' + '0002' + '0057' + '0145' + '00150' + CR; // left
-  cmd += '1X1100' + '0002' + '0057' + '0145' + '00783' + CR; // right
+  // NF box
+  lines.push('1X1100' + '0635' + '0002' + '0145' + '00150'); // top
+  lines.push('1X1100' + '0635' + '0002' + '0200' + '00150'); // bottom
+  lines.push('1X1100' + '0002' + '0057' + '0145' + '00150'); // left
+  lines.push('1X1100' + '0002' + '0057' + '0145' + '00783'); // right
 
-  // NF value (font 2)
-  cmd += '121' + '0165' + '00160' + (invoiceNumber || '') + CR;
+  // NF value - font 2
+  lines.push('12111' + '0165' + '00160' + (invoiceNumber || ''));
 
   // === VOLUME label ===
-  cmd += '161' + '0225' + '00015' + 'VOLUME' + CR;
+  lines.push('16111' + '0225' + '00015' + 'VOLUME');
 
-  // Volume box (row 220 to 275, col 150 to 290)
-  cmd += '1X1100' + '0140' + '0002' + '0220' + '00150' + CR; // top
-  cmd += '1X1100' + '0140' + '0002' + '0275' + '00150' + CR; // bottom
-  cmd += '1X1100' + '0002' + '0057' + '0220' + '00150' + CR; // left
-  cmd += '1X1100' + '0002' + '0057' + '0220' + '00288' + CR; // right
+  // Volume box
+  lines.push('1X1100' + '0140' + '0002' + '0220' + '00150'); // top
+  lines.push('1X1100' + '0140' + '0002' + '0275' + '00150'); // bottom
+  lines.push('1X1100' + '0002' + '0057' + '0220' + '00150'); // left
+  lines.push('1X1100' + '0002' + '0057' + '0220' + '00288'); // right
 
-  // Volume value (font 2)
+  // Volume value - font 2
   const volText = `${volumeNumber}/${totalVolumes}`;
-  cmd += '121' + '0240' + '00165' + volText + CR;
+  lines.push('12111' + '0240' + '00165' + volText);
 
   // === DATA label ===
-  cmd += '161' + '0225' + '00320' + 'DATA' + CR;
+  lines.push('16111' + '0225' + '00320' + 'DATA');
 
-  // Date box (row 220 to 275, col 400 to 785)
-  cmd += '1X1100' + '0385' + '0002' + '0220' + '00400' + CR; // top
-  cmd += '1X1100' + '0385' + '0002' + '0275' + '00400' + CR; // bottom
-  cmd += '1X1100' + '0002' + '0057' + '0220' + '00400' + CR; // left
-  cmd += '1X1100' + '0002' + '0057' + '0220' + '00783' + CR; // right
+  // Date box
+  lines.push('1X1100' + '0385' + '0002' + '0220' + '00400'); // top
+  lines.push('1X1100' + '0385' + '0002' + '0275' + '00400'); // bottom
+  lines.push('1X1100' + '0002' + '0057' + '0220' + '00400'); // left
+  lines.push('1X1100' + '0002' + '0057' + '0220' + '00783'); // right
 
-  // Date value (font 2)
-  cmd += '121' + '0240' + '00420' + date + CR;
+  // Date value - font 2
+  lines.push('12111' + '0240' + '00420' + date);
 
-  // End and print label
-  cmd += 'E' + CR;
+  // Quantity and end
+  lines.push('Q0001');
+  lines.push('E');
 
-  return cmd;
+  return lines;
 }
 
 export function generateAllDPLLabels(
   clientName: string,
   totalVolumes: number,
   invoiceNumber: string = ''
-): string {
+): string[] {
   const date = new Date().toLocaleDateString('pt-BR');
-  let allCommands = '';
+  let allLines: string[] = [];
 
   for (let i = 0; i < totalVolumes; i++) {
-    allCommands += generateDPLLabel(clientName, invoiceNumber, i + 1, totalVolumes, date);
+    const labelLines = generateDPLLabel(clientName, invoiceNumber, i + 1, totalVolumes, date);
+    allLines = allLines.concat(labelLines);
   }
 
-  return allCommands;
+  return allLines;
+}
+
+/**
+ * Send a minimal test label to validate printer communication.
+ */
+export async function printTestLabel(printerName: string): Promise<void> {
+  if (!qz.websocket.isActive()) {
+    await connectQZTray();
+  }
+
+  const config = qz.configs.create(printerName);
+  const testLines = [
+    '\x02L',
+    'D11',
+    'H14',
+    '12111' + '0003' + '00015' + 'TEST 1 2 3',
+    'Q0001',
+    'E'
+  ];
+
+  console.log('Test DPL lines:', testLines);
+  await qz.print(config, testLines);
 }
 
 export async function printRawDPL(
@@ -200,12 +221,12 @@ export async function printRawDPL(
   }
 
   const config = qz.configs.create(printerName);
-  const dplCommands = generateAllDPLLabels(clientName, totalVolumes, invoiceNumber);
+  const dplLines = generateAllDPLLabels(clientName, totalVolumes, invoiceNumber);
 
-  console.log('DPL commands being sent:', JSON.stringify(dplCommands.substring(0, 200)));
-  
-  // QZ Tray raw printing: pass array of raw strings
-  await qz.print(config, [dplCommands]);
+  console.log('DPL lines being sent:', dplLines.slice(0, 5));
+
+  // QZ Tray raw printing: pass array of strings, one per line
+  await qz.print(config, dplLines);
 }
 
 export async function disconnectQZTray(): Promise<void> {
