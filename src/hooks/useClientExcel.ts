@@ -79,7 +79,7 @@ export const useClientExcel = () => {
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, name, email')
-        .in('role', ['admin', 'gerente', 'vendas']);
+        .in('role', ['admin', 'gerente', 'vendas', 'vendedor_externo', 'vendedor_interno']);
 
       // Preparar dados para exportação
       const exportData = clients.map(client => {
@@ -183,7 +183,7 @@ export const useClientExcel = () => {
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, name, email')
-        .in('role', ['admin', 'gerente', 'vendas']);
+        .in('role', ['admin', 'gerente', 'vendas', 'vendedor_externo', 'vendedor_interno']);
 
       console.log('Vendedores carregados:', profiles?.length);
       
