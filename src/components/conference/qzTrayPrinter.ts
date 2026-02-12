@@ -14,9 +14,16 @@ export async function connectQZTray(): Promise<boolean> {
 
   try {
     // Allow unsigned connections (community/demo mode)
-    qz.security.setCertificatePromise(() => Promise.resolve(''));
+    // QZ Tray uses callback-style promises (RSVP pattern), not native Promises
+    qz.security.setCertificatePromise(function(resolve: (cert: string) => void) {
+      resolve('');
+    });
     qz.security.setSignatureAlgorithm('SHA512');
-    qz.security.setSignaturePromise(() => () => Promise.resolve(''));
+    qz.security.setSignaturePromise(function() {
+      return function(resolve: (sig: string) => void) {
+        resolve('');
+      };
+    });
 
     await qz.websocket.connect();
     isConnected = true;
