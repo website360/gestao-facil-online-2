@@ -90,10 +90,11 @@ function generateDPLLabel(
   date: string
 ): string[] {
   const STX = '\x02';
+  const CR = '\x0D';
   const lines: string[] = [];
 
-  // Each line MUST end with \n for QZ Tray raw printing
-  const add = (line: string) => lines.push(line + '\n');
+  // DPL uses CR (\x0D) as line terminator, NOT LF (\n)
+  const add = (line: string) => lines.push(line + CR);
 
   // Start label format
   add(STX + 'L');
@@ -197,13 +198,14 @@ export async function printTestLabel(printerName: string): Promise<void> {
   }
 
   const config = qz.configs.create(printerName);
+  const CR = '\x0D';
   const testLines = [
-    '\x02L\n',
-    'D11\n',
-    'H14\n',
-    '12111' + '0003' + '00015' + 'TEST 1 2 3\n',
-    'Q0001\n',
-    'E\n'
+    '\x02L' + CR,
+    'D11' + CR,
+    'H14' + CR,
+    '12111' + '0003' + '00015' + 'TEST 1 2 3' + CR,
+    'Q0001' + CR,
+    'E' + CR
   ];
 
   console.log('Test DPL lines:', testLines);
