@@ -164,36 +164,10 @@ export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
   return doc;
 }
 
-export function printVolumeLabelsPDF(data: LabelData): void {
+export function downloadVolumeLabelsPDF(data: LabelData): void {
   const doc = generateVolumeLabelsPDF(data);
-  
-  // Use data URI approach to avoid popup blockers
-  const pdfDataUri = doc.output('datauristring');
-  
-  // Create a hidden iframe to trigger print without popup blocker
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = 'none';
-  iframe.src = pdfDataUri;
-  
-  document.body.appendChild(iframe);
-  
-  iframe.onload = () => {
-    setTimeout(() => {
-      try {
-        iframe.contentWindow?.print();
-      } catch {
-        // Fallback: download the file instead
-        doc.save(`etiquetas_${data.totalVolumes}vol.pdf`);
-      }
-      // Clean up after printing
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 5000);
-    }, 500);
-  };
+  const safeName = data.clientName
+    .replace(/[^a-zA-Z0-9]/g, '_')
+    .substring(0, 20);
+  doc.save(`etiquetas_${safeName}_${data.totalVolumes}vol.pdf`);
 }
