@@ -13,29 +13,14 @@ export async function connectQZTray(): Promise<boolean> {
   }
 
   try {
-    // Skip certificate validation for unsigned/demo usage
-    qz.security.setCertificatePromise(() => {
-      return Promise.resolve(
-        '-----BEGIN CERTIFICATE-----\n' +
-        'MIIBszCCAVmgAwIBAgIJALB2ZxEbfmqJMAoGCCqGSM49BAMCMBgxFjAUBgNVBAMM\n' +
-        'DXFpbm90ZWNoLmNvbTAeFw0yNDAxMDEwMDAwMDBaFw0yNjAxMDEwMDAwMDBaMBgx\n' +
-        'FjAUBgNVBAMMDXFpbm90ZWNoLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IA\n' +
-        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n' +
-        'AAAAAAAAAAAAAAAjEDAOMAwGA1UdEwQFMAMBAf8wCgYIKoZIzj0EAwIDSAAwRQIh\n' +
-        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n' +
-        '-----END CERTIFICATE-----'
-      );
-    });
-
+    // Allow unsigned connections (community/demo mode)
+    qz.security.setCertificatePromise(() => Promise.resolve(''));
     qz.security.setSignatureAlgorithm('SHA512');
-    qz.security.setSignaturePromise(() => {
-      return (resolve: (value: string) => void) => {
-        resolve('');
-      };
-    });
+    qz.security.setSignaturePromise(() => () => Promise.resolve(''));
 
     await qz.websocket.connect();
     isConnected = true;
+    console.log('QZ Tray conectado com sucesso');
     return true;
   } catch (error) {
     console.warn('QZ Tray não está instalado ou não está rodando:', error);
