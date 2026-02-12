@@ -92,82 +92,82 @@ function generateDPLLabel(
   const STX = '\x02';
   const lines: string[] = [];
 
+  // Each line MUST end with \n for QZ Tray raw printing
+  const add = (line: string) => lines.push(line + '\n');
+
   // Start label format
-  lines.push(STX + 'L');
-  lines.push('D11');      // Density
-  lines.push('H15');      // Heat
-  lines.push('S2');       // Speed
-  lines.push('q800');     // Label width in dots
-  lines.push('Q0480,024'); // Label height, gap
+  add(STX + 'L');
+  add('D11');      // Density
+  add('H15');      // Heat
+  add('S2');       // Speed
+  add('q800');     // Label width in dots
+  add('Q0480,024'); // Label height, gap
 
   // === OUTER BORDER ===
-  // Line record: 1X1100WWWWHHHHRRRRCCCCC
-  lines.push('1X1100' + '0780' + '0003' + '0008' + '00008'); // top
-  lines.push('1X1100' + '0780' + '0003' + '0468' + '00008'); // bottom
-  lines.push('1X1100' + '0003' + '0463' + '0008' + '00008'); // left
-  lines.push('1X1100' + '0003' + '0463' + '0008' + '00785'); // right
+  add('1X1100' + '0780' + '0003' + '0008' + '00008'); // top
+  add('1X1100' + '0780' + '0003' + '0468' + '00008'); // bottom
+  add('1X1100' + '0003' + '0463' + '0008' + '00008'); // left
+  add('1X1100' + '0003' + '0463' + '0008' + '00785'); // right
 
   // === HEADER: IRMAOS MANTOVANI TEXTIL ===
-  // Font 4, rotation 1, height mult 1, width mult 1
-  lines.push('14111' + '0020' + '00193' + 'IRMAOS MANTOVANI TEXTIL');
+  add('14111' + '0020' + '00193' + 'IRMAOS MANTOVANI TEXTIL');
 
   // Separator line below header
-  lines.push('1X1100' + '0760' + '0002' + '0055' + '00020');
+  add('1X1100' + '0760' + '0002' + '0055' + '00020');
 
   // === CLIENTE label ===
-  // Font 6, rotation 1, h1, w1
-  lines.push('16111' + '0072' + '00015' + 'CLIENTE');
+  add('16111' + '0072' + '00015' + 'CLIENTE');
 
   // Client box
-  lines.push('1X1100' + '0635' + '0002' + '0068' + '00150'); // top
-  lines.push('1X1100' + '0635' + '0002' + '0128' + '00150'); // bottom
-  lines.push('1X1100' + '0002' + '0062' + '0068' + '00150'); // left
-  lines.push('1X1100' + '0002' + '0062' + '0068' + '00783'); // right
+  add('1X1100' + '0635' + '0002' + '0068' + '00150'); // top
+  add('1X1100' + '0635' + '0002' + '0128' + '00150'); // bottom
+  add('1X1100' + '0002' + '0062' + '0068' + '00150'); // left
+  add('1X1100' + '0002' + '0062' + '0068' + '00783'); // right
 
   // Client name - font 2, rotation 1, h1, w1
   const clientText = clientName.toUpperCase().substring(0, 30);
-  lines.push('12111' + '0090' + '00160' + clientText);
+  add('12111' + '0090' + '00160' + clientText);
 
   // === NOTA FISCAL label ===
-  lines.push('16111' + '0150' + '00015' + 'NOTA FISCAL');
+  add('16111' + '0150' + '00015' + 'NOTA FISCAL');
 
   // NF box
-  lines.push('1X1100' + '0635' + '0002' + '0145' + '00150'); // top
-  lines.push('1X1100' + '0635' + '0002' + '0200' + '00150'); // bottom
-  lines.push('1X1100' + '0002' + '0057' + '0145' + '00150'); // left
-  lines.push('1X1100' + '0002' + '0057' + '0145' + '00783'); // right
+  add('1X1100' + '0635' + '0002' + '0145' + '00150'); // top
+  add('1X1100' + '0635' + '0002' + '0200' + '00150'); // bottom
+  add('1X1100' + '0002' + '0057' + '0145' + '00150'); // left
+  add('1X1100' + '0002' + '0057' + '0145' + '00783'); // right
 
   // NF value - font 2
-  lines.push('12111' + '0165' + '00160' + (invoiceNumber || ''));
+  add('12111' + '0165' + '00160' + (invoiceNumber || ''));
 
   // === VOLUME label ===
-  lines.push('16111' + '0225' + '00015' + 'VOLUME');
+  add('16111' + '0225' + '00015' + 'VOLUME');
 
   // Volume box
-  lines.push('1X1100' + '0140' + '0002' + '0220' + '00150'); // top
-  lines.push('1X1100' + '0140' + '0002' + '0275' + '00150'); // bottom
-  lines.push('1X1100' + '0002' + '0057' + '0220' + '00150'); // left
-  lines.push('1X1100' + '0002' + '0057' + '0220' + '00288'); // right
+  add('1X1100' + '0140' + '0002' + '0220' + '00150'); // top
+  add('1X1100' + '0140' + '0002' + '0275' + '00150'); // bottom
+  add('1X1100' + '0002' + '0057' + '0220' + '00150'); // left
+  add('1X1100' + '0002' + '0057' + '0220' + '00288'); // right
 
   // Volume value - font 2
   const volText = `${volumeNumber}/${totalVolumes}`;
-  lines.push('12111' + '0240' + '00165' + volText);
+  add('12111' + '0240' + '00165' + volText);
 
   // === DATA label ===
-  lines.push('16111' + '0225' + '00320' + 'DATA');
+  add('16111' + '0225' + '00320' + 'DATA');
 
   // Date box
-  lines.push('1X1100' + '0385' + '0002' + '0220' + '00400'); // top
-  lines.push('1X1100' + '0385' + '0002' + '0275' + '00400'); // bottom
-  lines.push('1X1100' + '0002' + '0057' + '0220' + '00400'); // left
-  lines.push('1X1100' + '0002' + '0057' + '0220' + '00783'); // right
+  add('1X1100' + '0385' + '0002' + '0220' + '00400'); // top
+  add('1X1100' + '0385' + '0002' + '0275' + '00400'); // bottom
+  add('1X1100' + '0002' + '0057' + '0220' + '00400'); // left
+  add('1X1100' + '0002' + '0057' + '0220' + '00783'); // right
 
   // Date value - font 2
-  lines.push('12111' + '0240' + '00420' + date);
+  add('12111' + '0240' + '00420' + date);
 
   // Quantity and end
-  lines.push('Q0001');
-  lines.push('E');
+  add('Q0001');
+  add('E');
 
   return lines;
 }
@@ -198,12 +198,12 @@ export async function printTestLabel(printerName: string): Promise<void> {
 
   const config = qz.configs.create(printerName);
   const testLines = [
-    '\x02L',
-    'D11',
-    'H14',
-    '12111' + '0003' + '00015' + 'TEST 1 2 3',
-    'Q0001',
-    'E'
+    '\x02L\n',
+    'D11\n',
+    'H14\n',
+    '12111' + '0003' + '00015' + 'TEST 1 2 3\n',
+    'Q0001\n',
+    'E\n'
   ];
 
   console.log('Test DPL lines:', testLines);
