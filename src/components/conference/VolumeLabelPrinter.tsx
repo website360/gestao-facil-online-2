@@ -3,8 +3,20 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Printer, CheckCircle, Download, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { connectQZTray, findPrinters, findDatamaxPrinter, printRawDPL } from './qzTrayPrinter';
 import { downloadVolumeLabelsPDF } from './pdfLabelGenerator';
+
+// Lazy import QZ Tray to avoid errors if not available
+let qzModule: any = null;
+async function getQZ() {
+  if (!qzModule) {
+    try {
+      qzModule = await import('./qzTrayPrinter');
+    } catch {
+      return null;
+    }
+  }
+  return qzModule;
+}
 
 interface VolumeLabelPrinterProps {
   clientName: string;
@@ -14,6 +26,8 @@ interface VolumeLabelPrinterProps {
   onClose: () => void;
 }
 
+type PrintMode = 'loading' | 'qz' | 'fallback';
+
 const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   clientName,
   totalVolumes,
@@ -21,45 +35,68 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   onPrint,
   onClose
 }) => {
-  const [qzAvailable, setQzAvailable] = useState<boolean | null>(null);
+  const [mode, setMode] = useState<PrintMode>('loading');
   const [printers, setPrinters] = useState<string[]>([]);
-  const [selectedPrinter, setSelectedPrinter] = useState<string>('');
+  const [selectedPrinter, setSelectedPrinter] = useState('');
   const [printing, setPrinting] = useState(false);
 
   useEffect(() => {
-    checkQZTray();
+    let cancelled = false;
+
+    const init = async () => {
+      try {
+        const qz = await getQZ();
+        if (!qz || cancelled) {
+          if (!cancelled) setMode('fallback');
+          return;
+        }
+
+        const connected = await qz.connectQZTray();
+        if (!connected || cancelled) {
+          if (!cancelled) setMode('fallback');
+          return;
+        }
+
+        const found = await qz.findPrinters();
+        if (cancelled) return;
+
+        if (found.length === 0) {
+          setMode('fallback');
+          return;
+        }
+
+        setPrinters(found);
+        // Auto-select Datamax
+        const datamax = found.find((p: string) =>
+          p.toLowerCase().includes('datamax') ||
+          p.toLowerCase().includes('e-4204') ||
+          p.toLowerCase().includes('honeywell')
+        );
+        setSelectedPrinter(datamax || found[0]);
+        setMode('qz');
+      } catch {
+        if (!cancelled) setMode('fallback');
+      }
+    };
+
+    // Timeout after 3 seconds if QZ Tray doesn't respond
+    const timeout = setTimeout(() => {
+      if (!cancelled) setMode('fallback');
+    }, 3000);
+
+    init().finally(() => clearTimeout(timeout));
+
+    return () => { cancelled = true; };
   }, []);
 
-  const checkQZTray = async () => {
-    try {
-      const connected = await connectQZTray();
-      setQzAvailable(connected);
-      if (connected) {
-        const found = await findPrinters();
-        setPrinters(found);
-        // Auto-select Datamax printer
-        const datamax = await findDatamaxPrinter();
-        if (datamax) {
-          setSelectedPrinter(datamax);
-        } else if (found.length > 0) {
-          setSelectedPrinter(found[0]);
-        }
-      }
-    } catch {
-      setQzAvailable(false);
-    }
-  };
-
   const handleDirectPrint = async () => {
-    if (!selectedPrinter) {
-      toast.error('Selecione uma impressora.');
-      return;
-    }
-
+    if (!selectedPrinter) return;
     setPrinting(true);
     try {
-      await printRawDPL(selectedPrinter, clientName, totalVolumes, invoiceNumber);
-      toast.success(`${totalVolumes} etiqueta${totalVolumes > 1 ? 's' : ''} enviada${totalVolumes > 1 ? 's' : ''} para ${selectedPrinter}!`);
+      const qz = await getQZ();
+      if (!qz) throw new Error('QZ not available');
+      await qz.printRawDPL(selectedPrinter, clientName, totalVolumes, invoiceNumber);
+      toast.success(`${totalVolumes} etiqueta${totalVolumes > 1 ? 's' : ''} enviada${totalVolumes > 1 ? 's' : ''}!`);
       onPrint();
     } catch (error) {
       console.error('Erro na impressão:', error);
@@ -72,7 +109,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   const handleDownloadPDF = () => {
     try {
       downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
-      toast.success('PDF baixado!');
+      toast.success('PDF baixado! Abra e imprima pelo Adobe Reader.');
       onPrint();
     } catch {
       toast.error('Erro ao gerar PDF.');
@@ -97,18 +134,17 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
           </p>
         </div>
 
-        {/* QZ Tray - Direct print */}
-        {qzAvailable === null && (
+        {mode === 'loading' && (
           <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" />
             Verificando impressora...
           </div>
         )}
 
-        {qzAvailable && (
+        {mode === 'qz' && (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Impressora:</label>
+              <label className="text-sm font-medium whitespace-nowrap">Impressora:</label>
               <select
                 value={selectedPrinter}
                 onChange={(e) => setSelectedPrinter(e.target.value)}
@@ -135,32 +171,30 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
           </div>
         )}
 
-        {qzAvailable === false && (
+        {mode === 'fallback' && (
           <div className="space-y-3">
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
               <p className="font-bold flex items-center gap-1 mb-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                QZ Tray não detectado
+                Impressão direta não disponível
               </p>
               <p className="mb-2">
-                Para impressão direta na Datamax (igual ao BarTender), instale o QZ Tray:
+                Para impressão direta na Datamax (igual ao BarTender), instale o <strong>QZ Tray</strong> (gratuito):
               </p>
               <ol className="list-decimal list-inside space-y-0.5 ml-1">
                 <li>Acesse <a href="https://qz.io/download" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-bold">qz.io/download</a></li>
-                <li>Baixe e instale o QZ Tray</li>
-                <li>Deixe o programa rodando (fica na bandeja do sistema)</li>
-                <li>Recarregue esta página</li>
+                <li>Baixe e instale</li>
+                <li>Deixe rodando e recarregue a página</li>
               </ol>
             </div>
 
             <Button
               onClick={handleDownloadPDF}
-              variant="outline"
-              className="w-full"
+              className="w-full bg-blue-600 hover:bg-blue-700"
               size="lg"
             >
               <Download className="w-5 h-5 mr-2" />
-              Baixar PDF ({totalVolumes} etiqueta{totalVolumes > 1 ? 's' : ''})
+              Baixar Etiquetas PDF ({totalVolumes})
             </Button>
           </div>
         )}
