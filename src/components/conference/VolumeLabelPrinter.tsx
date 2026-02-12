@@ -79,10 +79,10 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
       }
     };
 
-    // Timeout after 3 seconds if QZ Tray doesn't respond
+    // Timeout after 8 seconds if QZ Tray doesn't respond
     const timeout = setTimeout(() => {
       if (!cancelled) setMode('fallback');
-    }, 3000);
+    }, 8000);
 
     init().finally(() => clearTimeout(timeout));
 
