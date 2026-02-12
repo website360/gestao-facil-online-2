@@ -116,6 +116,22 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
     }
   };
 
+  const handleTestPrint = async () => {
+    if (!selectedPrinter) return;
+    setPrinting(true);
+    try {
+      const qz = await getQZ();
+      if (!qz) throw new Error('QZ not available');
+      await qz.printTestLabel(selectedPrinter);
+      toast.success('Etiqueta de teste enviada!');
+    } catch (error) {
+      console.error('Erro no teste:', error);
+      toast.error('Erro ao enviar teste. Verifique a impressora.');
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -167,6 +183,15 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
                 <Printer className="w-5 h-5 mr-2" />
               )}
               {printing ? 'Imprimindo...' : `Imprimir ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''}`}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleTestPrint}
+              disabled={printing || !selectedPrinter}
+              className="w-full"
+              size="sm"
+            >
+              🧪 Teste Rápido (imprime "TEST 1 2 3")
             </Button>
           </div>
         )}
