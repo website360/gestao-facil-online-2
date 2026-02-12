@@ -85,7 +85,7 @@ function generateDPLLabel(
   date: string
 ): string {
   const STX = '\x02';
-  const CR = '\r';
+  const CR = '\n';
 
   // Label: 100mm x 60mm = 800 x 480 dots at 203 DPI (8 dots/mm)
   // DPL text record format: 1<font><rotation><RRRR><CCCCC><data>
