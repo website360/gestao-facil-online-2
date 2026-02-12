@@ -87,84 +87,86 @@ function generateDPLLabel(
   const STX = '\x02';
   const CR = '\r\n';
 
+  // Label: 100mm x 60mm = 800 x 480 dots at 203 DPI (8 dots/mm)
+  // DPL text record format: 1<font><rotation><RRRR><CCCCC><data>
+  // font: 0-8 bitmap, 9 scalable
+  // rotation: 1=0°, 2=90°CW, 3=180°, 4=90°CCW
+  // RRRR: 4-digit row (0-479), CCCCC: 5-digit column (0-799)
+  // Line record: 1X1100WWWWHHHHRRRRCCCCC
+
   let cmd = '';
   
   // Start label format
   cmd += STX + 'L' + CR;
-  cmd += 'D11' + CR;    // Density/darkness (0-30, higher = darker)
-  cmd += 'H15' + CR;    // Heat setting
-  cmd += 'S2' + CR;     // Speed 2 ips (slower = better quality)
-  cmd += 'q800' + CR;   // Label width in dots (100mm * 8)
-  cmd += 'Q480,24' + CR; // Label height, gap between labels
+  cmd += 'D11' + CR;     // Density
+  cmd += 'H15' + CR;     // Heat
+  cmd += 'S2' + CR;      // Speed
+  cmd += 'q800' + CR;    // Label width in dots
+  cmd += 'Q480,24' + CR; // Label height, gap
 
   // === OUTER BORDER ===
-  // Line draw: 1X1100WWWWHHHHRRRRCCCCC
-  // Top border
-  cmd += '1X1100' + '0780' + '0004' + '0010' + '0010' + CR;
-  // Bottom border
-  cmd += '1X1100' + '0780' + '0004' + '0010' + '0460' + CR;
-  // Left border
-  cmd += '1X1100' + '0004' + '0454' + '0010' + '0010' + CR;
-  // Right border
-  cmd += '1X1100' + '0004' + '0454' + '0786' + '0010' + CR;
+  cmd += '1X1100' + '0780' + '0003' + '0008' + '00008' + CR; // top
+  cmd += '1X1100' + '0780' + '0003' + '0468' + '00008' + CR; // bottom
+  cmd += '1X1100' + '0003' + '0463' + '0008' + '00008' + CR; // left
+  cmd += '1X1100' + '0003' + '0463' + '0008' + '00785' + CR; // right
 
   // === HEADER: IRMAOS MANTOVANI TEXTIL ===
-  // Text: 1<font><size><gap>RRRRCCCCC<data>
-  // Font 9 = scalable, size in 0.1mm increments
-  cmd += '161300002000' + '0025' + 'IRMAOS MANTOVANI TEXTIL' + CR;
+  // Font 4 (18x28 bold). 23 chars * 18 = 414 dots. Center: (800-414)/2 = 193
+  cmd += '141' + '0020' + '00193' + 'IRMAOS MANTOVANI TEXTIL' + CR;
 
   // Separator line below header
-  cmd += '1X1100' + '0760' + '0002' + '0020' + '0065' + CR;
+  cmd += '1X1100' + '0760' + '0002' + '0055' + '00020' + CR;
 
-  // === CLIENTE ===
-  cmd += '161200001500' + '0085' + 'CLIENTE' + CR;
+  // === CLIENTE label ===
+  // Font 6 (14x22 bold)
+  cmd += '161' + '0072' + '00015' + 'CLIENTE' + CR;
 
-  // Client box
-  cmd += '1X1100' + '0540' + '0003' + '0200' + '0080' + CR;  // top
-  cmd += '1X1100' + '0540' + '0003' + '0200' + '0160' + CR;  // bottom
-  cmd += '1X1100' + '0003' + '0083' + '0200' + '0080' + CR;  // left
-  cmd += '1X1100' + '0003' + '0083' + '0737' + '0080' + CR;  // right
+  // Client box (row 68 to 128, col 150 to 785)
+  cmd += '1X1100' + '0635' + '0002' + '0068' + '00150' + CR; // top
+  cmd += '1X1100' + '0635' + '0002' + '0128' + '00150' + CR; // bottom
+  cmd += '1X1100' + '0002' + '0062' + '0068' + '00150' + CR; // left
+  cmd += '1X1100' + '0002' + '0062' + '0068' + '00783' + CR; // right
 
-  // Client name (truncate to 28 chars)
-  const clientText = clientName.toUpperCase().substring(0, 28);
-  cmd += '161200002100' + '0105' + clientText + CR;
+  // Client name (font 2, 18x28) - truncate to fit box
+  const clientText = clientName.toUpperCase().substring(0, 30);
+  cmd += '121' + '0090' + '00160' + clientText + CR;
 
-  // === NOTA FISCAL ===
-  cmd += '161200001500' + '0185' + 'NOTA FISCAL' + CR;
+  // === NOTA FISCAL label ===
+  cmd += '161' + '0150' + '00015' + 'NOTA FISCAL' + CR;
 
-  // NF box
-  cmd += '1X1100' + '0540' + '0003' + '0200' + '0175' + CR;  // top
-  cmd += '1X1100' + '0540' + '0003' + '0200' + '0235' + CR;  // bottom
-  cmd += '1X1100' + '0003' + '0063' + '0200' + '0175' + CR;  // left
-  cmd += '1X1100' + '0003' + '0063' + '0737' + '0175' + CR;  // right
+  // NF box (row 145 to 200, col 150 to 785)
+  cmd += '1X1100' + '0635' + '0002' + '0145' + '00150' + CR; // top
+  cmd += '1X1100' + '0635' + '0002' + '0200' + '00150' + CR; // bottom
+  cmd += '1X1100' + '0002' + '0057' + '0145' + '00150' + CR; // left
+  cmd += '1X1100' + '0002' + '0057' + '0145' + '00783' + CR; // right
 
-  // NF value
-  cmd += '161200002100' + '0198' + (invoiceNumber || '') + CR;
+  // NF value (font 2)
+  cmd += '121' + '0165' + '00160' + (invoiceNumber || '') + CR;
 
-  // === VOLUME ===
-  cmd += '161200001500' + '0275' + 'VOLUME' + CR;
+  // === VOLUME label ===
+  cmd += '161' + '0225' + '00015' + 'VOLUME' + CR;
 
-  // Volume box
-  cmd += '1X1100' + '0130' + '0003' + '0145' + '0265' + CR;  // top
-  cmd += '1X1100' + '0130' + '0003' + '0145' + '0325' + CR;  // bottom
-  cmd += '1X1100' + '0003' + '0063' + '0145' + '0265' + CR;  // left
-  cmd += '1X1100' + '0003' + '0063' + '0272' + '0265' + CR;  // right
+  // Volume box (row 220 to 275, col 150 to 290)
+  cmd += '1X1100' + '0140' + '0002' + '0220' + '00150' + CR; // top
+  cmd += '1X1100' + '0140' + '0002' + '0275' + '00150' + CR; // bottom
+  cmd += '1X1100' + '0002' + '0057' + '0220' + '00150' + CR; // left
+  cmd += '1X1100' + '0002' + '0057' + '0220' + '00288' + CR; // right
 
-  // Volume value
+  // Volume value (font 2)
   const volText = `${volumeNumber}/${totalVolumes}`;
-  cmd += '161200001700' + '0285' + volText + CR;
+  cmd += '121' + '0240' + '00165' + volText + CR;
 
-  // === DATA ===
-  cmd += '161200003200' + '0275' + 'DATA' + CR;
+  // === DATA label ===
+  cmd += '161' + '0225' + '00320' + 'DATA' + CR;
 
-  // Date box
-  cmd += '1X1100' + '0360' + '0003' + '0370' + '0265' + CR;  // top
-  cmd += '1X1100' + '0360' + '0003' + '0370' + '0325' + CR;  // bottom
-  cmd += '1X1100' + '0003' + '0063' + '0370' + '0265' + CR;  // left
-  cmd += '1X1100' + '0003' + '0063' + '0727' + '0265' + CR;  // right
+  // Date box (row 220 to 275, col 400 to 785)
+  cmd += '1X1100' + '0385' + '0002' + '0220' + '00400' + CR; // top
+  cmd += '1X1100' + '0385' + '0002' + '0275' + '00400' + CR; // bottom
+  cmd += '1X1100' + '0002' + '0057' + '0220' + '00400' + CR; // left
+  cmd += '1X1100' + '0002' + '0057' + '0220' + '00783' + CR; // right
 
-  // Date value
-  cmd += '161200003900' + '0285' + date + CR;
+  // Date value (font 2)
+  cmd += '121' + '0240' + '00420' + date + CR;
 
   // End and print label
   cmd += 'E' + CR;
