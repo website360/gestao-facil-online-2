@@ -85,7 +85,7 @@ function generateDPLLabel(
   date: string
 ): string {
   const STX = '\x02';
-  const CR = '\r\n';
+  const CR = '\r';
 
   // Label: 100mm x 60mm = 800 x 480 dots at 203 DPI (8 dots/mm)
   // DPL text record format: 1<font><rotation><RRRR><CCCCC><data>
@@ -202,14 +202,10 @@ export async function printRawDPL(
   const config = qz.configs.create(printerName);
   const dplCommands = generateAllDPLLabels(clientName, totalVolumes, invoiceNumber);
 
-  const data: any[] = [{
-    type: 'raw',
-    format: 'command',
-    flavor: 'plain',
-    data: dplCommands
-  }];
-
-  await qz.print(config, data);
+  console.log('DPL commands being sent:', JSON.stringify(dplCommands.substring(0, 200)));
+  
+  // QZ Tray raw printing: pass array of raw strings
+  await qz.print(config, [dplCommands]);
 }
 
 export async function disconnectQZTray(): Promise<void> {
