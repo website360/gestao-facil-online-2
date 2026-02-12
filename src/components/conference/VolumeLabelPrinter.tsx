@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Printer, CheckCircle } from 'lucide-react';
+import { Printer, CheckCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface VolumeLabelPrinterProps {
@@ -28,13 +28,11 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
       return;
     }
 
-    // Gerar etiquetas para cada volume
     const labelsHTML = Array.from({ length: totalVolumes }, (_, index) => {
       const volumeNumber = index + 1;
       return `
         <div class="label">
           <div class="label-inner">
-            <!-- Header com logo -->
             <div class="header">
               <span class="company-left">IRMÃOS</span>
               <div class="logo">
@@ -42,20 +40,14 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               </div>
               <span class="company-right">MANTOVANI<span class="textil">TÊXTIL</span></span>
             </div>
-            
-            <!-- Cliente -->
             <div class="field-row">
               <span class="field-label">CLIENTE</span>
               <div class="field-box client-box">${clientName}</div>
             </div>
-            
-            <!-- Nota Fiscal -->
             <div class="field-row">
               <span class="field-label">NOTA FISCAL</span>
               <div class="field-box nf-box">${invoiceNumber || ''}</div>
             </div>
-            
-            <!-- Volume e Data -->
             <div class="field-row bottom-row">
               <div class="volume-group">
                 <span class="field-label">VOLUME</span>
@@ -104,14 +96,14 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             .label {
               width: 100mm;
               height: 60mm;
-              padding: 3mm;
+              padding: 0;
+              margin: 0 !important;
               background: white;
               page-break-after: always;
               page-break-inside: avoid;
               break-after: page;
               break-inside: avoid;
               overflow: hidden;
-              margin: 0 !important;
             }
             
             .label:last-child {
@@ -122,7 +114,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             .label-inner {
               width: 100%;
               height: 100%;
-              border: 1px solid #000;
+              border: 3px solid #000000;
               padding: 2mm 3mm;
               display: flex;
               flex-direction: column;
@@ -137,22 +129,26 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               padding-bottom: 1mm;
             }
             
+            .company-left, .company-right, .field-label, .field-box, .textil {
+              color: #000000 !important;
+              text-shadow: 0 0 0 #000, 0 0 0 #000;
+              -webkit-text-stroke: 0.5px #000;
+            }
+            
             .company-left {
               font-size: 10pt;
               font-weight: 900;
               letter-spacing: 0.5px;
-              color: #000000 !important;
             }
             
             .company-right {
               font-size: 10pt;
               font-weight: 900;
               letter-spacing: 0.5px;
-              color: #000000 !important;
             }
             
             .textil {
-              font-weight: 400;
+              font-weight: 900;
               font-size: 9pt;
             }
             
@@ -181,21 +177,19 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               text-transform: uppercase;
               display: flex;
               align-items: center;
-              color: #000000 !important;
             }
             
             .field-box {
-              border: 2px solid #000000 !important;
+              border: 3px solid #000000 !important;
               flex: 1;
               min-height: 7mm;
               display: flex;
               align-items: center;
               padding: 1mm 2mm;
               font-size: 8pt;
-              font-weight: bold;
+              font-weight: 900;
               text-transform: uppercase;
               overflow: hidden;
-              color: #000000 !important;
             }
             
             .client-box {
@@ -267,11 +261,14 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
+                filter: contrast(2);
               }
               
               .label {
                 margin: 0 !important;
-                padding: 3mm !important;
+                padding: 0 !important;
+                width: 100mm !important;
+                height: 60mm !important;
                 page-break-after: always !important;
                 break-after: page !important;
               }
@@ -279,10 +276,6 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
               .label:last-child {
                 page-break-after: auto !important;
                 break-after: auto !important;
-              }
-              
-              .label-inner {
-                border: none;
               }
               
               * {
@@ -302,7 +295,6 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
     printWindow.document.close();
     printWindow.focus();
     
-    // Aguardar um pouco antes de imprimir para garantir que o conteúdo foi carregado
     setTimeout(() => {
       printWindow.print();
       onPrint();
@@ -325,6 +317,18 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
           <p className="text-green-600 text-sm">
             A venda foi enviada para Nota Fiscal.
           </p>
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+          <p className="font-bold flex items-center gap-1 mb-1">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Dica para impressão via Windows (Datamax E-4204B):
+          </p>
+          <ul className="list-disc list-inside space-y-0.5 ml-1">
+            <li>Nas preferências da impressora, defina o tamanho do papel como <strong>100mm x 60mm</strong> (sem margens)</li>
+            <li>Reduza a velocidade para <strong>2-3 ips</strong></li>
+            <li>Aumente o Darkness/Heat para <strong>20-25</strong></li>
+          </ul>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
