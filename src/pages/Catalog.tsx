@@ -77,6 +77,7 @@ const Catalog = () => {
   
   // Estados específicos para Admin/Gerente
   const [showPrice, setShowPrice] = useState<boolean>(true);
+  const [showStock, setShowStock] = useState<boolean>(true);
   const [discountPercentage, setDiscountPercentage] = useState<number>(0);
   const [minStock, setMinStock] = useState<number>(0);
   const [maxStock, setMaxStock] = useState<number>(999999);
@@ -693,6 +694,17 @@ const Catalog = () => {
                     </label>
                   </div>
                   
+                  <div className="flex items-center space-x-2 h-12 px-3 bg-blue-50/50 border border-blue-200 rounded-xl">
+                    <Checkbox
+                      id="show-stock"
+                      checked={showStock}
+                      onCheckedChange={(checked) => setShowStock(checked as boolean)}
+                    />
+                    <label htmlFor="show-stock" className="text-sm text-blue-700 font-medium">
+                      Mostrar estoque
+                    </label>
+                  </div>
+                  
                   <div className="flex items-center space-x-2 bg-blue-50/50 border border-blue-200 rounded-xl px-3 justify-between">
                     <label className="text-sm text-blue-700 font-medium whitespace-nowrap">
                       Desconto (%):
@@ -756,6 +768,11 @@ const Catalog = () => {
                 {userType === 'admin' && !showPrice && (
                   <Badge variant="outline" className="text-red-600">
                     Preços ocultos
+                  </Badge>
+                )}
+                {userType === 'admin' && !showStock && (
+                  <Badge variant="outline" className="text-orange-600">
+                    Estoque oculto
                   </Badge>
                 )}
                 {userType === 'admin' && (minStock > 0 || maxStock < 999999) && (
@@ -839,8 +856,8 @@ const Catalog = () => {
                         {product.categories.name}
                       </span>
                     )}
-                    {/* Mostrar estoque para admin, gerente e vendedor interno */}
-                    {(userType === 'admin' || userType === 'seller_internal') && (
+                    {/* Mostrar estoque para admin, gerente e vendedor interno quando habilitado */}
+                    {(userType === 'admin' || userType === 'seller_internal') && showStock && (
                       <Badge 
                         className={`catalog-stock-badge ${
                           getStockBadgeVariant(product.stock) === 'default' 
