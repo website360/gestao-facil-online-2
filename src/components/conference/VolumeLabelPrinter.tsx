@@ -26,14 +26,32 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
     setPrinting(true);
     try {
       const doc = generateVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
-      const pdfBlob = doc.output('blob');
-      const url = URL.createObjectURL(pdfBlob);
-      const printWindow = window.open(url, '_blank');
-      if (printWindow) {
-        printWindow.addEventListener('load', () => {
-          printWindow.print();
-        });
-      }
+      const pdfDataUri = doc.output('bloburl') as unknown as string;
+      
+      // Criar iframe oculto para imprimir sem popup blocker
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.top = '-10000px';
+      iframe.style.left = '-10000px';
+      iframe.style.width = '1px';
+      iframe.style.height = '1px';
+      iframe.src = pdfDataUri;
+      
+      iframe.onload = () => {
+        setTimeout(() => {
+          try {
+            iframe.contentWindow?.print();
+          } catch {
+            // Fallback: abrir em nova aba
+            window.open(pdfDataUri, '_blank');
+          }
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 5000);
+        }, 500);
+      };
+      
+      document.body.appendChild(iframe);
       toast.success(`${totalVolumes} etiqueta${totalVolumes > 1 ? 's' : ''} gerada${totalVolumes > 1 ? 's' : ''}!`);
       onPrint();
     } catch {
