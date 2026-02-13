@@ -98,7 +98,7 @@ function generateDPLLabel(
 
   return [
     '\x02L\n',
-    'D11\n',
+    'D15\n',
     'H15\n',
     'S2\n',
     // Header - row 0030
