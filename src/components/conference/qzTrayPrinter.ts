@@ -89,44 +89,40 @@ function generateDPLLabel(
   totalVolumes: number,
   date: string
 ): string[] {
-  const lines: string[] = [];
-
-  // Using \n as line terminator per official QZ Tray DPL examples
-  const add = (line: string) => lines.push(line + '\n');
-
-  // Start label format
-  add('\x02L');
-  add('D14');      // Density (higher = darker)
-  add('H15');      // Heat
-  add('S2');       // Speed
-  add('q800');     // Label width 100mm = 800 dots at 203dpi
-
-  // === HEADER ===
-  add('141110020000150IRMAOS MANTOVANI TEXTIL');
-
-  // === CLIENTE ===
-  add('161110072000015CLIENTE');
-  const clientText = clientName.toUpperCase().substring(0, 30);
-  add('121110090000160' + clientText);
-
-  // === NOTA FISCAL ===
-  add('161110150000015NOTA FISCAL');
-  add('121110165000160' + (invoiceNumber || ''));
-
-  // === VOLUME ===
-  add('161110225000015VOLUME');
+  // Build label using EXACT same structure as the working test label.
+  // All row positions (RRRR) must stay within 0-420 dots (60mm label = ~480 dots).
+  // Format: 1<font><rot><hMul><wMul><RRRR><CCCCC><data>
+  const clientText = clientName.toUpperCase().substring(0, 28);
   const volText = `${volumeNumber}/${totalVolumes}`;
-  add('121110240000165' + volText);
+  const nf = invoiceNumber || '';
 
-  // === DATA ===
-  add('161110225000320DATA');
-  add('121110240000420' + date);
-
-  // Quantity and end
-  add('Q0001');
-  add('E');
-
-  return lines;
+  return [
+    '\x02L\n',
+    'D11\n',
+    'H15\n',
+    'S2\n',
+    // Header - row 0030
+    '141100003000050IRMAOS MANTOVANI TEXTIL\n',
+    // Cliente label - row 0100
+    '161100010000010CLIENTE:\n',
+    // Cliente value - row 0100, col after label
+    '121100010000150' + clientText + '\n',
+    // NF label - row 0180
+    '161100018000010NF:\n',
+    // NF value
+    '121100018000080' + nf + '\n',
+    // Volume label - row 0260
+    '161100026000010VOLUME:\n',
+    // Volume value
+    '121100026000140' + volText + '\n',
+    // Data label - row 0260, col 400
+    '161100026000350DATA:\n',
+    // Data value
+    '121100026000480' + date + '\n',
+    // Print 1 label and end
+    'Q0001\n',
+    'E\n'
+  ];
 }
 
 export function generateAllDPLLabels(
