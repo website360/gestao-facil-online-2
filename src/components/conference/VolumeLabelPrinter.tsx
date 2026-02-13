@@ -35,59 +35,12 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   onPrint,
   onClose
 }) => {
-  const [mode, setMode] = useState<PrintMode>('loading');
+  const [mode, setMode] = useState<PrintMode>('fallback');
   const [printers, setPrinters] = useState<string[]>([]);
   const [selectedPrinter, setSelectedPrinter] = useState('');
   const [printing, setPrinting] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const init = async () => {
-      try {
-        const qz = await getQZ();
-        if (!qz || cancelled) {
-          if (!cancelled) setMode('fallback');
-          return;
-        }
-
-        const connected = await qz.connectQZTray();
-        if (!connected || cancelled) {
-          if (!cancelled) setMode('fallback');
-          return;
-        }
-
-        const found = await qz.findPrinters();
-        if (cancelled) return;
-
-        if (found.length === 0) {
-          setMode('fallback');
-          return;
-        }
-
-        setPrinters(found);
-        // Auto-select Datamax
-        const datamax = found.find((p: string) =>
-          p.toLowerCase().includes('datamax') ||
-          p.toLowerCase().includes('e-4204') ||
-          p.toLowerCase().includes('honeywell')
-        );
-        setSelectedPrinter(datamax || found[0]);
-        setMode('qz');
-      } catch {
-        if (!cancelled) setMode('fallback');
-      }
-    };
-
-    // Timeout after 8 seconds if QZ Tray doesn't respond
-    const timeout = setTimeout(() => {
-      if (!cancelled) setMode('fallback');
-    }, 8000);
-
-    init().finally(() => clearTimeout(timeout));
-
-    return () => { cancelled = true; };
-  }, []);
+  // QZ Tray disabled - using Windows PDF printing instead
 
   const handleDirectPrint = async () => {
     if (!selectedPrinter) return;
