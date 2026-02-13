@@ -1,22 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Printer, CheckCircle, Download, AlertTriangle, Loader2 } from 'lucide-react';
+import { Printer, CheckCircle, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { downloadVolumeLabelsPDF } from './pdfLabelGenerator';
-
-// Lazy import QZ Tray to avoid errors if not available
-let qzModule: any = null;
-async function getQZ() {
-  if (!qzModule) {
-    try {
-      qzModule = await import('./qzTrayPrinter');
-    } catch {
-      return null;
-    }
-  }
-  return qzModule;
-}
+import { generateVolumeLabelsPDF, downloadVolumeLabelsPDF } from './pdfLabelGenerator';
 
 interface VolumeLabelPrinterProps {
   clientName: string;
@@ -26,8 +13,6 @@ interface VolumeLabelPrinterProps {
   onClose: () => void;
 }
 
-type PrintMode = 'loading' | 'qz' | 'fallback';
-
 const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   clientName,
   totalVolumes,
@@ -35,25 +20,24 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   onPrint,
   onClose
 }) => {
-  const [mode, setMode] = useState<PrintMode>('fallback');
-  const [printers, setPrinters] = useState<string[]>([]);
-  const [selectedPrinter, setSelectedPrinter] = useState('');
   const [printing, setPrinting] = useState(false);
 
-  // QZ Tray disabled - using Windows PDF printing instead
-
-  const handleDirectPrint = async () => {
-    if (!selectedPrinter) return;
+  const handlePrint = () => {
     setPrinting(true);
     try {
-      const qz = await getQZ();
-      if (!qz) throw new Error('QZ not available');
-      await qz.printRawDPL(selectedPrinter, clientName, totalVolumes, invoiceNumber);
-      toast.success(`${totalVolumes} etiqueta${totalVolumes > 1 ? 's' : ''} enviada${totalVolumes > 1 ? 's' : ''}!`);
+      const doc = generateVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
+      const pdfBlob = doc.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      const printWindow = window.open(url, '_blank');
+      if (printWindow) {
+        printWindow.addEventListener('load', () => {
+          printWindow.print();
+        });
+      }
+      toast.success(`${totalVolumes} etiqueta${totalVolumes > 1 ? 's' : ''} gerada${totalVolumes > 1 ? 's' : ''}!`);
       onPrint();
-    } catch (error) {
-      console.error('Erro na impressão:', error);
-      toast.error('Erro ao imprimir. Verifique se a impressora está ligada.');
+    } catch {
+      toast.error('Erro ao gerar etiquetas.');
     } finally {
       setPrinting(false);
     }
@@ -62,26 +46,10 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   const handleDownloadPDF = () => {
     try {
       downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
-      toast.success('PDF baixado! Abra e imprima pelo Adobe Reader.');
+      toast.success('PDF baixado!');
       onPrint();
     } catch {
       toast.error('Erro ao gerar PDF.');
-    }
-  };
-
-  const handleTestPrint = async () => {
-    if (!selectedPrinter) return;
-    setPrinting(true);
-    try {
-      const qz = await getQZ();
-      if (!qz) throw new Error('QZ not available');
-      await qz.printTestLabel(selectedPrinter);
-      toast.success('Etiqueta de teste enviada!');
-    } catch (error) {
-      console.error('Erro no teste:', error);
-      toast.error('Erro ao enviar teste. Verifique a impressora.');
-    } finally {
-      setPrinting(false);
     }
   };
 
@@ -103,79 +71,31 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
           </p>
         </div>
 
-        {mode === 'loading' && (
-          <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Verificando impressora...
-          </div>
-        )}
+        <div className="space-y-3">
+          <Button
+            onClick={handlePrint}
+            disabled={printing}
+            className="w-full bg-blue-600 hover:bg-blue-700"
+            size="lg"
+          >
+            {printing ? (
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            ) : (
+              <Printer className="w-5 h-5 mr-2" />
+            )}
+            {printing ? 'Gerando...' : `Imprimir ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''}`}
+          </Button>
 
-        {mode === 'qz' && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium whitespace-nowrap">Impressora:</label>
-              <select
-                value={selectedPrinter}
-                onChange={(e) => setSelectedPrinter(e.target.value)}
-                className="flex-1 border rounded px-2 py-1.5 text-sm bg-background"
-              >
-                {printers.map(p => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </div>
-            <Button
-              onClick={handleDirectPrint}
-              disabled={printing || !selectedPrinter}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              size="lg"
-            >
-              {printing ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <Printer className="w-5 h-5 mr-2" />
-              )}
-              {printing ? 'Imprimindo...' : `Imprimir ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''}`}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleTestPrint}
-              disabled={printing || !selectedPrinter}
-              className="w-full"
-              size="sm"
-            >
-              🧪 Teste Rápido (imprime "TEST 1 2 3")
-            </Button>
-          </div>
-        )}
-
-        {mode === 'fallback' && (
-          <div className="space-y-3">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
-              <p className="font-bold flex items-center gap-1 mb-1">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                Impressão direta não disponível
-              </p>
-              <p className="mb-2">
-                Para impressão direta na Datamax (igual ao BarTender), instale o <strong>QZ Tray</strong> (gratuito):
-              </p>
-              <ol className="list-decimal list-inside space-y-0.5 ml-1">
-                <li>Acesse <a href="https://qz.io/download" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-bold">qz.io/download</a></li>
-                <li>Baixe e instale</li>
-                <li>Deixe rodando e recarregue a página</li>
-              </ol>
-            </div>
-
-            <Button
-              onClick={handleDownloadPDF}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              size="lg"
-            >
-              <Download className="w-5 h-5 mr-2" />
-              Baixar Etiquetas PDF ({totalVolumes})
-            </Button>
-          </div>
-        )}
+          <Button
+            variant="outline"
+            onClick={handleDownloadPDF}
+            className="w-full"
+            size="sm"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Baixar PDF
+          </Button>
+        </div>
 
         <Button
           variant="outline"
