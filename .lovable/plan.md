@@ -1,93 +1,65 @@
 
 
-## Corrigir Impressao de Etiquetas DPL na Datamax (Saindo em Branco)
+## Corrigir Impressao DPL - Usando Exemplo Oficial do QZ Tray
 
-### Problema Identificado
+### Problema Real Identificado
 
-A etiqueta sai em branco porque o formato dos registros de texto DPL esta incorreto. O codigo atual usa o formato:
+Comparando nosso codigo com o **exemplo oficial do QZ Tray** (https://github.com/qzind/tray/wiki/Raw#dpl-text), existem duas diferencas criticas:
 
-`1<font><rotation><RRRR><CCCCC><data>`
+**1. Terminador de linha errado**: O exemplo oficial usa `\n` (LF). Nosso codigo usa `\x0D` (CR).
 
-Mas o formato correto do DPL exige dois campos adicionais (multiplicadores de altura e largura):
+Exemplo oficial funcional:
+```text
+'\x02L\n',
+'D11\n',
+'H14\n',
+'121100000300015TEST 1 2 3 4 5 6 7 8 9 10\n',
+'Q0001\n',
+'E\n'
+```
 
-`1<font><rotation><height_mult><width_mult><RRRR><CCCCC><data>`
+Nosso codigo atual:
+```text
+'\x02L' + '\x0D',
+'D11' + '\x0D',
+...
+```
 
-Sem esses campos, a impressora interpreta os dados errados, posiciona o texto em coordenadas invalidas e/ou renderiza com tamanho zero.
+**2. Comandos de desenho de linhas/caixas (1X) potencialmente malformados**: O label completo usa dezenas de comandos `1X1100...` para bordas e caixas. Se algum desses comandos estiver com formato invalido, a impressora pode entrar em estado de erro e produzir etiqueta em branco. O exemplo oficial nao usa esses comandos.
 
-Alem disso, o exemplo oficial do QZ Tray envia os dados como um **array de strings separadas** (uma por linha), enquanto nosso codigo concatena tudo em uma unica string.
-
-### Solucao
+### Solucao em Duas Etapas
 
 **Arquivo:** `src/components/conference/qzTrayPrinter.ts`
 
-#### 1. Corrigir o formato dos registros de texto DPL
+#### Etapa 1: Corrigir o teste rapido para ser IDENTICO ao exemplo oficial
 
-Todos os registros de texto precisam incluir os multiplicadores de altura e largura (valor `1` para tamanho normal). Exemplo:
-
-- Antes: `'141' + '0020' + '00193'` (11 chars, falta multiplicadores)
-- Depois: `'14111' + '0020' + '00193'` (13 chars, com height=1, width=1)
-
-Isso sera aplicado em todos os registros de texto da funcao `generateDPLLabel`:
-- Header "IRMAOS MANTOVANI TEXTIL"
-- Label "CLIENTE"
-- Nome do cliente
-- Label "NOTA FISCAL"
-- Valor NF
-- Label "VOLUME"
-- Valor volume
-- Label "DATA"
-- Valor data
-
-#### 2. Enviar dados como array de strings
-
-Alterar a funcao `printRawDPL` para enviar cada linha DPL como um elemento separado do array, seguindo o padrao oficial do QZ Tray:
+O botao "Teste Rapido" deve enviar exatamente o mesmo payload do exemplo oficial do QZ Tray, sem nenhuma modificacao:
 
 ```text
-// De:
-await qz.print(config, [dplCommands]);  // uma string gigante
-
-// Para:
-await qz.print(config, dplCommands);    // array de strings, uma por linha
+'\x02L\n',
+'D11\n',
+'H14\n',
+'121100000300015TEST 1 2 3 4 5 6 7 8 9 10\n',
+'Q0001\n',
+'E\n'
 ```
 
-E alterar `generateDPLLabel` para retornar um `string[]` em vez de `string`.
+Isso vai validar se a comunicacao com a impressora funciona. Se o teste imprimir, sabemos que o problema esta nos comandos complexos do label. Se nao imprimir, o problema e de configuracao/driver.
 
-#### 3. Adicionar botao de teste de impressao simples
+#### Etapa 2: Corrigir o label completo
 
-Na interface `VolumeLabelPrinter`, quando o QZ Tray esta conectado, adicionar um botao "Teste Rapido" que envia a etiqueta minima oficial do QZ Tray (apenas "TEST 1 2 3") para validar que a comunicacao com a impressora funciona.
-
-#### 4. Adicionar quantidade (Q0001)
-
-Incluir o comando `Q0001` antes do `E` (fim de label), conforme o exemplo oficial. Esse comando define a quantidade de copias a imprimir.
+Trocar o terminador de `\x0D` para `\n` em toda a funcao `generateDPLLabel`. Simplificar o label removendo os comandos de desenho de caixas/bordas (`1X1100...`) que podem estar malformados, mantendo apenas os textos essenciais (cliente, NF, volume, data) ate confirmar que a impressao basica funciona.
 
 ### Detalhes Tecnicos
 
-Formato correto para registros de texto DPL (bitmap fonts 0-8):
+Mudancas especificas no `qzTrayPrinter.ts`:
 
-```text
-1<font><rotation><height_mult><width_mult><RRRR><CCCCC><data>
-|  |      |          |           |         |       |       |
-|  |      |          |           |       4 dig   5 dig   texto
-|  |      |        1 dig       1 dig
-|  |    1 dig (1=0, 2=90CW, 3=180, 4=90CCW)
-|  1 dig (0-8 bitmap)
-record type = 1
-```
-
-Os multiplicadores `1` significam tamanho normal (1x). Valores de `2` a `9` ampliam.
-
-Exemplo oficial funcional do QZ Tray:
-```text
-\x02L
-D11
-H14
-121100000300015TEST 1 2 3
-Q0001
-E
-```
+1. Na funcao `printTestLabel`: substituir todo o array `testLines` pelo exemplo oficial exato do QZ Tray wiki, usando `\n` como terminador
+2. Na funcao `generateDPLLabel`: trocar `const CR = '\x0D'` por `const CR = '\n'`
+3. Remover temporariamente todos os comandos `1X1100...` (linhas de borda/caixa) do label completo, mantendo apenas comandos de texto, para isolar o problema
+4. Manter os comandos de configuracao basicos (`D11`, `H15`, `S2`, etc.) que nao devem causar problema
 
 ### Arquivos Modificados
 
-1. `src/components/conference/qzTrayPrinter.ts` -- corrigir formato DPL e envio como array
-2. `src/components/conference/VolumeLabelPrinter.tsx` -- adicionar botao de teste
+1. `src/components/conference/qzTrayPrinter.ts` -- corrigir terminadores e simplificar label
 
