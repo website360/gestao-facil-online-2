@@ -25,8 +25,8 @@ function drawLabel(
   const MARGIN_X = 3;
   const MARGIN_Y = 2;
 
-  // Outer border
-  doc.setLineWidth(0.8);
+  // Outer border - thick for dark printing
+  doc.setLineWidth(1.2);
   doc.setDrawColor(0, 0, 0);
   doc.rect(BORDER, BORDER, W - BORDER * 2, H - BORDER * 2);
 
@@ -50,7 +50,7 @@ function drawLabel(
 
   // Separator line
   const sepY = 10;
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.5);
   doc.line(MARGIN_X + 1, sepY, W - MARGIN_X - 1, sepY);
 
   // === CLIENTE field ===
@@ -64,7 +64,7 @@ function drawLabel(
   doc.text('CLIENTE', MARGIN_X + 1, clienteLabelY + 4);
 
   // Client box
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.8);
   doc.rect(clienteBoxX, clienteLabelY - 1, clienteBoxW, clienteBoxH);
 
   // Client name (truncate if needed, support 2 lines)
@@ -105,10 +105,11 @@ function drawLabel(
   doc.setFontSize(8);
   doc.text('NOTA FISCAL', MARGIN_X + 1, nfLabelY + 3.5);
 
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.8);
   doc.rect(clienteBoxX, nfLabelY - 1, clienteBoxW, nfBoxH);
 
-  doc.setFontSize(9);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
   doc.text((invoiceNumber || '').toUpperCase(), clienteBoxX + 1.5, nfLabelY + 4);
 
   // === VOLUME and DATA fields ===
@@ -122,24 +123,28 @@ function drawLabel(
 
   // VOLUME
   doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
   doc.text('VOLUME', MARGIN_X + 1, bottomY + 3.5);
 
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.8);
   doc.rect(volBoxX, bottomY - 1, volBoxW, bottomBoxH);
 
-  doc.setFontSize(9);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
   const volText = `${volumeNumber}/${totalVolumes}`;
   const volTextW = doc.getTextWidth(volText);
   doc.text(volText, volBoxX + (volBoxW - volTextW) / 2, bottomY + 4);
 
   // DATA
   doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
   doc.text('DATA', dataLabelX, bottomY + 3.5);
 
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.8);
   doc.rect(dataBoxX, bottomY - 1, dataBoxW, bottomBoxH);
 
-  doc.setFontSize(8);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
   const dateTextW = doc.getTextWidth(date);
   doc.text(date, dataBoxX + (dataBoxW - dateTextW) / 2, bottomY + 4);
 }
