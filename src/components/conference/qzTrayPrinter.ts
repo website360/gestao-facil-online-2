@@ -89,82 +89,37 @@ function generateDPLLabel(
   totalVolumes: number,
   date: string
 ): string[] {
-  const STX = '\x02';
-  const CR = '\x0D';
   const lines: string[] = [];
 
-  // DPL uses CR (\x0D) as line terminator, NOT LF (\n)
-  const add = (line: string) => lines.push(line + CR);
+  // Using \n as line terminator per official QZ Tray DPL examples
+  const add = (line: string) => lines.push(line + '\n');
 
   // Start label format
-  add(STX + 'L');
+  add('\x02L');
   add('D11');      // Density
   add('H15');      // Heat
   add('S2');       // Speed
-  add('q800');     // Label width in dots
-  add('Q0480,024'); // Label height, gap
 
-  // === OUTER BORDER ===
-  add('1X1100' + '0780' + '0003' + '0008' + '00008'); // top
-  add('1X1100' + '0780' + '0003' + '0468' + '00008'); // bottom
-  add('1X1100' + '0003' + '0463' + '0008' + '00008'); // left
-  add('1X1100' + '0003' + '0463' + '0008' + '00785'); // right
+  // === HEADER ===
+  add('141110020000150IRMAOS MANTOVANI TEXTIL');
 
-  // === HEADER: IRMAOS MANTOVANI TEXTIL ===
-  add('14111' + '0020' + '00193' + 'IRMAOS MANTOVANI TEXTIL');
-
-  // Separator line below header
-  add('1X1100' + '0760' + '0002' + '0055' + '00020');
-
-  // === CLIENTE label ===
-  add('16111' + '0072' + '00015' + 'CLIENTE');
-
-  // Client box
-  add('1X1100' + '0635' + '0002' + '0068' + '00150'); // top
-  add('1X1100' + '0635' + '0002' + '0128' + '00150'); // bottom
-  add('1X1100' + '0002' + '0062' + '0068' + '00150'); // left
-  add('1X1100' + '0002' + '0062' + '0068' + '00783'); // right
-
-  // Client name - font 2, rotation 1, h1, w1
+  // === CLIENTE ===
+  add('161110072000015CLIENTE');
   const clientText = clientName.toUpperCase().substring(0, 30);
-  add('12111' + '0090' + '00160' + clientText);
+  add('121110090000160' + clientText);
 
-  // === NOTA FISCAL label ===
-  add('16111' + '0150' + '00015' + 'NOTA FISCAL');
+  // === NOTA FISCAL ===
+  add('161110150000015NOTA FISCAL');
+  add('121110165000160' + (invoiceNumber || ''));
 
-  // NF box
-  add('1X1100' + '0635' + '0002' + '0145' + '00150'); // top
-  add('1X1100' + '0635' + '0002' + '0200' + '00150'); // bottom
-  add('1X1100' + '0002' + '0057' + '0145' + '00150'); // left
-  add('1X1100' + '0002' + '0057' + '0145' + '00783'); // right
-
-  // NF value - font 2
-  add('12111' + '0165' + '00160' + (invoiceNumber || ''));
-
-  // === VOLUME label ===
-  add('16111' + '0225' + '00015' + 'VOLUME');
-
-  // Volume box
-  add('1X1100' + '0140' + '0002' + '0220' + '00150'); // top
-  add('1X1100' + '0140' + '0002' + '0275' + '00150'); // bottom
-  add('1X1100' + '0002' + '0057' + '0220' + '00150'); // left
-  add('1X1100' + '0002' + '0057' + '0220' + '00288'); // right
-
-  // Volume value - font 2
+  // === VOLUME ===
+  add('161110225000015VOLUME');
   const volText = `${volumeNumber}/${totalVolumes}`;
-  add('12111' + '0240' + '00165' + volText);
+  add('121110240000165' + volText);
 
-  // === DATA label ===
-  add('16111' + '0225' + '00320' + 'DATA');
-
-  // Date box
-  add('1X1100' + '0385' + '0002' + '0220' + '00400'); // top
-  add('1X1100' + '0385' + '0002' + '0275' + '00400'); // bottom
-  add('1X1100' + '0002' + '0057' + '0220' + '00400'); // left
-  add('1X1100' + '0002' + '0057' + '0220' + '00783'); // right
-
-  // Date value - font 2
-  add('12111' + '0240' + '00420' + date);
+  // === DATA ===
+  add('161110225000320DATA');
+  add('121110240000420' + date);
 
   // Quantity and end
   add('Q0001');
@@ -198,14 +153,13 @@ export async function printTestLabel(printerName: string): Promise<void> {
   }
 
   const config = qz.configs.create(printerName);
-  const CR = '\x0D';
   const testLines = [
-    '\x02L' + CR,
-    'D11' + CR,
-    'H14' + CR,
-    '12111' + '0003' + '00015' + 'TEST 1 2 3' + CR,
-    'Q0001' + CR,
-    'E' + CR
+    '\x02L\n',
+    'D11\n',
+    'H14\n',
+    '121100000300015TEST 1 2 3 4 5 6 7 8 9 10\n',
+    'Q0001\n',
+    'E\n'
   ];
 
   console.log('Test DPL lines:', testLines);
