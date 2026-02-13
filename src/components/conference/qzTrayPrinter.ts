@@ -100,7 +100,6 @@ function generateDPLLabel(
   add('H15');      // Heat
   add('S2');       // Speed
   add('q800');     // Label width 100mm = 800 dots at 203dpi
-  add('Q0480,024'); // Label height 60mm = 480 dots, 24 dot gap
 
   // === HEADER ===
   add('141110020000150IRMAOS MANTOVANI TEXTIL');
