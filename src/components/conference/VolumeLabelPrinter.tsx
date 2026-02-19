@@ -26,32 +26,36 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
     setPrinting(true);
     try {
       const doc = generateVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
-      const pdfDataUri = doc.output('bloburl') as unknown as string;
       
-      // Criar iframe oculto para imprimir sem popup blocker
+      // Usar data URI inline para evitar bloqueio do Edge com blob URLs
+      const pdfBase64 = doc.output('datauristring');
+      
       const iframe = document.createElement('iframe');
       iframe.style.position = 'fixed';
       iframe.style.top = '-10000px';
       iframe.style.left = '-10000px';
       iframe.style.width = '1px';
       iframe.style.height = '1px';
-      iframe.src = pdfDataUri;
+      document.body.appendChild(iframe);
       
       iframe.onload = () => {
         setTimeout(() => {
           try {
+            iframe.contentWindow?.focus();
             iframe.contentWindow?.print();
           } catch {
-            // Fallback: abrir em nova aba
-            window.open(pdfDataUri, '_blank');
+            // Fallback: download direto do PDF
+            downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
+            toast.info('Impressão bloqueada pelo navegador. PDF baixado automaticamente.');
           }
           setTimeout(() => {
-            document.body.removeChild(iframe);
-          }, 5000);
-        }, 500);
+            try { document.body.removeChild(iframe); } catch {}
+          }, 10000);
+        }, 800);
       };
       
-      document.body.appendChild(iframe);
+      iframe.src = pdfBase64;
+      
       toast.success(`${totalVolumes} etiqueta${totalVolumes > 1 ? 's' : ''} gerada${totalVolumes > 1 ? 's' : ''}!`);
       onPrint();
     } catch {
