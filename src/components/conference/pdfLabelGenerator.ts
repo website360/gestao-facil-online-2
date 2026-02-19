@@ -3,6 +3,8 @@ import jsPDF from 'jspdf';
 /**
  * Generates a PDF with volume labels at exact 100mm x 60mm per page.
  * Uses vector drawing for sharp printing on thermal printers.
+ * Optimized for maximum darkness on thermal printers with triple-strike,
+ * inverted labels, and thick strokes.
  */
 
 interface LabelData {
@@ -11,10 +13,27 @@ interface LabelData {
   invoiceNumber?: string;
 }
 
-// Helper: draw text twice with slight offset for extra bold/dark effect on thermal printers
+// Triple-strike: draw text 3 times with offsets for maximum thermal density
 function boldText(doc: jsPDF, text: string, x: number, y: number, opts?: any) {
-  doc.text(text, x, y, opts);
-  doc.text(text, x + 0.1, y, opts); // slight offset for darker fill
+  const offsets = [
+    [0, 0],
+    [0.15, 0],
+    [0.3, 0.1],
+  ];
+  for (const [dx, dy] of offsets) {
+    doc.text(text, x + dx, y + dy, opts);
+  }
+}
+
+// Draw an inverted label (black bg, white text) for field names
+function invertedLabel(doc: jsPDF, text: string, x: number, y: number, w: number, h: number) {
+  doc.setFillColor(0, 0, 0);
+  doc.rect(x, y, w, h, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  boldText(doc, text, x + 1, y + h - 1.5);
+  // Reset to black
+  doc.setTextColor(0, 0, 0);
 }
 
 function drawLabel(
@@ -25,63 +44,68 @@ function drawLabel(
   totalVolumes: number,
   date: string
 ) {
-  const W = 100; // label width mm
-  const H = 60;  // label height mm
+  const W = 100;
+  const H = 60;
   const BORDER = 1.5;
   const MARGIN_X = 3;
 
-  // Force pure black fill & draw
+  // Force pure black
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
   doc.setFillColor(0, 0, 0);
 
   // Outer border - extra thick
-  doc.setLineWidth(1.6);
+  doc.setLineWidth(2.0);
   doc.rect(BORDER, BORDER, W - BORDER * 2, H - BORDER * 2);
 
   // === HEADER ===
   const headerY = 7;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  
+  doc.setFontSize(14);
+
   const centerX = W / 2;
-  
-  boldText(doc, 'IRMAOS', centerX - 22, headerY, { align: 'right' });
+
+  boldText(doc, 'IRMAOS', centerX - 24, headerY, { align: 'right' });
   boldText(doc, 'MANTOVANI', centerX + 2, headerY, { align: 'left' });
-  
-  doc.setFontSize(10);
+
+  doc.setFontSize(11);
   boldText(doc, 'TEXTIL', centerX + 2 + doc.getTextWidth('MANTOVANI '), headerY);
 
   // Separator line
   const sepY = 10;
-  doc.setLineWidth(0.8);
+  doc.setLineWidth(1.2);
   doc.line(MARGIN_X + 1, sepY, W - MARGIN_X - 1, sepY);
 
   // === CLIENTE field ===
-  const clienteLabelY = 16;
-  const clienteBoxX = 24;
+  const clienteLabelY = 15;
+  const clienteLabelW = 20;
+  const clienteLabelH = 6;
+  const clienteBoxX = clienteLabelW + MARGIN_X + 1;
   const clienteBoxW = W - MARGIN_X - clienteBoxX - 1;
-  const clienteBoxH = 10;
+  const clienteBoxH = 11;
 
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  boldText(doc, 'CLIENTE', MARGIN_X + 1, clienteLabelY + 4);
+  // Inverted "CLIENTE" label
+  doc.setFontSize(11);
+  invertedLabel(doc, 'CLIENTE', MARGIN_X + 1, clienteLabelY, clienteLabelW, clienteLabelH);
 
-  // Client box
-  doc.setLineWidth(1.0);
+  // Client data box
+  doc.setLineWidth(1.4);
+  doc.setDrawColor(0, 0, 0);
   doc.rect(clienteBoxX, clienteLabelY - 1, clienteBoxW, clienteBoxH);
 
   // Client name
-  doc.setFontSize(10);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
   const maxWidth = clienteBoxW - 3;
   const clientText = clientName.toUpperCase();
-  
+
   if (doc.getTextWidth(clientText) > maxWidth) {
     const words = clientText.split(' ');
     let line1 = '';
     let line2 = '';
     let onLine1 = true;
-    
+
     for (const word of words) {
       const test = line1 + (line1 ? ' ' : '') + word;
       if (onLine1 && doc.getTextWidth(test) <= maxWidth) {
@@ -91,61 +115,89 @@ function drawLabel(
         line2 += (line2 ? ' ' : '') + word;
       }
     }
-    
+
     boldText(doc, line1, clienteBoxX + 1.5, clienteLabelY + 3);
     if (line2) {
       const truncatedLine2 = line2.length > 35 ? line2.substring(0, 35) + '...' : line2;
-      boldText(doc, truncatedLine2, clienteBoxX + 1.5, clienteLabelY + 7);
+      boldText(doc, truncatedLine2, clienteBoxX + 1.5, clienteLabelY + 7.5);
     }
   } else {
     boldText(doc, clientText, clienteBoxX + 1.5, clienteLabelY + 5.5);
   }
 
+  // Extra separator
+  const sep2Y = clienteLabelY + clienteBoxH + 1;
+  doc.setLineWidth(0.6);
+  doc.setDrawColor(0, 0, 0);
+  doc.line(MARGIN_X + 1, sep2Y, W - MARGIN_X - 1, sep2Y);
+
   // === NOTA FISCAL field ===
   const nfLabelY = 29;
-  const nfBoxH = 8;
+  const nfLabelW = 24;
+  const nfLabelH = 6;
+  const nfBoxX = nfLabelW + MARGIN_X + 1;
+  const nfBoxW = W - MARGIN_X - nfBoxX - 1;
+  const nfBoxH = 9;
 
-  doc.setFontSize(9);
-  boldText(doc, 'NOTA FISCAL', MARGIN_X + 1, nfLabelY + 3.5);
+  // Inverted "NOTA FISCAL" label
+  doc.setFontSize(10);
+  invertedLabel(doc, 'NOTA FISCAL', MARGIN_X + 1, nfLabelY, nfLabelW, nfLabelH);
 
-  doc.setLineWidth(1.0);
-  doc.rect(clienteBoxX, nfLabelY - 1, clienteBoxW, nfBoxH);
+  doc.setLineWidth(1.4);
+  doc.setDrawColor(0, 0, 0);
+  doc.rect(nfBoxX, nfLabelY - 1, nfBoxW, nfBoxH);
 
-  doc.setFontSize(11);
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
-  boldText(doc, (invoiceNumber || '').toUpperCase(), clienteBoxX + 1.5, nfLabelY + 4.5);
+  doc.setTextColor(0, 0, 0);
+  boldText(doc, (invoiceNumber || '').toUpperCase(), nfBoxX + 1.5, nfLabelY + 4.5);
+
+  // Extra separator
+  const sep3Y = nfLabelY + nfBoxH + 1;
+  doc.setLineWidth(0.6);
+  doc.setDrawColor(0, 0, 0);
+  doc.line(MARGIN_X + 1, sep3Y, W - MARGIN_X - 1, sep3Y);
 
   // === VOLUME and DATA fields ===
-  const bottomY = 41;
-  const volBoxX = 20;
+  const bottomY = 42;
+  const volLabelW = 18;
+  const volLabelH = 6;
+  const volBoxX = volLabelW + MARGIN_X + 1;
   const volBoxW = 16;
-  const bottomBoxH = 8;
-  const dataLabelX = 42;
-  const dataBoxX = 52;
+  const bottomBoxH = 9;
+
+  const dataLabelX = volBoxX + volBoxW + 2;
+  const dataLabelW = 12;
+  const dataLabelH = 6;
+  const dataBoxX = dataLabelX + dataLabelW + 1;
   const dataBoxW = W - MARGIN_X - dataBoxX - 1;
 
-  // VOLUME
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  boldText(doc, 'VOLUME', MARGIN_X + 1, bottomY + 3.5);
+  // Inverted "VOLUME" label
+  doc.setFontSize(10);
+  invertedLabel(doc, 'VOLUME', MARGIN_X + 1, bottomY, volLabelW, volLabelH);
 
-  doc.setLineWidth(1.0);
+  doc.setLineWidth(1.4);
+  doc.setDrawColor(0, 0, 0);
   doc.rect(volBoxX, bottomY - 1, volBoxW, bottomBoxH);
 
-  doc.setFontSize(11);
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
   const volText = `${volumeNumber}/${totalVolumes}`;
   const volTextW = doc.getTextWidth(volText);
   boldText(doc, volText, volBoxX + (volBoxW - volTextW) / 2, bottomY + 4.5);
 
-  // DATA
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  boldText(doc, 'DATA', dataLabelX, bottomY + 3.5);
+  // Inverted "DATA" label
+  doc.setFontSize(10);
+  invertedLabel(doc, 'DATA', dataLabelX, bottomY, dataLabelW, dataLabelH);
 
-  doc.setLineWidth(1.0);
+  doc.setLineWidth(1.4);
+  doc.setDrawColor(0, 0, 0);
   doc.rect(dataBoxX, bottomY - 1, dataBoxW, bottomBoxH);
 
-  doc.setFontSize(10);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
   const dateTextW = doc.getTextWidth(date);
   boldText(doc, date, dataBoxX + (dataBoxW - dateTextW) / 2, bottomY + 4.5);
 }
@@ -157,7 +209,7 @@ export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
-    format: [100, 60], // exactly 100mm x 60mm
+    format: [100, 60],
   });
 
   for (let i = 0; i < totalVolumes; i++) {
