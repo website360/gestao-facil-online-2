@@ -26,37 +26,23 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
     setPrinting(true);
     try {
       const doc = generateVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
+      const pdfBlob = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
       
-      // Usar data URI inline para evitar bloqueio do Edge com blob URLs
-      const pdfBase64 = doc.output('datauristring');
+      // Abrir o PDF em nova aba - o usuário usa Ctrl+P ou o botão de imprimir do navegador
+      const newWindow = window.open(pdfUrl, '_blank');
       
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'fixed';
-      iframe.style.top = '-10000px';
-      iframe.style.left = '-10000px';
-      iframe.style.width = '1px';
-      iframe.style.height = '1px';
-      document.body.appendChild(iframe);
+      if (!newWindow) {
+        // Se popup bloqueado, fazer download direto
+        downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
+        toast.info('Popup bloqueado. PDF baixado automaticamente. Abra o arquivo e imprima.');
+      } else {
+        toast.success(`PDF aberto em nova aba. Use Ctrl+P para imprimir.`);
+      }
       
-      iframe.onload = () => {
-        setTimeout(() => {
-          try {
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
-          } catch {
-            // Fallback: download direto do PDF
-            downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
-            toast.info('Impressão bloqueada pelo navegador. PDF baixado automaticamente.');
-          }
-          setTimeout(() => {
-            try { document.body.removeChild(iframe); } catch {}
-          }, 10000);
-        }, 800);
-      };
+      // Limpar URL após 60s
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
       
-      iframe.src = pdfBase64;
-      
-      toast.success(`${totalVolumes} etiqueta${totalVolumes > 1 ? 's' : ''} gerada${totalVolumes > 1 ? 's' : ''}!`);
       onPrint();
     } catch {
       toast.error('Erro ao gerar etiquetas.');
