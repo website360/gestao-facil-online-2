@@ -25,24 +25,8 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   const handlePrint = () => {
     setPrinting(true);
     try {
-      const doc = generateVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
-      const pdfBlob = doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      
-      // Abrir o PDF em nova aba - o usuário usa Ctrl+P ou o botão de imprimir do navegador
-      const newWindow = window.open(pdfUrl, '_blank');
-      
-      if (!newWindow) {
-        // Se popup bloqueado, fazer download direto
-        downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
-        toast.info('Popup bloqueado. PDF baixado automaticamente. Abra o arquivo e imprima.');
-      } else {
-        toast.success(`PDF aberto em nova aba. Use Ctrl+P para imprimir.`);
-      }
-      
-      // Limpar URL após 60s
-      setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
-      
+      downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
+      toast.success(`PDF baixado! Abra o arquivo e imprima na impressora térmica.`);
       onPrint();
     } catch {
       toast.error('Erro ao gerar etiquetas.');
@@ -91,7 +75,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             ) : (
               <Printer className="w-5 h-5 mr-2" />
             )}
-            {printing ? 'Gerando...' : `Imprimir ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''}`}
+            {printing ? 'Gerando...' : `Baixar ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''} (PDF)`}
           </Button>
 
           <Button
