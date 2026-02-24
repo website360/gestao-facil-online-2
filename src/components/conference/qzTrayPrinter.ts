@@ -98,9 +98,9 @@ function generateDPLLabel(
 
   return [
     '\x02L\n',
-    'D15\n',
-    'H15\n',
-    'S2\n',
+    'D22\n',
+    'H28\n',
+    'S1\n',
     // Header - row 0030
     '141100003000050IRMAOS MANTOVANI TEXTIL\n',
     // Cliente label - row 0100
@@ -152,8 +152,9 @@ export async function printTestLabel(printerName: string): Promise<void> {
   const config = qz.configs.create(printerName);
   const testLines = [
     '\x02L\n',
-    'D11\n',
-    'H14\n',
+    'D22\n',
+    'H28\n',
+    'S1\n',
     '121100000300015TEST 1 2 3 4 5 6 7 8 9 10\n',
     'Q0001\n',
     'E\n'

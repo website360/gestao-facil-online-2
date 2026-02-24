@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Printer, CheckCircle, Download, Loader2 } from 'lucide-react';
+import { Printer, CheckCircle, Download, Loader2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateVolumeLabelsPDF, downloadVolumeLabelsPDF } from './pdfLabelGenerator';
+import { connectQZTray, findDatamaxPrinter, printRawDPL, isQZTrayAvailable } from './qzTrayPrinter';
 
 interface VolumeLabelPrinterProps {
   clientName: string;
@@ -21,6 +22,45 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   onClose
 }) => {
   const [printing, setPrinting] = useState(false);
+  const [printingDirect, setPrintingDirect] = useState(false);
+  const [qzAvailable, setQzAvailable] = useState(false);
+  const [datamaxPrinter, setDatamaxPrinter] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkQZTray = async () => {
+      try {
+        const available = await isQZTrayAvailable();
+        setQzAvailable(available);
+        if (available) {
+          const printer = await findDatamaxPrinter();
+          setDatamaxPrinter(printer);
+        }
+      } catch {
+        setQzAvailable(false);
+      }
+    };
+    checkQZTray();
+  }, []);
+
+  const handleDirectPrint = async () => {
+    if (!datamaxPrinter) {
+      toast.error('Impressora Datamax não encontrada. Verifique se está conectada.');
+      return;
+    }
+    
+    setPrintingDirect(true);
+    try {
+      await connectQZTray();
+      await printRawDPL(datamaxPrinter, clientName, totalVolumes, invoiceNumber);
+      toast.success(`${totalVolumes} etiqueta${totalVolumes > 1 ? 's' : ''} enviada${totalVolumes > 1 ? 's' : ''} para ${datamaxPrinter}!`);
+      onPrint();
+    } catch (error) {
+      console.error('Erro na impressão direta:', error);
+      toast.error('Erro ao imprimir. Tente baixar o PDF.');
+    } finally {
+      setPrintingDirect(false);
+    }
+  };
 
   const handlePrint = () => {
     setPrinting(true);
@@ -64,28 +104,47 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
         </div>
 
         <div className="space-y-3">
+          {qzAvailable && datamaxPrinter && (
+            <Button
+              onClick={handleDirectPrint}
+              disabled={printingDirect}
+              className="w-full bg-green-600 hover:bg-green-700"
+              size="lg"
+            >
+              {printingDirect ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Zap className="w-5 h-5 mr-2" />
+              )}
+              {printingDirect ? 'Imprimindo...' : `Imprimir Direto na Datamax (${totalVolumes} etiqueta${totalVolumes > 1 ? 's' : ''})`}
+            </Button>
+          )}
+
+          {qzAvailable && datamaxPrinter && (
+            <p className="text-xs text-center text-green-600">
+              Impressora detectada: {datamaxPrinter}
+            </p>
+          )}
+
+          {!qzAvailable && (
+            <div className="text-xs text-center text-amber-600 bg-amber-50 p-2 rounded">
+              QZ Tray não detectado. Instale para impressão direta mais escura.
+            </div>
+          )}
+
           <Button
             onClick={handlePrint}
             disabled={printing}
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            variant={qzAvailable && datamaxPrinter ? "outline" : "default"}
+            className={qzAvailable && datamaxPrinter ? "w-full" : "w-full bg-blue-600 hover:bg-blue-700"}
             size="lg"
           >
             {printing ? (
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
             ) : (
-              <Printer className="w-5 h-5 mr-2" />
+              <Download className="w-5 h-5 mr-2" />
             )}
             {printing ? 'Gerando...' : `Baixar ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''} (PDF)`}
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={handleDownloadPDF}
-            className="w-full"
-            size="sm"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Baixar PDF
           </Button>
         </div>
 
