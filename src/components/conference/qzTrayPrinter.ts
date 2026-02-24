@@ -224,13 +224,61 @@ export async function printRawDPL(
  * Uses pixel mode so the PDF renders exactly as designed.
  * Returns a result object with success/error info for the UI.
  */
+const QZ_CONNECT_TIMEOUT_MS = 8000;
+const QZ_PRINT_TIMEOUT_MS = 20000;
+
+const VIRTUAL_PRINTER_PATTERNS = [
+  /microsoft print to pdf/i,
+  /adobe pdf/i,
+  /xps document writer/i,
+  /onenote/i,
+  /fax/i,
+];
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
+function isDatamaxCompatiblePrinter(printerName: string): boolean {
+  const name = printerName.toLowerCase();
+  return (
+    name.includes('datamax') ||
+    name.includes('e-4204') ||
+    name.includes('e4204') ||
+    name.includes('honeywell') ||
+    name.includes('e-class') ||
+    name.includes('mark iii')
+  );
+}
+
+function isVirtualPrinter(printerName: string): boolean {
+  return VIRTUAL_PRINTER_PATTERNS.some((pattern) => pattern.test(printerName));
+}
+
 export async function printPdfDirect(
   pdfBase64: string,
   preferredPrinter?: string
 ): Promise<{ success: boolean; message: string }> {
   try {
-    // 1. Connect
-    const connected = await connectQZTray();
+    // 1. Connect with timeout
+    const connected = await withTimeout(
+      connectQZTray(),
+      QZ_CONNECT_TIMEOUT_MS,
+      'Timeout ao conectar no QZ Tray.'
+    );
+
     if (!connected) {
       return {
         success: false,
@@ -238,41 +286,68 @@ export async function printPdfDirect(
       };
     }
 
-    // 2. Find printer
-    let printerName = preferredPrinter || (await findDatamaxPrinter());
-    if (!printerName) {
-      // Fallback: try first available printer
-      const allPrinters = await findPrinters();
-      if (allPrinters.length > 0) {
-        printerName = allPrinters[0];
-      } else {
-        return {
-          success: false,
-          message: 'Nenhuma impressora encontrada. Verifique se a Datamax está ligada e instalada.',
-        };
-      }
+    // 2. Validate payload
+    const normalizedBase64 = (pdfBase64 || '').replace(/\s+/g, '');
+    if (!normalizedBase64) {
+      return {
+        success: false,
+        message: 'PDF inválido para impressão.',
+      };
     }
 
-    // 3. Configure and print
-    const config = qz.configs.create(printerName, {
+    // 3. Discover printers
+    const allPrinters = await withTimeout(
+      findPrinters(),
+      5000,
+      'Timeout ao buscar impressoras no QZ Tray.'
+    );
+
+    if (allPrinters.length === 0) {
+      return {
+        success: false,
+        message: 'Nenhuma impressora encontrada no QZ Tray.',
+      };
+    }
+
+    // 4. Select printer (never fallback to virtual printers)
+    const selectedPrinter = preferredPrinter
+      ? allPrinters.find((name) => name === preferredPrinter)
+      : allPrinters.find((name) => isDatamaxCompatiblePrinter(name) && !isVirtualPrinter(name));
+
+    if (!selectedPrinter) {
+      const availableList = allPrinters.slice(0, 5).join(', ');
+      return {
+        success: false,
+        message: preferredPrinter
+          ? `Impressora selecionada não encontrada no QZ: ${preferredPrinter}.`
+          : `Datamax não encontrada no QZ Tray. Impressoras detectadas: ${availableList || 'nenhuma'}.`,
+      };
+    }
+
+    // 5. Configure and print
+    const config = qz.configs.create(selectedPrinter, {
       units: 'mm',
       size: { width: 100, height: 60 },
       scaleContent: false,
       rasterize: true,
     });
 
-    await qz.print(config, [
-      {
-        type: 'pixel',
-        format: 'pdf',
-        flavor: 'base64',
-        data: pdfBase64,
-      },
-    ]);
+    await withTimeout(
+      qz.print(config, [
+        {
+          type: 'pixel',
+          format: 'pdf',
+          flavor: 'base64',
+          data: normalizedBase64,
+        },
+      ]),
+      QZ_PRINT_TIMEOUT_MS,
+      'Timeout no envio de impressão para a Datamax.'
+    );
 
     return {
       success: true,
-      message: `Etiquetas enviadas para ${printerName}`,
+      message: `Etiquetas enviadas para ${selectedPrinter}`,
     };
   } catch (error) {
     console.error('QZ Tray print error:', error);

@@ -27,6 +27,14 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
 
   const handleDirectPrint = async () => {
     if (printing) return; // prevent double-click
+
+    if (totalVolumes <= 0) {
+      const msg = 'Nenhum volume registrado para imprimir etiqueta.';
+      setLastError(msg);
+      toast.error(msg);
+      return;
+    }
+
     setPrinting(true);
     setLastError(null);
 
@@ -91,7 +99,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
         <div className="space-y-3">
           <Button
             onClick={handleDirectPrint}
-            disabled={printing}
+            disabled={printing || totalVolumes <= 0}
             className="w-full bg-green-600 hover:bg-green-700"
             size="lg"
           >
