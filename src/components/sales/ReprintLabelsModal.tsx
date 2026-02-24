@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Printer } from 'lucide-react';
 import { formatSaleId } from '@/lib/budgetFormatter';
@@ -42,6 +42,9 @@ const ReprintLabelsModal: React.FC<ReprintLabelsModalProps> = ({
               {formatSaleId(sale.id, sale.created_at)}
             </Badge>
           </DialogTitle>
+          <DialogDescription>
+            Imprima etiquetas de volume para o pacote selecionado
+          </DialogDescription>
         </DialogHeader>
 
         <VolumeLabelPrinter
