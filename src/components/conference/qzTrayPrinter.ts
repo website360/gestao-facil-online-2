@@ -69,18 +69,20 @@ export async function findDatamaxPrinter(): Promise<string | null> {
 
 /**
  * Generate DPL commands for a single volume label.
- * Datamax E-4204B at 203 DPI (8 dots/mm)
+ * Datamax O'Neil E-Class Mark III at 203 DPI (8 dots/mm)
  * Label: 100mm x 60mm = 800 x 480 dots
  *
- * DPL text record format:
- *   1<font><rotation><height_mult><width_mult><RRRR><CCCCC><data>
- *   font: 0-8 bitmap
- *   rotation: 1=0°, 2=90°CW, 3=180°, 4=90°CCW
- *   height_mult: 1-9 (1=normal)
- *   width_mult: 1-9 (1=normal)
- *   RRRR: 4-digit row, CCCCC: 5-digit column
+ * DPL format for E-Class Mark III:
+ * - STX + n = Clear buffer and start label
+ * - m = Set metric mode (mm)
+ * - D = Density/Darkness (00-15, higher = darker)
+ * - H = Heat setting (00-30)  
+ * - S = Speed (0=slowest)
+ * - 1 = Text command prefix
+ * - E = End and print
  *
- * Returns array of strings, one per DPL line.
+ * Text format: 1X1100YYYYXXXXXdata
+ * X = font (0-9), Y = row position, X = column position
  */
 function generateDPLLabel(
   clientName: string,
@@ -88,57 +90,67 @@ function generateDPLLabel(
   volumeNumber: number,
   totalVolumes: number,
   date: string
-): string[] {
-  // Build label using EXACT same structure as the working test label.
-  // All row positions (RRRR) must stay within 0-420 dots (60mm label = ~480 dots).
-  // Format: 1<font><rot><hMul><wMul><RRRR><CCCCC><data>
-  const clientText = clientName.toUpperCase().substring(0, 28);
+): string {
+  const clientText = clientName.toUpperCase().substring(0, 30);
   const volText = `${volumeNumber}/${totalVolumes}`;
-  const nf = invoiceNumber || '';
+  const nf = invoiceNumber || 'S/N';
 
-  return [
-    '\x02L\n',
-    'D22\n',
-    'H28\n',
-    'S1\n',
-    // Header - row 0030
-    '141100003000050IRMAOS MANTOVANI TEXTIL\n',
-    // Cliente label - row 0100
-    '161100010000010CLIENTE:\n',
-    // Cliente value - row 0100, col after label
-    '121100010000150' + clientText + '\n',
-    // NF label - row 0180
-    '161100018000010NF:\n',
-    // NF value
-    '121100018000080' + nf + '\n',
-    // Volume label - row 0260
-    '161100026000010VOLUME:\n',
-    // Volume value
-    '121100026000140' + volText + '\n',
-    // Data label - row 0260, col 400
-    '161100026000350DATA:\n',
-    // Data value
-    '121100026000480' + date + '\n',
-    // Print 1 label and end
-    'Q0001\n',
-    'E\n'
-  ];
+  // Build single string with CR line endings for DPL
+  // Using simpler DPL format compatible with E-Class Mark III
+  let label = '';
+  
+  // Start label format mode, clear buffer
+  label += '\x02n\r';           // STX + n = new label, clear image buffer
+  label += '\x02M0500\r';       // Set label length to 500 dots (~62mm)
+  label += '\x02O0220\r';       // Set label width offset
+  label += '\x02D15\r';         // Maximum darkness (0-15)
+  label += '\x02H30\r';         // Maximum heat (0-30)  
+  label += '\x02S0\r';          // Slowest speed for best quality
+  label += '\x02L\r';           // Start label format
+  
+  // Header - IRMAOS MANTOVANI TEXTIL (font 4, row 20, col 50)
+  label += '191100020000050IRMAOS MANTOVANI TEXTIL\r';
+  
+  // CLIENTE label (font 2, row 80, col 10)
+  label += '121100080000010CLIENTE:\r';
+  // Client name (font 2, row 80, col 150)
+  label += '121100080000150' + clientText + '\r';
+  
+  // NF label (font 2, row 140, col 10)
+  label += '121100140000010NF:\r';
+  // NF value (font 2, row 140, col 80)
+  label += '121100140000080' + nf + '\r';
+  
+  // VOLUME label (font 2, row 200, col 10)
+  label += '121100200000010VOLUME:\r';
+  // Volume value (font 2, row 200, col 150)
+  label += '121100200000150' + volText + '\r';
+  
+  // DATA label (font 2, row 200, col 350)
+  label += '121100200000350DATA:\r';
+  // Date value (font 2, row 200, col 450)
+  label += '121100200000450' + date + '\r';
+  
+  // End label and print 1 copy
+  label += 'Q0001\r';
+  label += 'E\r';
+  
+  return label;
 }
 
 export function generateAllDPLLabels(
   clientName: string,
   totalVolumes: number,
   invoiceNumber: string = ''
-): string[] {
+): string {
   const date = new Date().toLocaleDateString('pt-BR');
-  let allLines: string[] = [];
+  let allLabels = '';
 
   for (let i = 0; i < totalVolumes; i++) {
-    const labelLines = generateDPLLabel(clientName, invoiceNumber, i + 1, totalVolumes, date);
-    allLines = allLines.concat(labelLines);
+    allLabels += generateDPLLabel(clientName, invoiceNumber, i + 1, totalVolumes, date);
   }
 
-  return allLines;
+  return allLabels;
 }
 
 /**
@@ -149,19 +161,21 @@ export async function printTestLabel(printerName: string): Promise<void> {
     await connectQZTray();
   }
 
-  const config = qz.configs.create(printerName);
-  const testLines = [
-    '\x02L\n',
-    'D22\n',
-    'H28\n',
-    'S1\n',
-    '121100000300015TEST 1 2 3 4 5 6 7 8 9 10\n',
-    'Q0001\n',
-    'E\n'
-  ];
+  const config = qz.configs.create(printerName, { raw: true });
+  
+  // Simple test label with maximum darkness settings
+  let testLabel = '';
+  testLabel += '\x02n\r';
+  testLabel += '\x02D15\r';
+  testLabel += '\x02H30\r';
+  testLabel += '\x02S0\r';
+  testLabel += '\x02L\r';
+  testLabel += '121100100000050TESTE DE IMPRESSAO\r';
+  testLabel += 'Q0001\r';
+  testLabel += 'E\r';
 
-  console.log('Test DPL lines:', testLines);
-  await qz.print(config, testLines);
+  console.log('Test DPL:', testLabel);
+  await qz.print(config, [{ type: 'raw', format: 'plain', data: testLabel }]);
 }
 
 export async function printRawDPL(
@@ -174,13 +188,13 @@ export async function printRawDPL(
     await connectQZTray();
   }
 
-  const config = qz.configs.create(printerName);
-  const dplLines = generateAllDPLLabels(clientName, totalVolumes, invoiceNumber);
+  const config = qz.configs.create(printerName, { raw: true });
+  const dplData = generateAllDPLLabels(clientName, totalVolumes, invoiceNumber);
 
-  console.log('DPL lines being sent:', dplLines.slice(0, 5));
+  console.log('DPL data being sent (first 200 chars):', dplData.substring(0, 200));
 
-  // QZ Tray raw printing: pass array of strings, one per line
-  await qz.print(config, dplLines);
+  // QZ Tray raw printing: send as raw data
+  await qz.print(config, [{ type: 'raw', format: 'plain', data: dplData }]);
 }
 
 export async function disconnectQZTray(): Promise<void> {
