@@ -5,6 +5,33 @@
 import qz from 'qz-tray';
 
 let isConnected = false;
+let securityConfigured = false;
+
+/**
+ * Configure QZ Tray security for unsigned/demo mode.
+ * This allows printing without a paid certificate.
+ */
+function configureQZSecurity(): void {
+  if (securityConfigured) return;
+  
+  // Override certificate promise - return empty for unsigned mode
+  qz.security.setCertificatePromise(function(resolve: (cert: string) => void, reject: (err: Error) => void) {
+    // For demo/development, resolve with empty string
+    // QZ Tray will show a warning but will still work
+    resolve('');
+  });
+  
+  // Override signature promise - return empty for unsigned mode
+  qz.security.setSignaturePromise(function(toSign: string) {
+    return function(resolve: (sig: string) => void, reject: (err: Error) => void) {
+      // Return empty signature for unsigned mode
+      resolve('');
+    };
+  });
+  
+  securityConfigured = true;
+  console.log('QZ Tray security configured for unsigned mode');
+}
 
 export async function connectQZTray(): Promise<boolean> {
   if (qz.websocket.isActive()) {
@@ -13,15 +40,8 @@ export async function connectQZTray(): Promise<boolean> {
   }
 
   try {
-    qz.security.setCertificatePromise(function(resolve: (cert: string) => void) {
-      resolve('');
-    });
-    qz.security.setSignatureAlgorithm('SHA512');
-    qz.security.setSignaturePromise(function() {
-      return function(resolve: (sig: string) => void) {
-        resolve('');
-      };
-    });
+    // Configure security BEFORE connecting
+    configureQZSecurity();
 
     await qz.websocket.connect();
     isConnected = true;
@@ -37,6 +57,8 @@ export async function connectQZTray(): Promise<boolean> {
 export async function isQZTrayAvailable(): Promise<boolean> {
   if (qz.websocket.isActive()) return true;
   try {
+    // Configure security before checking availability
+    configureQZSecurity();
     await qz.websocket.connect();
     return true;
   } catch {
