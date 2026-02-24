@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Printer, CheckCircle, Download, Loader2, Info } from 'lucide-react';
+import { Printer, CheckCircle, Download, Loader2, Info, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { downloadVolumeLabelsPDF } from './pdfLabelGenerator';
-import { printLabelsDirectly } from './directPrinter';
+import { getVolumeLabelsPDFBase64, downloadVolumeLabelsPDF } from './pdfLabelGenerator';
+import { printPdfDirect } from './qzTrayPrinter';
 
 interface VolumeLabelPrinterProps {
   clientName: string;
@@ -22,28 +22,43 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   onClose
 }) => {
   const [printing, setPrinting] = useState(false);
-  const [printingDirect, setPrintingDirect] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
 
-  const handleDirectPrint = () => {
-    setPrintingDirect(true);
+  const handleDirectPrint = async () => {
+    if (printing) return; // prevent double-click
+    setPrinting(true);
+    setLastError(null);
+
     try {
-      const success = printLabelsDirectly({ clientName, totalVolumes, invoiceNumber });
-      if (success) {
-        toast.success('Selecione a impressora Datamax e clique em Imprimir!');
+      // 1. Generate PDF as base64
+      const pdfBase64 = getVolumeLabelsPDFBase64({
+        clientName,
+        totalVolumes,
+        invoiceNumber,
+      });
+
+      // 2. Send to printer via QZ Tray
+      const result = await printPdfDirect(pdfBase64);
+
+      if (result.success) {
+        toast.success(result.message);
         onPrint();
       } else {
-        toast.error('Popup bloqueado. Permita popups para imprimir.');
+        setLastError(result.message);
+        toast.error(result.message);
       }
     } catch (error) {
-      console.error('Erro ao imprimir:', error);
-      toast.error('Erro ao gerar etiquetas.');
+      const msg = `Erro inesperado: ${(error as Error).message}`;
+      setLastError(msg);
+      toast.error(msg);
     } finally {
-      setPrintingDirect(false);
+      setPrinting(false);
     }
   };
 
   const handleDownloadPDF = () => {
-    setPrinting(true);
+    setDownloading(true);
     try {
       downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
       toast.success('PDF baixado! Abra e imprima na Datamax.');
@@ -51,7 +66,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
     } catch {
       toast.error('Erro ao gerar PDF.');
     } finally {
-      setPrinting(false);
+      setDownloading(false);
     }
   };
 
@@ -76,44 +91,51 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
         <div className="space-y-3">
           <Button
             onClick={handleDirectPrint}
-            disabled={printingDirect}
-            className="w-full bg-green-600 hover:bg-green-700"
-            size="lg"
-          >
-            {printingDirect ? (
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            ) : (
-              <Printer className="w-5 h-5 mr-2" />
-            )}
-            {printingDirect ? 'Abrindo...' : `Imprimir ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''}`}
-          </Button>
-
-          <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 p-3 rounded border border-amber-200">
-            <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium mb-1">Para impressão mais escura na Datamax:</p>
-              <ol className="list-decimal list-inside space-y-0.5">
-                <li>Selecione a impressora Datamax</li>
-                <li>Clique em "Preferências" ou "Propriedades"</li>
-                <li>Ajuste <strong>Darkness/Heat</strong> para o máximo</li>
-                <li>Ajuste <strong>Speed</strong> para o mínimo</li>
-              </ol>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleDownloadPDF}
             disabled={printing}
-            variant="outline"
-            className="w-full"
+            className="w-full bg-green-600 hover:bg-green-700"
             size="lg"
           >
             {printing ? (
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
             ) : (
+              <Printer className="w-5 h-5 mr-2" />
+            )}
+            {printing ? 'Enviando para impressora...' : `Imprimir ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''} (Direto)`}
+          </Button>
+
+          {lastError && (
+            <div className="flex items-start gap-2 text-xs text-red-700 bg-red-50 p-3 rounded border border-red-200">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium mb-1">Impressão direta falhou</p>
+                <p>{lastError}</p>
+                <p className="mt-1">Use o botão "Baixar PDF" abaixo como alternativa.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 p-3 rounded border border-amber-200">
+            <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium mb-1">Requisito: QZ Tray instalado</p>
+              <p>Para impressão direta sem diálogo, o <strong>QZ Tray</strong> deve estar rodando.</p>
+              <p>Download: <a href="https://qz.io/download" target="_blank" rel="noopener noreferrer" className="underline">qz.io/download</a></p>
+            </div>
+          </div>
+
+          <Button
+            onClick={handleDownloadPDF}
+            disabled={downloading}
+            variant="outline"
+            className="w-full"
+            size="lg"
+          >
+            {downloading ? (
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            ) : (
               <Download className="w-5 h-5 mr-2" />
             )}
-            {printing ? 'Gerando...' : 'Baixar PDF'}
+            {downloading ? 'Gerando...' : 'Baixar PDF (alternativa)'}
           </Button>
         </div>
 
