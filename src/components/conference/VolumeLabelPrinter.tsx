@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Printer, CheckCircle, Download, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
-import { generateVolumeLabelsPDF, downloadVolumeLabelsPDF } from './pdfLabelGenerator';
+import { downloadVolumeLabelsPDF } from './pdfLabelGenerator';
 
 interface VolumeLabelPrinterProps {
   clientName: string;
@@ -26,20 +26,9 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   const handleDirectPrint = () => {
     setPrintingDirect(true);
     try {
-      const doc = generateVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
-      const pdfBlob = doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      
-      // Abre o PDF em nova janela e abre diálogo de impressão
-      const printWindow = window.open(pdfUrl, '_blank');
-      if (printWindow) {
-        printWindow.onload = () => {
-          printWindow.print();
-        };
-        toast.success('Selecione a impressora Datamax e configure: Darkness = Máximo');
-      } else {
-        toast.error('Popup bloqueado. Permita popups para imprimir.');
-      }
+      // Baixa o PDF com autoPrint - ao abrir, vai mostrar diálogo de impressão
+      downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber }, true);
+      toast.success('PDF baixado! Abra o arquivo para imprimir.');
       onPrint();
     } catch (error) {
       console.error('Erro ao imprimir:', error);

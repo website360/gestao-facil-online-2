@@ -222,10 +222,16 @@ export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
   return doc;
 }
 
-export function downloadVolumeLabelsPDF(data: LabelData): void {
+export function downloadVolumeLabelsPDF(data: LabelData, autoPrint: boolean = false): void {
   const doc = generateVolumeLabelsPDF(data);
   const safeName = data.clientName
     .replace(/[^a-zA-Z0-9]/g, '_')
     .substring(0, 20);
+  
+  if (autoPrint) {
+    // Adiciona script JavaScript no PDF para abrir diálogo de impressão automaticamente
+    doc.autoPrint();
+  }
+  
   doc.save(`etiquetas_${safeName}_${data.totalVolumes}vol.pdf`);
 }
