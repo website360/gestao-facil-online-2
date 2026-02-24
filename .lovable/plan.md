@@ -1,40 +1,35 @@
 
-# Escurecer Etiquetas para Impressora Termica
+# Reverter Etiquetas ao Estilo Original + Corrigir Erros de Build
 
-## Problema
-As etiquetas estao saindo claras na impressora termica. O metodo atual ja usa double-strike (texto desenhado 2x com offset de 0.1mm), mas nao e suficiente para impressoras termicas que precisam de mais area de contato para aquecer o papel.
+## Objetivo
+Reverter o estilo das etiquetas para o formato original (bordas finas, texto simples) que imprimia corretamente, e corrigir os erros de build nas edge functions.
 
-## Solucao
+## Alteracoes
 
-Aplicar multiplas tecnicas combinadas no arquivo `pdfLabelGenerator.ts` para maximizar a escuridao:
+### 1. Reverter `pdfLabelGenerator.ts` ao estilo simples
+- Remover triple-strike: `boldText` volta a desenhar texto apenas 1 vez (texto normal)
+- Remover labels invertidos (fundo preto com texto branco)
+- Bordas finas: outer border `0.5mm`, caixas `0.3mm`, separadores `0.3mm`
+- Fontes menores: header `12pt`, labels `9pt`, valores `10pt`
+- Remover separadores extras entre secoes
+- Manter layout e posicionamento dos campos iguais
 
-### 1. Triple-strike no texto (em vez de double)
-Desenhar cada texto 3 vezes com offsets diferentes (0, +0.15, +0.3mm) para criar uma mancha mais densa e escura.
-
-### 2. Aumentar fontes em todos os campos
-- Header: 12pt para 14pt
-- Labels (CLIENTE, NF, VOLUME, DATA): 9pt para 11pt
-- Valores nos campos: 10-11pt para 12-13pt
-
-### 3. Engrossar todas as linhas
-- Borda externa: 1.6 para 2.0mm
-- Caixas de dados: 1.0 para 1.4mm
-- Linha separadora: 0.8 para 1.2mm
-
-### 4. Preencher retangulos de fundo nos labels
-Adicionar retangulos preenchidos (filled rects) atras dos labels "CLIENTE", "NOTA FISCAL", "VOLUME", "DATA" com texto branco invertido. Isso forca a impressora termica a aquecer uma area grande, garantindo contraste maximo.
-
-### 5. Adicionar linhas horizontais extras
-Linhas divisorias adicionais entre secoes para reforcar a estrutura visual.
+### 2. Corrigir erros de build nas edge functions
+- `calculate-shipping/index.ts` (linha 172-173): adicionar `?? 0` para `price` e `delivery_time`
+- `delete-user/index.ts` (linha 187): cast `cleanError` para `Error`
+- `delete-user/index.ts` (linhas 222-223): cast `error` para `Error`
+- `update-user-email/index.ts` (linha 98): cast `error` para `Error`
+- `update-user-password/index.ts` (linha 106): cast `error` para `Error`
 
 ## Detalhes Tecnicos
 
 ### Arquivo: `src/components/conference/pdfLabelGenerator.ts`
+Reescrever com estilo leve:
+- `boldText` removido ou substituido por chamada simples `doc.text()`
+- Sem `invertedLabel` - labels serao texto bold normal
+- `setLineWidth(0.5)` para borda externa, `0.3` para caixas internas
+- Fontes: header 12pt, labels 9pt, valores 10pt
+- Sem retangulos preenchidos (sem `'F'`)
 
-- Refatorar `boldText` para desenhar 3 camadas com offsets `[0, 0.15, 0.3]` em X e `[0, 0.1]` em Y
-- Aumentar todos os `setFontSize` conforme descrito
-- Aumentar todos os `setLineWidth` conforme descrito
-- Adicionar `doc.rect(x, y, w, h, 'F')` (filled) para labels com texto invertido branco via `setTextColor(255,255,255)` seguido de reset para preto
-- Manter o layout e posicionamento geral inalterados, apenas reforcar peso visual
-
-Nenhuma alteracao no `VolumeLabelPrinter.tsx` - o fluxo de impressao via iframe permanece igual.
+### Arquivos de edge functions
+Adicionar type assertions `(error as Error).message` nos catches para resolver erros TypeScript.
