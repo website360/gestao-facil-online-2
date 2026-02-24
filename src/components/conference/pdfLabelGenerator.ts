@@ -178,6 +178,13 @@ export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
   return doc;
 }
 
+export function getVolumeLabelsPDFBase64(data: LabelData): string {
+  const doc = generateVolumeLabelsPDF(data);
+  // Returns raw base64 string (no data URI prefix)
+  const dataUri = doc.output('datauristring');
+  return dataUri.split(',')[1];
+}
+
 export function downloadVolumeLabelsPDF(data: LabelData, autoPrint: boolean = false): void {
   const doc = generateVolumeLabelsPDF(data);
   const safeName = data.clientName

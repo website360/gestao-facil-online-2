@@ -219,6 +219,70 @@ export async function printRawDPL(
   await qz.print(config, [{ type: 'raw', format: 'plain', data: dplData }]);
 }
 
+/**
+ * Print a PDF (base64-encoded) directly to a printer via QZ Tray.
+ * Uses pixel mode so the PDF renders exactly as designed.
+ * Returns a result object with success/error info for the UI.
+ */
+export async function printPdfDirect(
+  pdfBase64: string,
+  preferredPrinter?: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    // 1. Connect
+    const connected = await connectQZTray();
+    if (!connected) {
+      return {
+        success: false,
+        message: 'QZ Tray não está instalado ou não está rodando. Instale em https://qz.io/download e reinicie.',
+      };
+    }
+
+    // 2. Find printer
+    let printerName = preferredPrinter || (await findDatamaxPrinter());
+    if (!printerName) {
+      // Fallback: try first available printer
+      const allPrinters = await findPrinters();
+      if (allPrinters.length > 0) {
+        printerName = allPrinters[0];
+      } else {
+        return {
+          success: false,
+          message: 'Nenhuma impressora encontrada. Verifique se a Datamax está ligada e instalada.',
+        };
+      }
+    }
+
+    // 3. Configure and print
+    const config = qz.configs.create(printerName, {
+      units: 'mm',
+      size: { width: 100, height: 60 },
+      scaleContent: false,
+      rasterize: true,
+    });
+
+    await qz.print(config, [
+      {
+        type: 'pixel',
+        format: 'pdf',
+        flavor: 'base64',
+        data: pdfBase64,
+      },
+    ]);
+
+    return {
+      success: true,
+      message: `Etiquetas enviadas para ${printerName}`,
+    };
+  } catch (error) {
+    console.error('QZ Tray print error:', error);
+    return {
+      success: false,
+      message: `Erro ao imprimir: ${(error as Error).message || 'falha desconhecida'}`,
+    };
+  }
+}
+
 export async function disconnectQZTray(): Promise<void> {
   if (qz.websocket.isActive()) {
     try {
