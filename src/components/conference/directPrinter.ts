@@ -37,12 +37,20 @@ function generateLabelHTML(
       
       <div class="row-bottom">
         <div class="col">
-          <div class="field-label">VOLUME</div>
-          <div class="field-value">${volText}</div>
+          <div class="inner">
+            <div class="row">
+              <div class="field-label">VOLUME</div>
+              <div class="field-value">${volText}</div>
+            </div>
+          </div>
         </div>
         <div class="col">
-          <div class="field-label">DATA</div>
-          <div class="field-value">${date}</div>
+          <div class="inner">
+            <div class="row">
+              <div class="field-label">DATA</div>
+              <div class="field-value">${date}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -53,7 +61,7 @@ function generatePrintStyles(): string {
   return `
     <style>
       @page {
-        size: 100mm 60mm;
+        size: 4in 2.4in;
         margin: 0;
       }
       
@@ -61,21 +69,29 @@ function generatePrintStyles(): string {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+        font-family: Arial, Helvetica, sans-serif;
       }
       
-      body {
-        font-family: Arial, Helvetica, sans-serif;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+      html, body {
+        width: 4in;
+        height: 2.4in;
+        margin: 0;
+        padding: 0;
+        background: white;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
       }
       
       .label {
-        width: 100mm;
-        height: 60mm;
-        padding: 2mm;
-        border: 2px solid black;
+        width: 4in;
+        height: 2.4in;
+        padding: 0.08in;
+        border: 3px solid #000;
+        background: white;
         page-break-after: always;
         page-break-inside: avoid;
+        overflow: hidden;
       }
       
       .label:last-child {
@@ -84,82 +100,88 @@ function generatePrintStyles(): string {
       
       .header {
         text-align: center;
-        font-size: 14pt;
-        font-weight: bold;
-        padding: 2mm 0;
-        letter-spacing: 0.5px;
+        font-size: 16pt;
+        font-weight: 900;
+        padding: 0.05in 0;
+        color: #000;
       }
       
       .separator {
-        border-bottom: 2px solid black;
-        margin: 1mm 0;
+        border-bottom: 3px solid #000;
+        margin: 0.03in 0;
       }
       
       .row {
-        display: flex;
-        align-items: stretch;
-        margin: 2mm 0;
-        min-height: 10mm;
+        display: table;
+        width: 100%;
+        margin: 0.05in 0;
+        table-layout: fixed;
       }
       
       .field-label {
-        background: black;
-        color: white;
-        font-weight: bold;
-        font-size: 9pt;
-        padding: 2mm 3mm;
-        display: flex;
-        align-items: center;
-        min-width: 22mm;
+        display: table-cell;
+        background-color: #000 !important;
+        color: #fff !important;
+        font-weight: 900;
+        font-size: 10pt;
+        padding: 0.05in 0.08in;
+        vertical-align: middle;
+        width: 0.9in;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       
       .field-value {
-        border: 2px solid black;
-        font-weight: bold;
-        font-size: 11pt;
-        padding: 2mm 3mm;
-        flex: 1;
-        display: flex;
-        align-items: center;
+        display: table-cell;
+        border: 3px solid #000;
+        font-weight: 900;
+        font-size: 12pt;
+        padding: 0.05in 0.08in;
+        vertical-align: middle;
+        color: #000;
       }
       
       .field-value.client {
-        font-size: 10pt;
+        font-size: 11pt;
         word-break: break-word;
       }
       
       .row-bottom {
-        display: flex;
-        gap: 3mm;
-        margin-top: 2mm;
+        display: table;
+        width: 100%;
+        margin-top: 0.05in;
+        table-layout: fixed;
       }
       
       .col {
-        flex: 1;
-        display: flex;
+        display: table-cell;
+        width: 50%;
+        padding-right: 0.05in;
+      }
+      
+      .col:last-child {
+        padding-right: 0;
+        padding-left: 0.05in;
+      }
+      
+      .col .inner {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
       }
       
       .col .field-label {
-        min-width: 18mm;
+        width: 0.7in;
       }
       
       .col .field-value {
         text-align: center;
-        justify-content: center;
       }
       
       @media print {
-        body {
-          width: 100mm;
-        }
-        
-        .label {
-          border-width: 3px;
-        }
-        
-        .field-label {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+        html, body {
+          width: 4in !important;
+          height: 2.4in !important;
         }
       }
     </style>
