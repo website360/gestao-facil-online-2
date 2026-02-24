@@ -169,8 +169,8 @@ serve(async (req) => {
           shippingOptions.push({
             service_name: service.name,
             service_code: service.code,
-            price: shippingData.price,
-            delivery_time: shippingData.delivery_time
+            price: shippingData.price ?? 0,
+            delivery_time: shippingData.delivery_time ?? 0
           });
         } else {
           shippingOptions.push({

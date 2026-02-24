@@ -184,7 +184,7 @@ serve(async (req) => {
           
       } catch (cleanError) {
         return new Response(
-          JSON.stringify({ error: 'Cleanup failed', step, userId, cleanError: cleanError.message }),
+          JSON.stringify({ error: 'Cleanup failed', step, userId, cleanError: (cleanError as Error).message }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
       }
@@ -219,8 +219,8 @@ serve(async (req) => {
         error: 'Exception', 
         step, 
         userId, 
-        message: error.message,
-        stack: error.stack?.substring(0, 500)
+        message: (error as Error).message,
+        stack: (error as Error).stack?.substring(0, 500)
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
