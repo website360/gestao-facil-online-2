@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Printer, CheckCircle, Download, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadVolumeLabelsPDF } from './pdfLabelGenerator';
+import { printLabelsDirectly } from './directPrinter';
 
 interface VolumeLabelPrinterProps {
   clientName: string;
@@ -26,10 +27,13 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   const handleDirectPrint = () => {
     setPrintingDirect(true);
     try {
-      // Baixa o PDF com autoPrint - ao abrir, vai mostrar diálogo de impressão
-      downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber }, true);
-      toast.success('PDF baixado! Abra o arquivo para imprimir.');
-      onPrint();
+      const success = printLabelsDirectly({ clientName, totalVolumes, invoiceNumber });
+      if (success) {
+        toast.success('Selecione a impressora Datamax e clique em Imprimir!');
+        onPrint();
+      } else {
+        toast.error('Popup bloqueado. Permita popups para imprimir.');
+      }
     } catch (error) {
       console.error('Erro ao imprimir:', error);
       toast.error('Erro ao gerar etiquetas.');
