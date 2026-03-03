@@ -185,6 +185,25 @@ export function getVolumeLabelsPDFBase64(data: LabelData): string {
   return dataUri.split(',')[1];
 }
 
+export function printVolumeLabelsDirect(data: LabelData): boolean {
+  try {
+    const doc = generateVolumeLabelsPDF(data);
+    doc.autoPrint();
+    const blob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(blob);
+    const win = window.open(blobUrl, '_blank');
+    if (!win) {
+      // popup blocked - fallback
+      return false;
+    }
+    // Clean up blob URL after a delay
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function downloadVolumeLabelsPDF(data: LabelData, autoPrint: boolean = false): void {
   const doc = generateVolumeLabelsPDF(data);
   const safeName = data.clientName
