@@ -23,16 +23,21 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
   const [printing, setPrinting] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (printing || totalVolumes <= 0) return;
 
     setPrinting(true);
     try {
-      printVolumeLabelsDirect({ clientName, totalVolumes, invoiceNumber });
-      toast.success('PDF baixado! Abra o arquivo para imprimir automaticamente.');
-      onPrint();
+      const result = await printVolumeLabelsDirect({ clientName, totalVolumes, invoiceNumber });
+
+      if (result.success) {
+        toast.success(result.message || 'Etiquetas enviadas para impressão.');
+        onPrint();
+      } else {
+        toast.error(result.message || 'Não foi possível imprimir direto. Use "Baixar PDF" abaixo.');
+      }
     } catch {
-      toast.error('Erro ao gerar PDF para impressão.');
+      toast.error('Erro ao enviar impressão para a impressora.');
     } finally {
       setPrinting(false);
     }
@@ -81,7 +86,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             ) : (
               <Printer className="w-5 h-5 mr-2" />
             )}
-            {printing ? 'Gerando...' : `Baixar ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''} (Auto-Impressão)`}
+            {printing ? 'Enviando...' : `Imprimir ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''}` }
           </Button>
 
           <Button
