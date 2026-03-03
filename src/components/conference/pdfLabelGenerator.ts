@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { printPdfDirect } from './qzTrayPrinter';
 
 /**
  * Generates a PDF with volume labels at exact 100mm x 60mm per page.
@@ -185,15 +186,17 @@ export function getVolumeLabelsPDFBase64(data: LabelData): string {
   return dataUri.split(',')[1];
 }
 
-export function printVolumeLabelsDirect(data: LabelData): boolean {
+export async function printVolumeLabelsDirect(
+  data: LabelData
+): Promise<{ success: boolean; message: string }> {
   try {
-    // Método definitivo: baixar PDF com autoPrint embutido.
-    // Quando o usuário abre o PDF, o diálogo de impressão dispara automaticamente.
-    // Este é o ÚNICO método que não pode ser bloqueado por extensões do navegador.
-    downloadVolumeLabelsPDF(data, true);
-    return true;
-  } catch {
-    return false;
+    const pdfBase64 = getVolumeLabelsPDFBase64(data);
+    return await printPdfDirect(pdfBase64);
+  } catch (error) {
+    return {
+      success: false,
+      message: `Erro ao preparar impressão: ${(error as Error)?.message || 'falha desconhecida'}`,
+    };
   }
 }
 
