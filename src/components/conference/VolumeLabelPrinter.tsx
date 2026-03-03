@@ -28,13 +28,9 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
 
     setPrinting(true);
     try {
-      const success = printVolumeLabelsDirect({ clientName, totalVolumes, invoiceNumber });
-      if (success) {
-        toast.success('Comando de impressão enviado. Verifique a impressora térmica.');
-        onPrint();
-      } else {
-        toast.error('Impressão bloqueada pelo navegador. Use "Baixar PDF" abaixo.');
-      }
+      printVolumeLabelsDirect({ clientName, totalVolumes, invoiceNumber });
+      toast.success('PDF baixado! Abra o arquivo para imprimir automaticamente.');
+      onPrint();
     } catch {
       toast.error('Erro ao gerar PDF para impressão.');
     } finally {
@@ -85,7 +81,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             ) : (
               <Printer className="w-5 h-5 mr-2" />
             )}
-            {printing ? 'Abrindo...' : `Imprimir ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''}`}
+            {printing ? 'Gerando...' : `Baixar ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''} (Auto-Impressão)`}
           </Button>
 
           <Button
