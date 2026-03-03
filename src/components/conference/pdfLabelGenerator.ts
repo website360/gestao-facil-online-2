@@ -189,25 +189,23 @@ export function printVolumeLabelsDirect(data: LabelData): boolean {
   try {
     const doc = generateVolumeLabelsPDF(data);
     doc.autoPrint();
-    const blob = doc.output('blob');
-    const blobUrl = URL.createObjectURL(blob);
 
-    const openInNewTabFallback = () => {
-      const win = window.open(blobUrl, '_blank');
-      if (!win) return false;
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-      return true;
-    };
+    // Usar data URI evita bloqueios comuns de extensões em blob:// (ERR_BLOCKED_BY_CLIENT)
+    const dataUri = doc.output('datauristring');
 
     if (!document.body) {
-      return openInNewTabFallback();
+      // Fallback seguro: garante que o usuário tenha o arquivo para imprimir
+      downloadVolumeLabelsPDF(data, true);
+      return true;
     }
 
     const iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
     iframe.style.position = 'fixed';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
     iframe.style.border = '0';
     iframe.style.opacity = '0';
     iframe.style.pointerEvents = 'none';
@@ -216,44 +214,41 @@ export function printVolumeLabelsDirect(data: LabelData): boolean {
       if (iframe.parentNode) {
         iframe.parentNode.removeChild(iframe);
       }
-      URL.revokeObjectURL(blobUrl);
     };
 
-    const cleanupTimer = window.setTimeout(cleanup, 90000);
+    const cleanupTimer = window.setTimeout(cleanup, 120000);
 
     iframe.onload = () => {
       window.setTimeout(() => {
         try {
+          // Alguns navegadores exigem print explícito; outros respeitam apenas autoPrint do PDF.
           iframe.contentWindow?.focus();
           iframe.contentWindow?.print();
         } catch {
-          const opened = openInNewTabFallback();
-          if (!opened) {
-            window.clearTimeout(cleanupTimer);
-            cleanup();
-          }
+          // Sem fallback com popup para evitar bloqueio ERR_BLOCKED_BY_CLIENT
         }
       }, 300);
     };
 
     iframe.onerror = () => {
-      if (iframe.parentNode) {
-        iframe.parentNode.removeChild(iframe);
-      }
-
-      const opened = openInNewTabFallback();
-      if (!opened) {
-        window.clearTimeout(cleanupTimer);
-        URL.revokeObjectURL(blobUrl);
-      }
+      window.clearTimeout(cleanupTimer);
+      cleanup();
+      // Fallback definitivo sem popup: baixa o PDF já com autoPrint embutido
+      downloadVolumeLabelsPDF(data, true);
     };
 
     document.body.appendChild(iframe);
-    iframe.src = blobUrl;
+    iframe.src = dataUri;
 
     return true;
   } catch {
-    return false;
+    try {
+      // Último fallback para nunca deixar o usuário sem saída
+      downloadVolumeLabelsPDF(data, true);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 
