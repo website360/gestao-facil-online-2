@@ -30,10 +30,10 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
     try {
       const success = printVolumeLabelsDirect({ clientName, totalVolumes, invoiceNumber });
       if (success) {
-        toast.success('PDF aberto para impressão! Selecione a impressora térmica.');
+        toast.success('Comando de impressão enviado. Verifique a impressora térmica.');
         onPrint();
       } else {
-        toast.error('Pop-up bloqueado. Use o botão "Baixar PDF" abaixo.');
+        toast.error('Impressão bloqueada pelo navegador. Use "Baixar PDF" abaixo.');
       }
     } catch {
       toast.error('Erro ao gerar PDF para impressão.');

@@ -191,13 +191,66 @@ export function printVolumeLabelsDirect(data: LabelData): boolean {
     doc.autoPrint();
     const blob = doc.output('blob');
     const blobUrl = URL.createObjectURL(blob);
-    const win = window.open(blobUrl, '_blank');
-    if (!win) {
-      // popup blocked - fallback
-      return false;
+
+    const openInNewTabFallback = () => {
+      const win = window.open(blobUrl, '_blank');
+      if (!win) return false;
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      return true;
+    };
+
+    if (!document.body) {
+      return openInNewTabFallback();
     }
-    // Clean up blob URL after a delay
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.position = 'fixed';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.opacity = '0';
+    iframe.style.pointerEvents = 'none';
+
+    const cleanup = () => {
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+      URL.revokeObjectURL(blobUrl);
+    };
+
+    const cleanupTimer = window.setTimeout(cleanup, 90000);
+
+    iframe.onload = () => {
+      window.setTimeout(() => {
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch {
+          const opened = openInNewTabFallback();
+          if (!opened) {
+            window.clearTimeout(cleanupTimer);
+            cleanup();
+          }
+        }
+      }, 300);
+    };
+
+    iframe.onerror = () => {
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+
+      const opened = openInNewTabFallback();
+      if (!opened) {
+        window.clearTimeout(cleanupTimer);
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+
+    document.body.appendChild(iframe);
+    iframe.src = blobUrl;
+
     return true;
   } catch {
     return false;
