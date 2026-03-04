@@ -31,10 +31,10 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
       const result = await printVolumeLabelsDirect({ clientName, totalVolumes, invoiceNumber });
 
       if (result.success) {
-        toast.success(result.message || 'Etiquetas enviadas para impressão.');
+        toast.success(result.message || 'Etiquetas enviadas via modo nativo (escuro).');
         onPrint();
       } else {
-        toast.error(result.message || 'Não foi possível imprimir direto. Use "Baixar PDF" abaixo.');
+        toast.error(result.message || 'Não foi possível imprimir. Use "Baixar PDF" abaixo.');
       }
     } catch {
       toast.error('Erro ao enviar impressão para a impressora.');

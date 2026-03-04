@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { printPdfDirect } from './qzTrayPrinter';
+import { printVolumeLabelsDPL } from './qzTrayPrinter';
 
 /**
  * Generates a PDF with volume labels at exact 100mm x 60mm per page.
@@ -190,8 +190,8 @@ export async function printVolumeLabelsDirect(
   data: LabelData
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const pdfBase64 = getVolumeLabelsPDFBase64(data);
-    return await printPdfDirect(pdfBase64);
+    // Use native RAW DPL for Datamax — maximum darkness (D15/H30/S0)
+    return await printVolumeLabelsDPL(data.clientName, data.totalVolumes, data.invoiceNumber || '');
   } catch (error) {
     return {
       success: false,
