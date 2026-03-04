@@ -164,14 +164,14 @@ export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
   const currentDate = new Date().toLocaleDateString('pt-BR');
 
   const doc = new jsPDF({
-    orientation: 'portrait',
+    orientation: 'landscape',
     unit: 'mm',
     format: [100, 60],
   });
 
   for (let i = 0; i < totalVolumes; i++) {
     if (i > 0) {
-      doc.addPage([100, 60], 'portrait');
+      doc.addPage([100, 60], 'landscape');
     }
     drawLabel(doc, clientName, invoiceNumber, i + 1, totalVolumes, currentDate);
   }
