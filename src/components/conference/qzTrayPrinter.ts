@@ -329,11 +329,8 @@ export async function printPdfDirect(
       units: 'mm',
       size: { width: 100, height: 60 },
       scaleContent: false,
-      rasterize: true,
+      rasterize: false,
       orientation: 'landscape',
-      colorType: 'blackwhite',
-      density: [203, 203],
-      interpolation: 'nearest-neighbor',
     });
 
     await withTimeout(
