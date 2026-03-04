@@ -92,20 +92,36 @@ export async function findDatamaxPrinter(): Promise<string | null> {
 /**
  * Generate DPL commands for a single volume label.
  * Datamax O'Neil E-Class Mark III at 203 DPI (8 dots/mm)
- * Label: 100mm x 60mm = 800 x 480 dots
- *
- * DPL format for E-Class Mark III:
- * - STX + n = Clear buffer and start label
- * - m = Set metric mode (mm)
- * - D = Density/Darkness (00-15, higher = darker)
- * - H = Heat setting (00-30)  
- * - S = Speed (0=slowest)
- * - 1 = Text command prefix
- * - E = End and print
- *
- * Text format: 1X1100YYYYXXXXXdata
- * X = font (0-9), Y = row position, X = column position
+ * Label: 100mm x 60mm in landscape
  */
+const DPL_SYSTEM_SETUP = {
+  metricMode: '\x02m\r',          // STX m -> metric mode (mm/10)
+  edgeSensor: '\x02e\r',          // STX e -> gap/edge sensing
+  gapLength: '\x02c0000\r',       // STX c0000 -> disable continuous mode (required for gap media)
+  maxLabelTravel: '\x02M1500\r',  // STX M1500 -> max TOF search = 150.0mm (safety, avoids long feed)
+  startOffset: '\x02O0220\r',     // STX O0220 -> start-of-print offset (legacy Datamax default)
+  startFormat: '\x02L\r',         // STX L -> enter label format mode
+} as const;
+
+const DPL_LABEL_HEADER = {
+  widthAndDotSize: 'D11\r',        // Label header: width + dot size
+  heat: 'H30\r',                   // Label header: max heat for darker print
+  printSpeed: 'P0\r',              // Label header: slowest print speed
+  feedSpeed: 'S0\r',               // Label header: slow feed speed
+  quantityOne: 'Q0001\r',          // Print exactly 1 label per format
+  endAndPrint: 'E\r',              // End format and print
+} as const;
+
+function buildDPLSystemSetup(): string {
+  return (
+    DPL_SYSTEM_SETUP.metricMode +
+    DPL_SYSTEM_SETUP.edgeSensor +
+    DPL_SYSTEM_SETUP.gapLength +
+    DPL_SYSTEM_SETUP.maxLabelTravel +
+    DPL_SYSTEM_SETUP.startOffset
+  );
+}
+
 function generateDPLLabel(
   clientName: string,
   invoiceNumber: string,
@@ -117,21 +133,21 @@ function generateDPLLabel(
   const volText = `${volumeNumber}/${totalVolumes}`;
   const nf = invoiceNumber || 'S/N';
 
-  // DPL structure for Datamax E-Class Mark III (203 DPI):
-  // All STX system commands BEFORE STX L
-  // All text commands between STX L and E (no STX inside)
+  // IMPORTANT:
+  // - System commands first (STX...)
+  // - Then STX L
+  // - Then ONLY label formatting records (no STX)
   let label = '';
-  
-  // System commands (each prefixed with STX)
-  label += '\x02n\r';           // Clear image buffer
-  label += '\x02M0480\r';       // Label length: 480 dots = 60mm at 8 dots/mm
-  label += '\x02D15\r';         // Maximum darkness (0-15)
-  label += '\x02S0\r';          // Slowest speed for best quality
-  label += '\x02L\r';           // START label format — everything below is ONE label
-  
-  // Text commands (NO \x02 prefix here)
-  // Format: 1[font][rotation]1100[row:4][col:5][data]
-  label += 'D11\r';             // Set dot density inside format
+
+  label += buildDPLSystemSetup();
+  label += DPL_SYSTEM_SETUP.startFormat;
+
+  label += DPL_LABEL_HEADER.widthAndDotSize;
+  label += DPL_LABEL_HEADER.heat;
+  label += DPL_LABEL_HEADER.printSpeed;
+  label += DPL_LABEL_HEADER.feedSpeed;
+
+  // Text records (metric coordinates in mm/10)
   label += '191100020000050IRMAOS MANTOVANI TEXTIL\r';
   label += '121100080000010CLIENTE:\r';
   label += '121100080000150' + clientText + '\r';
@@ -141,8 +157,10 @@ function generateDPLLabel(
   label += '121100200000150' + volText + '\r';
   label += '121100200000350DATA:\r';
   label += '121100200000450' + date + '\r';
-  label += 'E\r';               // END label and print 1 copy
-  
+
+  label += DPL_LABEL_HEADER.quantityOne;
+  label += DPL_LABEL_HEADER.endAndPrint;
+
   return label;
 }
 
@@ -170,17 +188,18 @@ export async function printTestLabel(printerName: string): Promise<void> {
   }
 
   const config = qz.configs.create(printerName, { raw: true });
-  
-  // Simple test label with correct DPL structure
+
+  // Test label using the same validated structure as production labels
   let testLabel = '';
-  testLabel += '\x02n\r';
-  testLabel += '\x02M0480\r';
-  testLabel += '\x02D15\r';
-  testLabel += '\x02S0\r';
-  testLabel += '\x02L\r';
-  testLabel += 'D11\r';
+  testLabel += buildDPLSystemSetup();
+  testLabel += DPL_SYSTEM_SETUP.startFormat;
+  testLabel += DPL_LABEL_HEADER.widthAndDotSize;
+  testLabel += DPL_LABEL_HEADER.heat;
+  testLabel += DPL_LABEL_HEADER.printSpeed;
+  testLabel += DPL_LABEL_HEADER.feedSpeed;
   testLabel += '121100100000050TESTE DE IMPRESSAO\r';
-  testLabel += 'E\r';
+  testLabel += DPL_LABEL_HEADER.quantityOne;
+  testLabel += DPL_LABEL_HEADER.endAndPrint;
 
   console.log('Test DPL:', testLabel);
   await qz.print(config, [{ type: 'raw', format: 'plain', data: testLabel }]);
