@@ -1,34 +1,60 @@
 
+Objetivo
+- Fazer a etiqueta sair mais escura na Datamax (como no BarTender) sem engrossar linhas/layout.
 
-# Plano: Restaurar impressao de etiquetas funcional
+Diagnóstico rápido
+- Hoje o fluxo principal imprime em `pixel/pdf` via QZ (`printPdfDirect`), que depende do raster/driver e pode sair “lavado”.
+- Já existe suporte nativo DPL no projeto com comandos de escurecimento máximos (`D15`, `H30`, `S0`), mas ele não está sendo usado no botão principal.
+- Para Datamax, o caminho mais confiável para escurecer é RAW DPL (linguagem nativa da impressora), não PDF rasterizado.
 
-## Diagnostico
-O fluxo atual depende exclusivamente do QZ Tray, que requer software externo instalado e esta causando travamento na impressora. O caminho anterior via `directPrinter.ts` (window.open + window.print) tambem falha por bloqueios do Edge.
+Plano de implementação
+1) Priorizar impressão nativa Datamax (RAW DPL)
+- Em `src/components/conference/qzTrayPrinter.ts`:
+  - Criar/ajustar uma função de alto nível que:
+    - conecta no QZ com timeout,
+    - seleciona impressora Datamax/Honeywell física (mantendo filtro de impressoras virtuais),
+    - gera DPL com os comandos de densidade/heat já existentes,
+    - envia via `qz.print` em modo `raw`.
+  - Centralizar parâmetros térmicos em constantes (ex.: `DARKNESS=15`, `HEAT=30`, `SPEED=0`) para ajuste fino sem mexer no layout.
 
-## Solucao pragmatica
-Usar o PDF ja gerado (jsPDF) com `autoPrint()` embutido e abrir como blob URL em nova aba do navegador. O visualizador de PDF do proprio browser dispara a impressao automaticamente sem depender de QZ Tray nem de window.open+write.
+2) Trocar o fluxo principal de impressão de etiquetas para DPL
+- Em `src/components/conference/pdfLabelGenerator.ts`:
+  - `printVolumeLabelsDirect(...)` passa a chamar primeiro a nova função RAW DPL (usando os dados de cliente/NF/volume).
+  - PDF continua para download e fallback controlado.
 
-### Fluxo
-1. Gerar PDF com `generateVolumeLabelsPDF` (layout atual, 100x60mm)
-2. Chamar `doc.autoPrint()` para embutir comando de impressao automatica no PDF
-3. Converter para blob URL e abrir em nova aba (`window.open(blobUrl)`)
-4. O navegador abre o PDF e dispara impressao automaticamente
-5. Manter botao "Baixar PDF" como alternativa
+3) Fallback controlado (sem regredir para “claro” sem aviso)
+- Estratégia:
+  - Se Datamax está disponível: tentar DPL; se falhar, retornar erro claro (“falha no modo Datamax nativo”) em vez de imprimir automaticamente em PDF claro.
+  - Se Datamax não for encontrada: manter comportamento atual de mensagem/fallback (download PDF).
 
-### Alteracoes
+4) Feedback de UI
+- Em `VolumeLabelPrinter.tsx`:
+  - Ajustar mensagens de sucesso/erro para deixar explícito quando foi “modo Datamax nativo (escuro)”.
+  - Manter botões e UX atuais (sem novas telas).
 
-**`src/components/conference/VolumeLabelPrinter.tsx`**
-- Botao principal: chamar nova funcao `printVolumeLabelsDirect` que abre PDF com autoPrint em nova aba
-- Remover dependencia do QZ Tray como caminho principal
-- Remover aviso sobre QZ Tray
-- Manter botao "Baixar PDF" como fallback
+Fluxo final (resumo)
+```text
+Clique "Imprimir"
+   -> QZ conecta
+   -> Detecta Datamax física
+      -> Sim: envia RAW DPL (D15/H30/S0)  => saída mais escura
+      -> Não: informa ausência Datamax e mantém alternativa PDF
+```
 
-**`src/components/conference/pdfLabelGenerator.ts`**
-- Adicionar funcao `printVolumeLabelsDirect(data)` que:
-  - Gera o PDF
-  - Chama `doc.autoPrint()`
-  - Cria blob URL
-  - Abre em nova aba com `window.open`
+Arquivos impactados
+- `src/components/conference/qzTrayPrinter.ts` (principal)
+- `src/components/conference/pdfLabelGenerator.ts` (roteamento do fluxo)
+- `src/components/conference/VolumeLabelPrinter.tsx` (mensagens de status)
 
-Nenhuma alteracao no layout da etiqueta - mantemos o estilo atual. Nenhuma dependencia de software externo.
+Critérios de aceite
+- Etiqueta sai visivelmente mais escura (comparável ao padrão BarTender) sem aumentar espessura de linhas no layout.
+- Orientação permanece correta (já ajustada anteriormente).
+- Funciona tanto em:
+  - Conferência final (`VolumeWeightModal`)
+  - Reimpressão (`ReprintLabelsModal`)
+- Quando Datamax não estiver disponível, sistema não “finge sucesso”.
 
+Validação ponta a ponta
+- Testar 1 etiqueta real na Datamax com mesmo pedido que estava saindo claro.
+- Testar múltiplos volumes (ex.: 1/3, 2/3, 3/3).
+- Testar caminho de erro (QZ desligado / impressora desconectada).
