@@ -359,6 +359,80 @@ export async function printPdfDirect(
   }
 }
 
+/**
+ * High-level function: print volume labels via native RAW DPL on Datamax.
+ * Uses D15/H30/S0 for maximum darkness (comparable to BarTender).
+ * Returns result object for UI feedback.
+ */
+export async function printVolumeLabelsDPL(
+  clientName: string,
+  totalVolumes: number,
+  invoiceNumber: string = ''
+): Promise<{ success: boolean; message: string }> {
+  try {
+    // 1. Connect with timeout
+    const connected = await withTimeout(
+      connectQZTray(),
+      QZ_CONNECT_TIMEOUT_MS,
+      'Timeout ao conectar no QZ Tray.'
+    );
+
+    if (!connected) {
+      return {
+        success: false,
+        message: 'QZ Tray não está instalado ou não está rodando. Instale em https://qz.io/download e reinicie.',
+      };
+    }
+
+    // 2. Discover printers
+    const allPrinters = await withTimeout(
+      findPrinters(),
+      5000,
+      'Timeout ao buscar impressoras no QZ Tray.'
+    );
+
+    if (allPrinters.length === 0) {
+      return { success: false, message: 'Nenhuma impressora encontrada no QZ Tray.' };
+    }
+
+    // 3. Find Datamax physical printer (exclude virtual)
+    const datamaxPrinter = allPrinters.find(
+      (name) => isDatamaxCompatiblePrinter(name) && !isVirtualPrinter(name)
+    );
+
+    if (!datamaxPrinter) {
+      const availableList = allPrinters.slice(0, 5).join(', ');
+      return {
+        success: false,
+        message: `Datamax não encontrada. Impressoras detectadas: ${availableList || 'nenhuma'}. Use "Baixar PDF" como alternativa.`,
+      };
+    }
+
+    // 4. Generate DPL and send RAW
+    const dplData = generateAllDPLLabels(clientName, totalVolumes, invoiceNumber);
+    const config = qz.configs.create(datamaxPrinter, { raw: true });
+
+    console.log(`Enviando ${totalVolumes} etiqueta(s) DPL nativo para ${datamaxPrinter}`);
+
+    await withTimeout(
+      qz.print(config, [{ type: 'raw', format: 'plain', data: dplData }]),
+      QZ_PRINT_TIMEOUT_MS,
+      'Timeout no envio de impressão DPL para a Datamax.'
+    );
+
+    return {
+      success: true,
+      message: `${totalVolumes} etiqueta(s) enviada(s) para ${datamaxPrinter} (modo nativo escuro)`,
+    };
+  } catch (error) {
+    console.error('DPL print error:', error);
+    return {
+      success: false,
+      message: `Erro na impressão nativa: ${(error as Error).message || 'falha desconhecida'}`,
+    };
+  }
+}
+
 export async function disconnectQZTray(): Promise<void> {
   if (qz.websocket.isActive()) {
     try {
