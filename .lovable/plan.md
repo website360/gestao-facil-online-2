@@ -1,60 +1,52 @@
 
-Objetivo
-- Fazer a etiqueta sair mais escura na Datamax (como no BarTender) sem engrossar linhas/layout.
 
-Diagnóstico rápido
-- Hoje o fluxo principal imprime em `pixel/pdf` via QZ (`printPdfDirect`), que depende do raster/driver e pode sair “lavado”.
-- Já existe suporte nativo DPL no projeto com comandos de escurecimento máximos (`D15`, `H30`, `S0`), mas ele não está sendo usado no botão principal.
-- Para Datamax, o caminho mais confiável para escurecer é RAW DPL (linguagem nativa da impressora), não PDF rasterizado.
+## Problema
 
-Plano de implementação
-1) Priorizar impressão nativa Datamax (RAW DPL)
-- Em `src/components/conference/qzTrayPrinter.ts`:
-  - Criar/ajustar uma função de alto nível que:
-    - conecta no QZ com timeout,
-    - seleciona impressora Datamax/Honeywell física (mantendo filtro de impressoras virtuais),
-    - gera DPL com os comandos de densidade/heat já existentes,
-    - envia via `qz.print` em modo `raw`.
-  - Centralizar parâmetros térmicos em constantes (ex.: `DARKNESS=15`, `HEAT=30`, `SPEED=0`) para ajuste fino sem mexer no layout.
+O código DPL atual tem problemas graves de formatação que causam o desperdício de papel e layout quebrado:
 
-2) Trocar o fluxo principal de impressão de etiquetas para DPL
-- Em `src/components/conference/pdfLabelGenerator.ts`:
-  - `printVolumeLabelsDirect(...)` passa a chamar primeiro a nova função RAW DPL (usando os dados de cliente/NF/volume).
-  - PDF continua para download e fallback controlado.
+1. **Cada comando de sistema (`\x02M`, `\x02O`, `\x02D`, `\x02H`, `\x02S`) está sendo tratado como uma label separada** — a impressora interpreta cada `\x02` como início de novo label, fazendo avançar papel a cada comando.
+2. **O comprimento da label (`M0500`) está em dots (500 dots ≈ 62mm), mas os comandos de posicionamento de texto usam valores muito altos** (row 200 = 200 dots ≈ 25mm, o que está OK, mas a combinação com os múltiplos inícios de label causa o avanço excessivo).
+3. **Os comandos de configuração (D, H, S) devem ser enviados ANTES do `\x02L` (início do formato) e idealmente como comandos de sistema separados, não misturados com STX repetidos.**
 
-3) Fallback controlado (sem regredir para “claro” sem aviso)
-- Estratégia:
-  - Se Datamax está disponível: tentar DPL; se falhar, retornar erro claro (“falha no modo Datamax nativo”) em vez de imprimir automaticamente em PDF claro.
-  - Se Datamax não for encontrada: manter comportamento atual de mensagem/fallback (download PDF).
+## Solução
 
-4) Feedback de UI
-- Em `VolumeLabelPrinter.tsx`:
-  - Ajustar mensagens de sucesso/erro para deixar explícito quando foi “modo Datamax nativo (escuro)”.
-  - Manter botões e UX atuais (sem novas telas).
+Reescrever `generateDPLLabel` com a estrutura DPL correta para E-Class Mark III:
 
-Fluxo final (resumo)
 ```text
-Clique "Imprimir"
-   -> QZ conecta
-   -> Detecta Datamax física
-      -> Sim: envia RAW DPL (D15/H30/S0)  => saída mais escura
-      -> Não: informa ausência Datamax e mantém alternativa PDF
+STX n          ← limpa buffer (uma vez)
+STX KcRFF      ← set continuous media (ou gap mode)
+STX c           ← set metric mode  
+STX M0480      ← label length 480 dots (60mm × 8 dots/mm)
+STX D15        ← darkness
+STX S0         ← speed
+STX L          ← START label format (tudo entre L e E é UMA etiqueta)
+D11            ← density dentro do formato
+191100020000050IRMAOS MANTOVANI TEXTIL
+121100080000010CLIENTE:
+121100080000150[nome]
+121100140000010NF:
+121100140000080[nf]
+121100200000010VOLUME:
+121100200000150[vol]
+121100200000350DATA:
+121100200000450[data]
+E              ← fim e imprime
 ```
 
-Arquivos impactados
-- `src/components/conference/qzTrayPrinter.ts` (principal)
-- `src/components/conference/pdfLabelGenerator.ts` (roteamento do fluxo)
-- `src/components/conference/VolumeLabelPrinter.tsx` (mensagens de status)
+Pontos-chave da correção:
+- **Todos os comandos de configuração (D, H, S, M) ficam ANTES do `\x02L`**, cada um com seu próprio `\x02`
+- **Entre `\x02L` e `E` ficam APENAS os comandos de texto/gráfico** — sem `\x02` no meio
+- **Remover `\x02H30`** — o comando H não existe no DPL padrão do E-Class; a densidade é controlada apenas por D e opcionalmente pelo comando `D11` (set dot density) dentro do formato
+- **Ajustar `M` para 480 dots** (60mm × 8 dots/mm) para corresponder exatamente ao tamanho da etiqueta
+- **Remover `Q0001\r` de dentro do bloco** — no DPL do E-Class, `E` já finaliza e imprime 1 cópia; `Q` deve vir antes de `E` se necessário
 
-Critérios de aceite
-- Etiqueta sai visivelmente mais escura (comparável ao padrão BarTender) sem aumentar espessura de linhas no layout.
-- Orientação permanece correta (já ajustada anteriormente).
-- Funciona tanto em:
-  - Conferência final (`VolumeWeightModal`)
-  - Reimpressão (`ReprintLabelsModal`)
-- Quando Datamax não estiver disponível, sistema não “finge sucesso”.
+## Arquivo impactado
 
-Validação ponta a ponta
-- Testar 1 etiqueta real na Datamax com mesmo pedido que estava saindo claro.
-- Testar múltiplos volumes (ex.: 1/3, 2/3, 3/3).
-- Testar caminho de erro (QZ desligado / impressora desconectada).
+- `src/components/conference/qzTrayPrinter.ts` — reescrever apenas a função `generateDPLLabel`
+
+## Validação
+
+- Deve imprimir **uma única etiqueta de ~60mm** com todas as informações no mesmo label
+- Layout compacto sem avanço excessivo de papel
+- Texto escuro (D15 mantido)
+
