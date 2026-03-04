@@ -117,45 +117,31 @@ function generateDPLLabel(
   const volText = `${volumeNumber}/${totalVolumes}`;
   const nf = invoiceNumber || 'S/N';
 
-  // Build single string with CR line endings for DPL
-  // Using simpler DPL format compatible with E-Class Mark III
+  // DPL structure for Datamax E-Class Mark III (203 DPI):
+  // All STX system commands BEFORE STX L
+  // All text commands between STX L and E (no STX inside)
   let label = '';
   
-  // Start label format mode, clear buffer
-  label += '\x02n\r';           // STX + n = new label, clear image buffer
-  label += '\x02M0500\r';       // Set label length to 500 dots (~62mm)
-  label += '\x02O0220\r';       // Set label width offset
+  // System commands (each prefixed with STX)
+  label += '\x02n\r';           // Clear image buffer
+  label += '\x02M0480\r';       // Label length: 480 dots = 60mm at 8 dots/mm
   label += '\x02D15\r';         // Maximum darkness (0-15)
-  label += '\x02H30\r';         // Maximum heat (0-30)  
   label += '\x02S0\r';          // Slowest speed for best quality
-  label += '\x02L\r';           // Start label format
+  label += '\x02L\r';           // START label format — everything below is ONE label
   
-  // Header - IRMAOS MANTOVANI TEXTIL (font 4, row 20, col 50)
+  // Text commands (NO \x02 prefix here)
+  // Format: 1[font][rotation]1100[row:4][col:5][data]
+  label += 'D11\r';             // Set dot density inside format
   label += '191100020000050IRMAOS MANTOVANI TEXTIL\r';
-  
-  // CLIENTE label (font 2, row 80, col 10)
   label += '121100080000010CLIENTE:\r';
-  // Client name (font 2, row 80, col 150)
   label += '121100080000150' + clientText + '\r';
-  
-  // NF label (font 2, row 140, col 10)
   label += '121100140000010NF:\r';
-  // NF value (font 2, row 140, col 80)
   label += '121100140000080' + nf + '\r';
-  
-  // VOLUME label (font 2, row 200, col 10)
   label += '121100200000010VOLUME:\r';
-  // Volume value (font 2, row 200, col 150)
   label += '121100200000150' + volText + '\r';
-  
-  // DATA label (font 2, row 200, col 350)
   label += '121100200000350DATA:\r';
-  // Date value (font 2, row 200, col 450)
   label += '121100200000450' + date + '\r';
-  
-  // End label and print 1 copy
-  label += 'Q0001\r';
-  label += 'E\r';
+  label += 'E\r';               // END label and print 1 copy
   
   return label;
 }
@@ -185,15 +171,15 @@ export async function printTestLabel(printerName: string): Promise<void> {
 
   const config = qz.configs.create(printerName, { raw: true });
   
-  // Simple test label with maximum darkness settings
+  // Simple test label with correct DPL structure
   let testLabel = '';
   testLabel += '\x02n\r';
+  testLabel += '\x02M0480\r';
   testLabel += '\x02D15\r';
-  testLabel += '\x02H30\r';
   testLabel += '\x02S0\r';
   testLabel += '\x02L\r';
+  testLabel += 'D11\r';
   testLabel += '121100100000050TESTE DE IMPRESSAO\r';
-  testLabel += 'Q0001\r';
   testLabel += 'E\r';
 
   console.log('Test DPL:', testLabel);
