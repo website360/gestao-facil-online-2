@@ -327,9 +327,10 @@ export async function printPdfDirect(
     // 5. Configure and print
     const config = qz.configs.create(selectedPrinter, {
       units: 'mm',
-      size: { width: 100, height: 60 },
+      size: { width: 60, height: 100 },
       scaleContent: false,
       rasterize: true,
+      orientation: 'portrait',
     });
 
     await withTimeout(
