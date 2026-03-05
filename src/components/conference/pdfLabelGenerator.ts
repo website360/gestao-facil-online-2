@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { printVolumeLabelsDPL } from './qzTrayPrinter';
+import { printPdfDirect } from './qzTrayPrinter';
 
 /**
  * Generates a PDF with volume labels at exact 100mm x 60mm per page.
