@@ -113,6 +113,10 @@ function drawLabel(
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
 
+  // Outer border around entire label usable area
+  doc.setLineWidth(0.4);
+  doc.rect(ML, MT, CONTENT_W, CONTENT_H);
+
   // Font sizes (real, no scaling)
   const fontCompany = 9;
   const fontLabel = 7;
