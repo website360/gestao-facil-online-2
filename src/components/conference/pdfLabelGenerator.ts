@@ -206,7 +206,7 @@ export async function generateVolumeLabelsPDF(data: LabelData): Promise<jsPDF> {
 
   for (let i = 0; i < totalVolumes; i++) {
     if (i > 0) {
-      doc.addPage([100, 60], 'landscape');
+      doc.addPage([100, 78], 'landscape');
     }
     drawLabel(doc, clientName, invoiceNumber, i + 1, totalVolumes, currentDate, logoBase64);
   }
