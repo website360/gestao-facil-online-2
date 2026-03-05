@@ -365,7 +365,7 @@ export async function printPdfDirect(
 
     // 5. Configure and print
     const LABEL_WIDTH_MM = 100;
-    const LABEL_HEIGHT_MM = 78;
+    const LABEL_HEIGHT_MM = 60;
 
     const config = qz.configs.create(selectedPrinter, {
       units: 'mm',
