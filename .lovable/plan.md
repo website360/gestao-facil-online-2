@@ -1,68 +1,52 @@
 
 
-## Diagnóstico do Problema
+## Problema
 
-O problema persistente de corte tem uma causa raiz simples: o conteúdo da etiqueta ocupa quase toda a área de 100x78mm do PDF, mas a Datamax possui margens físicas não imprimíveis de ~4-6mm em cada lado. As correções anteriores ajustaram margens em 1-2mm de cada vez, nunca criando espaço suficiente.
+O código DPL atual tem problemas graves de formatação que causam o desperdício de papel e layout quebrado:
 
-Além disso, o QZ Tray está com `scaleContent: false`, o que significa que o PDF é enviado em tamanho 1:1 e tudo que cai fora da área imprimível da Datamax é simplesmente cortado.
+1. **Cada comando de sistema (`\x02M`, `\x02O`, `\x02D`, `\x02H`, `\x02S`) está sendo tratado como uma label separada** — a impressora interpreta cada `\x02` como início de novo label, fazendo avançar papel a cada comando.
+2. **O comprimento da label (`M0500`) está em dots (500 dots ≈ 62mm), mas os comandos de posicionamento de texto usam valores muito altos** (row 200 = 200 dots ≈ 25mm, o que está OK, mas a combinação com os múltiplos inícios de label causa o avanço excessivo).
+3. **Os comandos de configuração (D, H, S) devem ser enviados ANTES do `\x02L` (início do formato) e idealmente como comandos de sistema separados, não misturados com STX repetidos.**
 
-## Solução Definitiva
+## Solução
 
-A abordagem é criar uma **zona segura agressiva** dentro do PDF e usar o QZ Tray para escalar o conteúdo para caber na área imprimível.
-
-### Mudança 1: `pdfLabelGenerator.ts` -- Redesenho completo do layout
-
-Reescrever a função `drawLabel` com as seguintes alterações:
-
-- **Margens muito maiores**: `ML=8, MR=8, MT=12, MB=12` (total: 16mm horizontais, 24mm verticais consumidos por margens)
-- **Área útil resultante**: 84mm x 54mm (dentro de 100x78mm)
-- **Proporções das seções**:
-  - Header: 8mm (logo 6x6mm, nome da empresa em 7pt)
-  - Cliente: 26mm (nome em 7.5pt, label "CLIENTE" em 6pt)
-  - Rodapé (NF/Volume/Data): 20mm (labels em 5.5pt, valores em 6.5pt, volume em 7pt)
-- **Sem borda externa** (a borda ocupava espaço e era cortada, causando a impressão de "película branca")
-- **Fontes significativamente menores** em todas as seções para garantir que nada exceda a área útil
-- **Logo reduzido** para 6x6mm
+Reescrever `generateDPLLabel` com a estrutura DPL correta para E-Class Mark III:
 
 ```text
-┌──────────────── 100mm ────────────────┐
-│  8mm                           8mm    │
-│  ┌─────────── 84mm ──────────┐        │
-│  │  LOGO  IRMAOS MANTOVANI   │ 12mm   │ MT
-│  │────────────────────────────│        │
-│  │ CLI │  NOME DO CLIENTE     │        │
-│  │ENTE │  (até 3 linhas 7pt) │ 26mm   │
-│  │────────────────────────────│        │
-│  │ NF: xxx │ VOL: 1/3 │ DATA │ 20mm   │
-│  └────────────────────────────┘        │
-│                                 12mm   │ MB
-└────────────────────────────────────────┘
-         Área útil: 84 x 54mm
+STX n          ← limpa buffer (uma vez)
+STX KcRFF      ← set continuous media (ou gap mode)
+STX c           ← set metric mode  
+STX M0480      ← label length 480 dots (60mm × 8 dots/mm)
+STX D15        ← darkness
+STX S0         ← speed
+STX L          ← START label format (tudo entre L e E é UMA etiqueta)
+D11            ← density dentro do formato
+191100020000050IRMAOS MANTOVANI TEXTIL
+121100080000010CLIENTE:
+121100080000150[nome]
+121100140000010NF:
+121100140000080[nf]
+121100200000010VOLUME:
+121100200000150[vol]
+121100200000350DATA:
+121100200000450[data]
+E              ← fim e imprime
 ```
 
-### Mudança 2: `qzTrayPrinter.ts` -- Configuração de impressão
+Pontos-chave da correção:
+- **Todos os comandos de configuração (D, H, S, M) ficam ANTES do `\x02L`**, cada um com seu próprio `\x02`
+- **Entre `\x02L` e `E` ficam APENAS os comandos de texto/gráfico** — sem `\x02` no meio
+- **Remover `\x02H30`** — o comando H não existe no DPL padrão do E-Class; a densidade é controlada apenas por D e opcionalmente pelo comando `D11` (set dot density) dentro do formato
+- **Ajustar `M` para 480 dots** (60mm × 8 dots/mm) para corresponder exatamente ao tamanho da etiqueta
+- **Remover `Q0001\r` de dentro do bloco** — no DPL do E-Class, `E` já finaliza e imprime 1 cópia; `Q` deve vir antes de `E` se necessário
 
-Na função `printPdfDirect`, alterar a configuração do QZ Tray:
+## Arquivo impactado
 
-```typescript
-const config = qz.configs.create(selectedPrinter, {
-  units: 'mm',
-  size: { width: 100, height: 78 },
-  orientation: 'landscape',
-  scaleContent: true,    // CRÍTICO: permite ao driver escalar para a área imprimível
-  rasterize: true,
-  density: 'best',
-  interpolation: 'nearest-neighbor',
-  colorType: 'blackwhite',
-});
-```
+- `src/components/conference/qzTrayPrinter.ts` — reescrever apenas a função `generateDPLLabel`
 
-A combinação de `scaleContent: true` com conteúdo centralizado e compacto garante que o driver da Datamax redimensione o PDF para caber 100% na área imprimível, eliminando qualquer corte.
+## Validação
 
-### Resumo das mudanças
-
-| Arquivo | O que muda |
-|---------|-----------|
-| `pdfLabelGenerator.ts` | Reescrita completa do `drawLabel`: margens 8/8/12/12mm, fontes 30% menores, logo 6x6mm, sem borda externa, área útil 84x54mm |
-| `qzTrayPrinter.ts` | `scaleContent: true` na config do `printPdfDirect` |
+- Deve imprimir **uma única etiqueta de ~60mm** com todas as informações no mesmo label
+- Layout compacto sem avanço excessivo de papel
+- Texto escuro (D15 mantido)
 

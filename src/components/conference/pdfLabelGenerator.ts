@@ -62,73 +62,68 @@ function drawLabel(
   logoBase64: string | null
 ) {
   // Etiqueta física: 100x78mm
-  // Área segura agressiva para Datamax (evita corte superior/direito)
-  const ML = 4;
-  const MR = 12;
-  const MT = 10;
-  const MB = 6;
+  // Zona segura agressiva: margens grandes para garantir 0% de corte na Datamax
+  const ML = 8;
+  const MR = 8;
+  const MT = 12;
+  const MB = 12;
   const PW = 100;
   const PH = 78;
   const contentW = PW - ML - MR; // 84mm
-  const contentH = PH - MT - MB; // 62mm
+  const contentH = PH - MT - MB; // 54mm
 
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
 
-  // Borda externa
-  doc.setLineWidth(0.5);
-  doc.rect(ML, MT, contentW, contentH);
-
-  // Distribuição vertical equilibrada (rodapé mais compacto)
-  const headerH = 10;
-  const clientH = 30;
-  const bottomH = contentH - headerH - clientH; // 22mm
+  // Seções verticais dentro da área útil (sem borda externa)
+  const headerH = 8;
+  const clientH = 26;
+  const bottomH = contentH - headerH - clientH; // 20mm
 
   const headerY = MT;
   const clientY = MT + headerH;
   const bottomY = clientY + clientH;
-  const contentBottomY = MT + contentH;
 
   // === HEADER ===
-  doc.setLineWidth(0.35);
+  doc.setLineWidth(0.3);
   doc.line(ML, clientY, ML + contentW, clientY);
 
   if (logoBase64) {
     try {
-      const logoW = 8;
-      const logoH = 8;
-      const logoX = ML + 2;
+      const logoW = 6;
+      const logoH = 6;
+      const logoX = ML + 1;
       const logoY = headerY + (headerH - logoH) / 2;
       doc.addImage(logoBase64, 'JPEG', logoX, logoY, logoW, logoH);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.text('IRMAOS MANTOVANI TEXTIL', ML + 11.5, headerY + headerH / 2 + 0.8);
+      doc.setFontSize(7);
+      doc.text('IRMAOS MANTOVANI TEXTIL', ML + 8.5, headerY + headerH / 2 + 0.6);
     } catch {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.2);
-      doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 0.8, { align: 'center' });
+      doc.setFontSize(7);
+      doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 0.6, { align: 'center' });
     }
   } else {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.2);
-    doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 0.8, { align: 'center' });
+    doc.setFontSize(7);
+    doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 0.6, { align: 'center' });
   }
 
   // === CLIENTE ===
   doc.line(ML, bottomY, ML + contentW, bottomY);
 
-  const lblW = 15;
+  const lblW = 13;
   doc.line(ML + lblW, clientY, ML + lblW, bottomY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.text('CLIENTE', ML + 1.8, clientY + clientH / 2 + 0.8);
+  doc.setFontSize(6);
+  doc.text('CLIENTE', ML + 1.2, clientY + clientH / 2 + 0.6);
 
-  doc.setFontSize(8.8);
+  doc.setFontSize(7.5);
   const clientText = clientName.toUpperCase();
-  const maxW = contentW - lblW - 5;
-  const dataX = ML + lblW + 2;
+  const maxW = contentW - lblW - 4;
+  const dataX = ML + lblW + 1.5;
 
   if (doc.getTextWidth(clientText) > maxW) {
     const words = clientText.split(' ');
@@ -159,18 +154,19 @@ function drawLabel(
       }
     }
 
-    const lineSpacing = 3.4;
-    const totalTextH = (line3 ? 3 : line2 ? 2 : 1) * lineSpacing;
-    const startY = clientY + (clientH - totalTextH) / 2 + 2.6;
+    const lineSpacing = 3.2;
+    const numLines = line3 ? 3 : line2 ? 2 : 1;
+    const totalTextH = numLines * lineSpacing;
+    const startY = clientY + (clientH - totalTextH) / 2 + 2.2;
 
     doc.text(line1, dataX, startY);
     if (line2) doc.text(line2, dataX, startY + lineSpacing);
     if (line3) {
-      const trunc = line3.length > 32 ? `${line3.substring(0, 32)}...` : line3;
+      const trunc = line3.length > 30 ? `${line3.substring(0, 30)}...` : line3;
       doc.text(trunc, dataX, startY + lineSpacing * 2);
     }
   } else {
-    doc.text(clientText, dataX, clientY + clientH / 2 + 0.8);
+    doc.text(clientText, dataX, clientY + clientH / 2 + 0.6);
   }
 
   // === LINHA INFERIOR: NF | VOLUME | DATA ===
@@ -182,30 +178,32 @@ function drawLabel(
   const col2X = ML + col1W;
   const col3X = col2X + col2W;
 
-  doc.setLineWidth(0.35);
+  const contentBottomY = MT + contentH;
+
+  doc.setLineWidth(0.3);
   doc.line(col2X, bottomY, col2X, contentBottomY);
   doc.line(col3X, bottomY, col3X, contentBottomY);
 
-  // Cabeçalhos da linha inferior
-  const labelY = bottomY + 3.8;
+  // Cabeçalhos
+  const labelY = bottomY + 3.5;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6);
-  doc.text('NOTA FISCAL', col1X + 1.8, labelY);
-  doc.text('VOLUME', col2X + 1.8, labelY);
-  doc.text('DATA', col3X + 1.8, labelY);
+  doc.setFontSize(5.5);
+  doc.text('NOTA FISCAL', col1X + 1.5, labelY);
+  doc.text('VOLUME', col2X + 1.5, labelY);
+  doc.text('DATA', col3X + 1.5, labelY);
 
-  // Valores reduzidos para evitar excesso visual na 3ª linha
-  const valueY = bottomY + bottomH / 2 + 2.6;
+  // Valores
+  const valueY = bottomY + bottomH / 2 + 2.5;
 
-  doc.setFontSize(7.2);
-  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 1.8, valueY);
+  doc.setFontSize(6.5);
+  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 1.5, valueY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.8);
+  doc.setFontSize(7);
   const volText = `${volumeNumber}/${totalVolumes}`;
   doc.text(volText, col2X + col2W / 2, valueY, { align: 'center' });
 
-  doc.setFontSize(6.8);
+  doc.setFontSize(6);
   doc.text(date, col3X + col3W / 2, valueY, { align: 'center' });
 }
 
