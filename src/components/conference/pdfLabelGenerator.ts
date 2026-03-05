@@ -201,12 +201,12 @@ export async function generateVolumeLabelsPDF(data: LabelData): Promise<jsPDF> {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
-    format: [100, 80],
+    format: [100, 60],
   });
 
   for (let i = 0; i < totalVolumes; i++) {
     if (i > 0) {
-      doc.addPage([100, 80], 'landscape');
+      doc.addPage([100, 60], 'landscape');
     }
     drawLabel(doc, clientName, invoiceNumber, i + 1, totalVolumes, currentDate, logoBase64);
   }
