@@ -1,52 +1,37 @@
 
 
-## Problema
+## Problem
 
-O código DPL atual tem problemas graves de formatação que causam o desperdício de papel e layout quebrado:
+The current label has massive margins (MT=30mm top, ML=30mm left, MB=14mm bottom) leaving only **16mm** of usable content height on a 78mm tall page. This crushes all 3 rows into a tiny space, causing the bottom row (VOLUME) to disappear or get clipped.
 
-1. **Cada comando de sistema (`\x02M`, `\x02O`, `\x02D`, `\x02H`, `\x02S`) está sendo tratado como uma label separada** — a impressora interpreta cada `\x02` como início de novo label, fazendo avançar papel a cada comando.
-2. **O comprimento da label (`M0500`) está em dots (500 dots ≈ 62mm), mas os comandos de posicionamento de texto usam valores muito altos** (row 200 = 200 dots ≈ 25mm, o que está OK, mas a combinação com os múltiplos inícios de label causa o avanço excessivo).
-3. **Os comandos de configuração (D, H, S) devem ser enviados ANTES do `\x02L` (início do formato) e idealmente como comandos de sistema separados, não misturados com STX repetidos.**
+## Plan
 
-## Solução
+Redistribute the layout so the content fills the entire label proportionally. The key change is to **reduce the top margin from 30mm to 8mm** and **bottom margin from 14mm to 6mm**, giving ~64mm of content height instead of 16mm. Left margin stays at 8mm (per the memory note about Datamax safe margins). All three rows (Header, Cliente, NF/Volume/Data) will scale up proportionally to fill the space.
 
-Reescrever `generateDPLLabel` com a estrutura DPL correta para E-Class Mark III:
+### New Layout (100mm x 78mm page)
 
 ```text
-STX n          ← limpa buffer (uma vez)
-STX KcRFF      ← set continuous media (ou gap mode)
-STX c           ← set metric mode  
-STX M0480      ← label length 480 dots (60mm × 8 dots/mm)
-STX D15        ← darkness
-STX S0         ← speed
-STX L          ← START label format (tudo entre L e E é UMA etiqueta)
-D11            ← density dentro do formato
-191100020000050IRMAOS MANTOVANI TEXTIL
-121100080000010CLIENTE:
-121100080000150[nome]
-121100140000010NF:
-121100140000080[nf]
-121100200000010VOLUME:
-121100200000150[vol]
-121100200000350DATA:
-121100200000450[data]
-E              ← fim e imprime
+┌──────────────────────────────────┐
+│  MT = 8mm                        │
+│  ┌────────────────────────────┐  │
+│  │ HEADER (Logo + Nome) 16mm │  │  ML=8mm, MR=4mm
+│  ├────────────────────────────┤  │
+│  │ CLIENTE            28mm   │  │
+│  ├──────────┬────────┬───────┤  │
+│  │ NF 20mm  │VOLUME  │ DATA │  │  bottomH = 20mm
+│  └──────────┴────────┴───────┘  │
+│  MB = 6mm                        │
+└──────────────────────────────────┘
 ```
 
-Pontos-chave da correção:
-- **Todos os comandos de configuração (D, H, S, M) ficam ANTES do `\x02L`**, cada um com seu próprio `\x02`
-- **Entre `\x02L` e `E` ficam APENAS os comandos de texto/gráfico** — sem `\x02` no meio
-- **Remover `\x02H30`** — o comando H não existe no DPL padrão do E-Class; a densidade é controlada apenas por D e opcionalmente pelo comando `D11` (set dot density) dentro do formato
-- **Ajustar `M` para 480 dots** (60mm × 8 dots/mm) para corresponder exatamente ao tamanho da etiqueta
-- **Remover `Q0001\r` de dentro do bloco** — no DPL do E-Class, `E` já finaliza e imprime 1 cópia; `Q` deve vir antes de `E` se necessário
+### Changes in `pdfLabelGenerator.ts`
 
-## Arquivo impactado
+1. **Margins**: `MT=8, MB=6, ML=8, MR=4` → `contentH = 64mm`, `contentW = 88mm`
+2. **Row heights**: `headerH=16mm`, `clientH=28mm`, `bottomH=20mm` — all scaled proportionally
+3. **Font sizes**: Scale up proportionally (~2-3x) since we have ~4x more space
+4. **Logo**: Scale up to ~14x14mm to match the larger header
+5. **Client text**: Larger font, more room for long names
+6. **Bottom row values**: Larger fonts, centered vertically with plenty of clearance
 
-- `src/components/conference/qzTrayPrinter.ts` — reescrever apenas a função `generateDPLLabel`
-
-## Validação
-
-- Deve imprimir **uma única etiqueta de ~60mm** com todas as informações no mesmo label
-- Layout compacto sem avanço excessivo de papel
-- Texto escuro (D15 mantido)
+This ensures the label fills the full paper and no information is cut off.
 
