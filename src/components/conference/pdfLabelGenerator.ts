@@ -62,15 +62,15 @@ function drawLabel(
   logoBase64: string | null
 ) {
   // Etiqueta física: 100x78mm
-  // Área segura calibrada para Datamax (evita corte em cima e na direita)
+  // Área segura agressiva para Datamax (evita corte superior/direito)
   const ML = 4;
-  const MR = 8;
-  const MT = 6;
-  const MB = 8;
+  const MR = 12;
+  const MT = 10;
+  const MB = 6;
   const PW = 100;
   const PH = 78;
-  const contentW = PW - ML - MR; // 88mm
-  const contentH = PH - MT - MB; // 64mm
+  const contentW = PW - ML - MR; // 84mm
+  const contentH = PH - MT - MB; // 62mm
 
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
@@ -79,10 +79,10 @@ function drawLabel(
   doc.setLineWidth(0.5);
   doc.rect(ML, MT, contentW, contentH);
 
-  // Distribuição vertical equilibrada
-  const headerH = 11;
-  const clientH = 27;
-  const bottomH = contentH - headerH - clientH; // 26mm
+  // Distribuição vertical equilibrada (rodapé mais compacto)
+  const headerH = 10;
+  const clientH = 30;
+  const bottomH = contentH - headerH - clientH; // 22mm
 
   const headerY = MT;
   const clientY = MT + headerH;
@@ -95,37 +95,37 @@ function drawLabel(
 
   if (logoBase64) {
     try {
-      const logoW = 9;
-      const logoH = 9;
+      const logoW = 8;
+      const logoH = 8;
       const logoX = ML + 2;
       const logoY = headerY + (headerH - logoH) / 2;
       doc.addImage(logoBase64, 'JPEG', logoX, logoY, logoW, logoH);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.text('IRMAOS MANTOVANI TEXTIL', ML + 13, headerY + headerH / 2 + 0.9);
+      doc.setFontSize(8);
+      doc.text('IRMAOS MANTOVANI TEXTIL', ML + 11.5, headerY + headerH / 2 + 0.8);
     } catch {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.8);
-      doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 0.9, { align: 'center' });
+      doc.setFontSize(8.2);
+      doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 0.8, { align: 'center' });
     }
   } else {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.8);
-    doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 0.9, { align: 'center' });
+    doc.setFontSize(8.2);
+    doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 0.8, { align: 'center' });
   }
 
   // === CLIENTE ===
   doc.line(ML, bottomY, ML + contentW, bottomY);
 
-  const lblW = 16;
+  const lblW = 15;
   doc.line(ML + lblW, clientY, ML + lblW, bottomY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.text('CLIENTE', ML + 2, clientY + clientH / 2 + 0.8);
+  doc.setFontSize(7.5);
+  doc.text('CLIENTE', ML + 1.8, clientY + clientH / 2 + 0.8);
 
-  doc.setFontSize(9.2);
+  doc.setFontSize(8.8);
   const clientText = clientName.toUpperCase();
   const maxW = contentW - lblW - 5;
   const dataX = ML + lblW + 2;
@@ -159,14 +159,14 @@ function drawLabel(
       }
     }
 
-    const lineSpacing = 3.8;
+    const lineSpacing = 3.4;
     const totalTextH = (line3 ? 3 : line2 ? 2 : 1) * lineSpacing;
-    const startY = clientY + (clientH - totalTextH) / 2 + 2.8;
+    const startY = clientY + (clientH - totalTextH) / 2 + 2.6;
 
     doc.text(line1, dataX, startY);
     if (line2) doc.text(line2, dataX, startY + lineSpacing);
     if (line3) {
-      const trunc = line3.length > 34 ? `${line3.substring(0, 34)}...` : line3;
+      const trunc = line3.length > 32 ? `${line3.substring(0, 32)}...` : line3;
       doc.text(trunc, dataX, startY + lineSpacing * 2);
     }
   } else {
@@ -187,25 +187,25 @@ function drawLabel(
   doc.line(col3X, bottomY, col3X, contentBottomY);
 
   // Cabeçalhos da linha inferior
-  const labelY = bottomY + 4.2;
+  const labelY = bottomY + 3.8;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
-  doc.text('NOTA FISCAL', col1X + 2, labelY);
-  doc.text('VOLUME', col2X + 2, labelY);
-  doc.text('DATA', col3X + 2, labelY);
+  doc.setFontSize(6);
+  doc.text('NOTA FISCAL', col1X + 1.8, labelY);
+  doc.text('VOLUME', col2X + 1.8, labelY);
+  doc.text('DATA', col3X + 1.8, labelY);
 
   // Valores reduzidos para evitar excesso visual na 3ª linha
-  const valueY = bottomY + bottomH / 2 + 3.2;
+  const valueY = bottomY + bottomH / 2 + 2.6;
 
-  doc.setFontSize(8.2);
-  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 2, valueY);
+  doc.setFontSize(7.2);
+  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 1.8, valueY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
+  doc.setFontSize(7.8);
   const volText = `${volumeNumber}/${totalVolumes}`;
   doc.text(volText, col2X + col2W / 2, valueY, { align: 'center' });
 
-  doc.setFontSize(7.5);
+  doc.setFontSize(6.8);
   doc.text(date, col3X + col3W / 2, valueY, { align: 'center' });
 }
 
