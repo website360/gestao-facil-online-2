@@ -371,7 +371,7 @@ export async function printPdfDirect(
       units: 'mm',
       size: { width: LABEL_WIDTH_MM, height: LABEL_HEIGHT_MM },
       orientation: 'landscape',
-      scaleContent: false,
+      scaleContent: true,
       rasterize: true,
       density: 'best',
       interpolation: 'nearest-neighbor',
