@@ -370,7 +370,6 @@ export async function printPdfDirect(
       scaleContent: false,
       rasterize: true,
       density: 203,
-      colorType: 'blackwhite',
       orientation: 'landscape',
     });
 
