@@ -62,14 +62,14 @@ function drawLabel(
   logoBase64: string | null
 ) {
   // Etiqueta física: 100x78mm
-  // Margens reduzidas para preencher todo o papel
-  const ML = 8;
+  // Margens ajustadas: menos em cima, mais embaixo para compensar corte mecânico
+  const ML = 6;
   const MR = 4;
-  const MT = 8;
-  const MB = 6;
+  const MT = 4;   // reduzido — evita corte no topo
+  const MB = 10;  // aumentado — absorve excesso inferior
   const PW = 100;
   const PH = 78;
-  const contentW = PW - ML - MR; // 88mm
+  const contentW = PW - ML - MR; // 90mm
   const contentH = PH - MT - MB; // 64mm
 
   doc.setTextColor(0, 0, 0);
@@ -79,10 +79,10 @@ function drawLabel(
   doc.setLineWidth(0.5);
   doc.rect(ML, MT, contentW, contentH);
 
-  // Distribuição vertical proporcional com folga interna extra para evitar corte
+  // Distribuição vertical: header 12 | cliente 28 | rodapé 24
   const headerH = 12;
-  const clientH = 20;
-  const bottomH = contentH - headerH - clientH; // 32mm
+  const clientH = 28;
+  const bottomH = contentH - headerH - clientH; // 24mm
 
   const headerY = MT;
   const clientY = MT + headerH;
@@ -187,25 +187,25 @@ function drawLabel(
   doc.line(col3X, bottomY, col3X, contentBottomY);
 
   // Cabeçalhos da linha inferior
-  const labelY = bottomY + 5.2;
+  const labelY = bottomY + 4.5;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.text('NOTA FISCAL', col1X + 2, labelY);
   doc.text('VOLUME', col2X + 2, labelY);
   doc.text('DATA', col3X + 2, labelY);
 
-  // Valores da linha inferior
-  const valueY = bottomY + bottomH - 6.2;
+  // Valores — centralizados verticalmente na célula
+  const valueY = bottomY + bottomH / 2 + 4;
 
-  doc.setFontSize(9.5);
+  doc.setFontSize(9);
   doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 2, valueY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11.5);
+  doc.setFontSize(10);
   const volText = `${volumeNumber}/${totalVolumes}`;
   doc.text(volText, col2X + col2W / 2, valueY, { align: 'center' });
 
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.text(date, col3X + col3W / 2, valueY, { align: 'center' });
 }
 
