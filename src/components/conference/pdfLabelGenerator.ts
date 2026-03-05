@@ -133,12 +133,12 @@ export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
-    format: [100, 60],
+    format: [100, 70],
   });
 
   for (let i = 0; i < totalVolumes; i++) {
     if (i > 0) {
-      doc.addPage([100, 60], 'landscape');
+      doc.addPage([100, 70], 'landscape');
     }
     drawLabel(doc, clientName, invoiceNumber, i + 1, totalVolumes, currentDate);
   }
