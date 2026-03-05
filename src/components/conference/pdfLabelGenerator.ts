@@ -13,6 +13,16 @@ interface LabelData {
   invoiceNumber?: string;
 }
 
+/**
+ * Draw bold text by rendering it multiple times with slight offsets.
+ * This simulates extra-bold on thermal printers where fonts appear light.
+ */
+function drawBoldText(doc: jsPDF, text: string, x: number, y: number, options?: any) {
+  doc.text(text, x, y, options);
+  doc.text(text, x + 0.15, y, options);
+  doc.text(text, x, y + 0.15, options);
+}
+
 function drawLabel(
   doc: jsPDF,
   clientName: string,
@@ -29,25 +39,25 @@ function drawLabel(
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
 
-  // Outer border - thin
-  doc.setLineWidth(0.5);
+  // Outer border - thicker for visibility
+  doc.setLineWidth(0.8);
   doc.rect(BORDER, BORDER, W - BORDER * 2, H - BORDER * 2);
 
   // === HEADER ===
   const headerY = 7;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(13);
 
   const centerX = W / 2;
-  doc.text('IRMAOS', centerX - 24, headerY, { align: 'right' });
-  doc.text('MANTOVANI', centerX + 2, headerY, { align: 'left' });
+  drawBoldText(doc, 'IRMAOS', centerX - 24, headerY, { align: 'right' });
+  drawBoldText(doc, 'MANTOVANI', centerX + 2, headerY, { align: 'left' });
 
-  doc.setFontSize(9);
-  doc.text('TEXTIL', centerX + 2 + doc.getTextWidth('MANTOVANI '), headerY);
+  doc.setFontSize(10);
+  drawBoldText(doc, 'TEXTIL', centerX + 2 + doc.getTextWidth('MANTOVANI '), headerY);
 
-  // Separator line
+  // Separator line - thicker
   const sepY = 10;
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.5);
   doc.line(MARGIN_X + 1, sepY, W - MARGIN_X - 1, sepY);
 
   // === CLIENTE field ===
@@ -57,17 +67,17 @@ function drawLabel(
   const clienteBoxW = W - MARGIN_X - clienteBoxX - 1;
   const clienteBoxH = 11;
 
-  // "CLIENTE" label - simple bold text
-  doc.setFontSize(9);
+  // "CLIENTE" label
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('CLIENTE', MARGIN_X + 2, clienteLabelY + 4);
+  drawBoldText(doc, 'CLIENTE', MARGIN_X + 2, clienteLabelY + 4);
 
-  // Client data box - thin border
-  doc.setLineWidth(0.3);
+  // Client data box - thicker border
+  doc.setLineWidth(0.5);
   doc.rect(clienteBoxX, clienteLabelY - 1, clienteBoxW, clienteBoxH);
 
   // Client name
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   const maxWidth = clienteBoxW - 3;
   const clientText = clientName.toUpperCase();
@@ -88,13 +98,13 @@ function drawLabel(
       }
     }
 
-    doc.text(line1, clienteBoxX + 1.5, clienteLabelY + 3);
+    drawBoldText(doc, line1, clienteBoxX + 1.5, clienteLabelY + 3);
     if (line2) {
       const truncatedLine2 = line2.length > 35 ? line2.substring(0, 35) + '...' : line2;
-      doc.text(truncatedLine2, clienteBoxX + 1.5, clienteLabelY + 7.5);
+      drawBoldText(doc, truncatedLine2, clienteBoxX + 1.5, clienteLabelY + 7.5);
     }
   } else {
-    doc.text(clientText, clienteBoxX + 1.5, clienteLabelY + 5.5);
+    drawBoldText(doc, clientText, clienteBoxX + 1.5, clienteLabelY + 5.5);
   }
 
   // === NOTA FISCAL field ===
@@ -104,18 +114,16 @@ function drawLabel(
   const nfBoxW = W - MARGIN_X - nfBoxX - 1;
   const nfBoxH = 9;
 
-  // "NOTA FISCAL" label - simple bold text
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.text('NOTA FISCAL', MARGIN_X + 2, nfLabelY + 4);
-
-  // NF data box - thin border
-  doc.setLineWidth(0.3);
-  doc.rect(nfBoxX, nfLabelY - 1, nfBoxW, nfBoxH);
-
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text((invoiceNumber || '').toUpperCase(), nfBoxX + 1.5, nfLabelY + 4.5);
+  drawBoldText(doc, 'NOTA FISCAL', MARGIN_X + 2, nfLabelY + 4);
+
+  doc.setLineWidth(0.5);
+  doc.rect(nfBoxX, nfLabelY - 1, nfBoxW, nfBoxH);
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  drawBoldText(doc, (invoiceNumber || '').toUpperCase(), nfBoxX + 1.5, nfLabelY + 4.5);
 
   // === VOLUME and DATA fields ===
   const bottomY = 42;
@@ -129,34 +137,30 @@ function drawLabel(
   const dataBoxX = dataLabelX + dataLabelW + 1;
   const dataBoxW = W - MARGIN_X - dataBoxX - 1;
 
-  // "VOLUME" label - simple bold text
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('VOLUME', MARGIN_X + 2, bottomY + 4);
+  drawBoldText(doc, 'VOLUME', MARGIN_X + 2, bottomY + 4);
 
-  // Volume box - thin border
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.5);
   doc.rect(volBoxX, bottomY - 1, volBoxW, bottomBoxH);
 
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   const volText = `${volumeNumber}/${totalVolumes}`;
   const volTextW = doc.getTextWidth(volText);
-  doc.text(volText, volBoxX + (volBoxW - volTextW) / 2, bottomY + 4.5);
-
-  // "DATA" label - simple bold text
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.text('DATA', dataLabelX + 1, bottomY + 4);
-
-  // Data box - thin border
-  doc.setLineWidth(0.3);
-  doc.rect(dataBoxX, bottomY - 1, dataBoxW, bottomBoxH);
+  drawBoldText(doc, volText, volBoxX + (volBoxW - volTextW) / 2, bottomY + 4.5);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
+  drawBoldText(doc, 'DATA', dataLabelX + 1, bottomY + 4);
+
+  doc.setLineWidth(0.5);
+  doc.rect(dataBoxX, bottomY - 1, dataBoxW, bottomBoxH);
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
   const dateTextW = doc.getTextWidth(date);
-  doc.text(date, dataBoxX + (dataBoxW - dateTextW) / 2, bottomY + 4.5);
+  drawBoldText(doc, date, dataBoxX + (dataBoxW - dateTextW) / 2, bottomY + 4.5);
 }
 
 export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
