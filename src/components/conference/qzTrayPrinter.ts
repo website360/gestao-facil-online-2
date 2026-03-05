@@ -158,31 +158,35 @@ function generateDPLLabel(
   const volText = `${volumeNumber}/${totalVolumes}`;
   const nf = invoiceNumber || 'S/N';
 
-  // IMPORTANT:
-  // - System commands first (STX...)
-  // - Then STX L
-  // - Then ONLY label formatting records (no STX)
+  // Text records — coordinates in mm/10, ALL rows must be <= 0600 (60mm)
+  // Row layout: 0020=2mm, 0100=10mm, 0200=20mm, 0350=35mm, 0500=50mm
+  const textRecords = [
+    '191100020000050IRMAOS MANTOVANI TEXTIL',  // row 0020 = 2mm
+    '121100100000010CLIENTE:',                  // row 0100 = 10mm
+    '121100100000150' + clientText,             // row 0100 = 10mm
+    '121100200000010NF:',                       // row 0200 = 20mm
+    '121100200000080' + nf,                     // row 0200 = 20mm
+    '121100350000010VOLUME:',                   // row 0350 = 35mm
+    '121100350000150' + volText,                // row 0350 = 35mm
+    '121100500000010DATA:',                     // row 0500 = 50mm
+    '121100500000150' + date,                   // row 0500 = 50mm
+  ];
+
+  // Safety: validate coordinates before generating (prevents "meters of paper")
+  if (!validateDPLCoordinates(textRecords)) {
+    throw new Error('Layout inválido para etiqueta 60mm; impressão bloqueada para evitar desperdício.');
+  }
+
+  // Build single label block (no system setup — that's sent once per batch)
   let label = '';
-
-  label += buildDPLSystemSetup();
   label += DPL_SYSTEM_SETUP.startFormat;
-
   label += DPL_LABEL_HEADER.widthAndDotSize;
   label += DPL_LABEL_HEADER.heat;
   label += DPL_LABEL_HEADER.printSpeed;
   label += DPL_LABEL_HEADER.feedSpeed;
-
-  // Text records (metric coordinates in mm/10)
-  label += '191100020000050IRMAOS MANTOVANI TEXTIL\r';
-  label += '121100080000010CLIENTE:\r';
-  label += '121100080000150' + clientText + '\r';
-  label += '121100140000010NF:\r';
-  label += '121100140000080' + nf + '\r';
-  label += '121100200000010VOLUME:\r';
-  label += '121100200000150' + volText + '\r';
-  label += '121100200000350DATA:\r';
-  label += '121100200000450' + date + '\r';
-
+  for (const rec of textRecords) {
+    label += rec + '\r';
+  }
   label += DPL_LABEL_HEADER.quantityOne;
   label += DPL_LABEL_HEADER.endAndPrint;
 
