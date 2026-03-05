@@ -11,18 +11,41 @@ interface LabelData {
 const LOGO_PATH = '/lovable-uploads/00b0624f-8191-44a2-beb9-c9e0ead49c89.png';
 
 /**
- * Load image as base64 for embedding in PDF
+ * Load logo and convert to JPEG data URI for better jsPDF compatibility.
  */
 async function loadLogoBase64(): Promise<string | null> {
   try {
     const response = await fetch(LOGO_PATH);
+    if (!response.ok) return null;
+
     const blob = await response.blob();
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
+    const imageUrl = URL.createObjectURL(blob);
+
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Erro ao carregar logo'));
+      img.src = imageUrl;
     });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      URL.revokeObjectURL(imageUrl);
+      return null;
+    }
+
+    // Fundo branco para evitar transparência problemática em impressoras térmicas
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0);
+
+    const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    URL.revokeObjectURL(imageUrl);
+    return jpegDataUrl;
   } catch {
     console.warn('Could not load logo for label');
     return null;
