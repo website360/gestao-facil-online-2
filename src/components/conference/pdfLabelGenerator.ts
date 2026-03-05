@@ -201,7 +201,7 @@ export async function generateVolumeLabelsPDF(data: LabelData): Promise<jsPDF> {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
-    format: [100, 60],
+    format: [100, 78],
   });
 
   for (let i = 0; i < totalVolumes; i++) {
