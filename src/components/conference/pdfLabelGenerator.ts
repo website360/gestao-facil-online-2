@@ -188,6 +188,7 @@ function drawLabel(
 
   doc.setFontSize(10);
   doc.text(date, col3X + col3W / 2, valueY, { align: 'center' });
+}
 
 export async function generateVolumeLabelsPDF(data: LabelData): Promise<jsPDF> {
   const { clientName, totalVolumes, invoiceNumber = '' } = data;
