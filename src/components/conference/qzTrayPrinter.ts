@@ -370,6 +370,7 @@ export async function printPdfDirect(
     const config = qz.configs.create(selectedPrinter, {
       units: 'mm',
       size: { width: LABEL_WIDTH_MM, height: LABEL_HEIGHT_MM },
+      orientation: 'landscape',
       scaleContent: true,
       rasterize: true,
       density: 'best',
