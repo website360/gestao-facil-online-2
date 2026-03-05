@@ -19,8 +19,10 @@ interface LabelData {
  */
 function drawBoldText(doc: jsPDF, text: string, x: number, y: number, options?: any) {
   doc.text(text, x, y, options);
-  doc.text(text, x + 0.15, y, options);
-  doc.text(text, x, y + 0.15, options);
+  doc.text(text, x + 0.3, y, options);
+  doc.text(text, x - 0.15, y, options);
+  doc.text(text, x + 0.15, y + 0.15, options);
+  doc.text(text, x, y - 0.15, options);
 }
 
 function drawLabel(
