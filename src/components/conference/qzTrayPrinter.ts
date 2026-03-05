@@ -371,7 +371,7 @@ export async function printPdfDirect(
       rasterize: true,
       density: 'best',
       interpolation: 'nearest-neighbor',
-      colorType: 'default',
+      colorType: 'blackwhite',
       orientation: 'landscape',
     });
 
