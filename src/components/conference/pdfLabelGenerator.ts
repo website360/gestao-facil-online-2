@@ -26,11 +26,11 @@ function drawLabel(
 ) {
   const W = 100;
   const H = 60;
-  // Centralized printable area (balanced offsets on all sides)
-  const ML = 4;   // left margin
+  // Thermal printers clip edges — use very generous margins
+  const ML = 30;  // left margin
   const MR = 4;   // right margin
-  const MT = 4;   // top margin
-  const MB = 4;   // bottom margin
+  const MT = 30;  // top margin
+  const MB = 3;   // bottom margin
   const contentW = W - ML - MR;
   const contentH = H - MT - MB;
 
