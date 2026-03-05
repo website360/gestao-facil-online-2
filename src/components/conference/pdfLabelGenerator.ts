@@ -61,28 +61,27 @@ function drawLabel(
   date: string,
   logoBase64: string | null
 ) {
-  // Etiqueta física: 100x60mm
-  // Área não-imprimível aproximada da Datamax: 30mm topo/esquerda + margem de segurança maior no fundo
-  const ML = 30;
+  // Etiqueta física: 100x60mm — usar altura total
+  const ML = 2;
   const MR = 2;
-  const MT = 30;
-  const MB = 14;
+  const MT = 2;
+  const MB = 2;
   const PW = 100;
   const PH = 60;
-  const contentW = PW - ML - MR; // ~68mm
-  const contentH = PH - MT - MB; // 16mm úteis
+  const contentW = PW - ML - MR; // 96mm
+  const contentH = PH - MT - MB; // 56mm
 
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
 
   // Borda externa
-  doc.setLineWidth(0.45);
+  doc.setLineWidth(0.5);
   doc.rect(ML, MT, contentW, contentH);
 
-  // Distribuição vertical compacta com faixa inferior mais alta (evita corte do VOLUME)
-  const headerH = 5;
-  const clientH = 6;
-  const bottomH = contentH - headerH - clientH; // 5mm
+  // Distribuição vertical proporcional para preencher os 56mm
+  const headerH = 12;  // logo + nome
+  const clientH = 24;  // cliente
+  const bottomH = contentH - headerH - clientH; // 20mm (NF/VOLUME/DATA)
 
   const headerY = MT;
   const clientY = MT + headerH;
