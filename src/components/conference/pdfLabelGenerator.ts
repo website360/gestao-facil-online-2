@@ -27,6 +27,11 @@ const MB = 4;
 const CONTENT_W = PAGE_W - ML - MR;
 const CONTENT_H = PAGE_H - MT - MB;
 
+// Datamax compatibility: scale down content to 92% to guarantee 100% visibility
+// Effective usable area: ~82.8 x 47.8 mm (centered within the 90x52 safe zone)
+const SCALE_PERCENT = 92;
+const SCALE = SCALE_PERCENT / 100;
+
 /**
  * Load logo and convert to JPEG data URI for better jsPDF compatibility.
  */
@@ -101,57 +106,74 @@ function drawLabel(
   date: string,
   logoBase64: string | null
 ) {
-  const headerH = 8;
-  const clientH = 24;
-  const bottomH = CONTENT_H - headerH - clientH;
+  // Apply scale transformation: shrink content by SCALE_PERCENT centered in the safe zone
+  // This creates a buffer zone around the content to prevent any clipping
+  const scaledW = CONTENT_W * SCALE;
+  const scaledH = CONTENT_H * SCALE;
+  const offsetX = ML + (CONTENT_W - scaledW) / 2;
+  const offsetY = MT + (CONTENT_H - scaledH) / 2;
 
-  const headerY = MT;
-  const clientY = MT + headerH;
+  // All coordinates below are relative to the scaled content area
+  const headerH = 8 * SCALE;
+  const clientH = 24 * SCALE;
+  const bottomH = scaledH - headerH - clientH;
+
+  const headerY = offsetY;
+  const clientY = offsetY + headerH;
   const bottomY = clientY + clientH;
 
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
 
+  // Scaled font sizes (base sizes * SCALE)
+  const fontCompany = 7 * SCALE;
+  const fontLabel = 5.5 * SCALE;
+  const fontClient = 7 * SCALE;
+  const fontFooterLabel = 5 * SCALE;
+  const fontFooterValue = 6 * SCALE;
+  const fontVolume = 7 * SCALE;
+  const fontDate = 5.5 * SCALE;
+
   // Header
   doc.setLineWidth(0.3);
-  doc.line(ML, clientY, ML + CONTENT_W, clientY);
+  doc.line(offsetX, clientY, offsetX + scaledW, clientY);
 
   if (logoBase64) {
     try {
-      const logoW = 5;
-      const logoH = 5;
-      const logoX = ML + 1;
+      const logoW = 5 * SCALE;
+      const logoH = 5 * SCALE;
+      const logoX = offsetX + 1;
       const logoY = headerY + (headerH - logoH) / 2;
       doc.addImage(logoBase64, 'JPEG', logoX, logoY, logoW, logoH);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.text('IRMAOS MANTOVANI TEXTIL', ML + 7.5, headerY + headerH / 2 + 0.6);
+      doc.setFontSize(fontCompany);
+      doc.text('IRMAOS MANTOVANI TEXTIL', offsetX + (6 * SCALE) + 1.5, headerY + headerH / 2 + 0.5);
     } catch {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.text('IRMAOS MANTOVANI TEXTIL', ML + CONTENT_W / 2, headerY + headerH / 2 + 0.6, { align: 'center' });
+      doc.setFontSize(fontCompany);
+      doc.text('IRMAOS MANTOVANI TEXTIL', offsetX + scaledW / 2, headerY + headerH / 2 + 0.5, { align: 'center' });
     }
   } else {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.text('IRMAOS MANTOVANI TEXTIL', ML + CONTENT_W / 2, headerY + headerH / 2 + 0.6, { align: 'center' });
+    doc.setFontSize(fontCompany);
+    doc.text('IRMAOS MANTOVANI TEXTIL', offsetX + scaledW / 2, headerY + headerH / 2 + 0.5, { align: 'center' });
   }
 
   // Client section
-  doc.line(ML, bottomY, ML + CONTENT_W, bottomY);
+  doc.line(offsetX, bottomY, offsetX + scaledW, bottomY);
 
-  const lblW = 12;
-  doc.line(ML + lblW, clientY, ML + lblW, bottomY);
+  const lblW = 12 * SCALE;
+  doc.line(offsetX + lblW, clientY, offsetX + lblW, bottomY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5.5);
-  doc.text('CLIENTE', ML + 1, clientY + clientH / 2 + 0.6);
+  doc.setFontSize(fontLabel);
+  doc.text('CLIENTE', offsetX + 1, clientY + clientH / 2 + 0.5);
 
-  doc.setFontSize(7);
+  doc.setFontSize(fontClient);
   const clientText = clientName.toUpperCase();
-  const maxW = CONTENT_W - lblW - 4;
-  const dataX = ML + lblW + 1.5;
+  const maxW = scaledW - lblW - 4;
+  const dataX = offsetX + lblW + 1.5;
 
   if (doc.getTextWidth(clientText) > maxW) {
     const words = clientText.split(' ');
@@ -182,10 +204,10 @@ function drawLabel(
       }
     }
 
-    const lineSpacing = 3;
+    const lineSpacing = 3 * SCALE;
     const numLines = line3 ? 3 : line2 ? 2 : 1;
     const totalTextH = numLines * lineSpacing;
-    const startY = clientY + (clientH - totalTextH) / 2 + 2;
+    const startY = clientY + (clientH - totalTextH) / 2 + 2 * SCALE;
 
     doc.text(line1, dataX, startY);
     if (line2) doc.text(line2, dataX, startY + lineSpacing);
@@ -194,40 +216,40 @@ function drawLabel(
       doc.text(trunc, dataX, startY + lineSpacing * 2);
     }
   } else {
-    doc.text(clientText, dataX, clientY + clientH / 2 + 0.6);
+    doc.text(clientText, dataX, clientY + clientH / 2 + 0.5);
   }
 
   // Footer: NF | VOLUME | DATA
-  const col1W = CONTENT_W * 0.37;
-  const col2W = CONTENT_W * 0.30;
-  const col3W = CONTENT_W - col1W - col2W;
+  const col1W = scaledW * 0.37;
+  const col2W = scaledW * 0.30;
+  const col3W = scaledW - col1W - col2W;
 
-  const col1X = ML;
-  const col2X = ML + col1W;
+  const col1X = offsetX;
+  const col2X = offsetX + col1W;
   const col3X = col2X + col2W;
-  const contentBottomY = MT + CONTENT_H;
+  const contentBottomY = offsetY + scaledH;
 
   doc.setLineWidth(0.3);
   doc.line(col2X, bottomY, col2X, contentBottomY);
   doc.line(col3X, bottomY, col3X, contentBottomY);
 
-  const labelY = bottomY + 3.5;
+  const labelY = bottomY + 3 * SCALE;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5);
+  doc.setFontSize(fontFooterLabel);
   doc.text('NOTA FISCAL', col1X + 1.5, labelY);
   doc.text('VOLUME', col2X + 1.5, labelY);
   doc.text('DATA', col3X + 1.5, labelY);
 
-  const valueY = bottomY + bottomH / 2 + 2.5;
+  const valueY = bottomY + bottomH / 2 + 2 * SCALE;
 
-  doc.setFontSize(6);
+  doc.setFontSize(fontFooterValue);
   doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 1.5, valueY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
+  doc.setFontSize(fontVolume);
   doc.text(`${volumeNumber}/${totalVolumes}`, col2X + col2W / 2, valueY, { align: 'center' });
 
-  doc.setFontSize(5.5);
+  doc.setFontSize(fontDate);
   doc.text(date, col3X + col3W / 2, valueY, { align: 'center' });
 }
 

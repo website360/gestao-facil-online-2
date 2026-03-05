@@ -363,13 +363,22 @@ export async function printPdfDirect(
       };
     }
 
-    // 5. Configure and print
+    // 5. Configure and print — Datamax compatibility mode
+    // The PDF is generated at 100x60mm landscape internally.
+    // Some drivers/QZ combos interpret the landscape PDF as portrait and split it.
+    // Fix: send size as WIDTH=60, HEIGHT=100 (swapped) so QZ feeds correctly,
+    // combined with scaleContent to fit the rasterized output.
     const LABEL_WIDTH_MM = 100;
     const LABEL_HEIGHT_MM = 60;
 
+    const isDatamax = isDatamaxCompatiblePrinter(selectedPrinter);
+
     const config = qz.configs.create(selectedPrinter, {
       units: 'mm',
-      size: { width: LABEL_WIDTH_MM, height: LABEL_HEIGHT_MM },
+      // Swap W/H for Datamax to prevent split-page on landscape PDFs
+      size: isDatamax
+        ? { width: LABEL_HEIGHT_MM, height: LABEL_WIDTH_MM }
+        : { width: LABEL_WIDTH_MM, height: LABEL_HEIGHT_MM },
       scaleContent: true,
       rasterize: true,
       density: 'best',
@@ -377,18 +386,43 @@ export async function printPdfDirect(
       colorType: 'blackwhite',
     });
 
-    await withTimeout(
-      qz.print(config, [
-        {
-          type: 'pixel',
-          format: 'pdf',
-          flavor: 'base64',
-          data: normalizedBase64,
-        },
-      ]),
-      QZ_PRINT_TIMEOUT_MS,
-      'Timeout no envio de impressão para a Datamax.'
-    );
+    const printPayload = [
+      {
+        type: 'pixel',
+        format: 'pdf',
+        flavor: 'base64',
+        data: normalizedBase64,
+      },
+    ];
+
+    try {
+      await withTimeout(
+        qz.print(config, printPayload),
+        QZ_PRINT_TIMEOUT_MS,
+        'Timeout no envio de impressão para a Datamax.'
+      );
+    } catch (firstError) {
+      // Fallback: retry with non-swapped dimensions if swapped failed
+      if (isDatamax) {
+        console.warn('First print attempt failed with swapped dims, retrying with normal dims:', firstError);
+        const fallbackConfig = qz.configs.create(selectedPrinter, {
+          units: 'mm',
+          size: { width: LABEL_WIDTH_MM, height: LABEL_HEIGHT_MM },
+          scaleContent: true,
+          rasterize: true,
+          density: 'best',
+          interpolation: 'nearest-neighbor',
+          colorType: 'blackwhite',
+        });
+        await withTimeout(
+          qz.print(fallbackConfig, printPayload),
+          QZ_PRINT_TIMEOUT_MS,
+          'Timeout no envio de impressão (fallback) para a Datamax.'
+        );
+      } else {
+        throw firstError;
+      }
+    }
 
     return {
       success: true,
