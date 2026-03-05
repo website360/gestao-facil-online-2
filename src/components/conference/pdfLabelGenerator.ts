@@ -55,8 +55,8 @@ function drawLabel(
   doc.line(ML, clientY, ML + contentW, clientY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + 3.5, { align: 'center' });
+  doc.setFontSize(9);
+  doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + 4, { align: 'center' });
 
   // === CLIENT ROW ===
   doc.line(ML, bottomY, ML + contentW, bottomY);
