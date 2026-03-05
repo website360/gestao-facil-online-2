@@ -94,32 +94,57 @@ export async function findDatamaxPrinter(): Promise<string | null> {
  * Datamax O'Neil E-Class Mark III at 203 DPI (8 dots/mm)
  * Label: 100mm x 60mm in landscape
  */
+// Max row coordinate allowed (mm/10). 60mm label = 0600.
+const MAX_ROW_MM10 = 600;
+
 const DPL_SYSTEM_SETUP = {
   metricMode: '\x02m\r',          // STX m -> metric mode (mm/10)
   edgeSensor: '\x02e\r',          // STX e -> gap/edge sensing
-  gapLength: '\x02c0000\r',       // STX c0000 -> disable continuous mode (required for gap media)
-  maxLabelTravel: '\x02M1500\r',  // STX M1500 -> max TOF search = 150.0mm (safety, avoids long feed)
-  startOffset: '\x02O0220\r',     // STX O0220 -> start-of-print offset (legacy Datamax default)
+  gapLength: '\x02c0000\r',       // STX c0000 -> gap media mode
+  maxLabelTravel: '\x02M0700\r',  // STX M0700 -> max TOF search = 70.0mm (just above 60mm label)
+  zeroOffset: '\x02O0000\r',      // STX O0000 -> no start-of-print offset
   startFormat: '\x02L\r',         // STX L -> enter label format mode
 } as const;
 
 const DPL_LABEL_HEADER = {
-  widthAndDotSize: 'D11\r',        // Label header: width + dot size
-  heat: 'H30\r',                   // Label header: max heat for darker print
-  printSpeed: 'P0\r',              // Label header: slowest print speed
-  feedSpeed: 'S0\r',               // Label header: slow feed speed
+  widthAndDotSize: 'D11\r',        // Dot density inside format
+  heat: 'H30\r',                   // Max heat for darker print
+  printSpeed: 'P0\r',              // Slowest print speed
+  feedSpeed: 'S0\r',               // Slow feed speed
   quantityOne: 'Q0001\r',          // Print exactly 1 label per format
   endAndPrint: 'E\r',              // End format and print
 } as const;
 
+/**
+ * Build system setup commands (sent ONCE per batch).
+ */
 function buildDPLSystemSetup(): string {
   return (
     DPL_SYSTEM_SETUP.metricMode +
     DPL_SYSTEM_SETUP.edgeSensor +
     DPL_SYSTEM_SETUP.gapLength +
     DPL_SYSTEM_SETUP.maxLabelTravel +
-    DPL_SYSTEM_SETUP.startOffset
+    DPL_SYSTEM_SETUP.zeroOffset
   );
+}
+
+/**
+ * Validate that all row coordinates fit within the physical label height.
+ * Row values are in mm/10 (metric mode). Returns true if all rows <= MAX_ROW_MM10.
+ */
+function validateDPLCoordinates(records: string[]): boolean {
+  for (const rec of records) {
+    // Text record format: 1[font][rot]1100[row:4][col:5]data
+    // Row is at characters index 6..9 (4 digits after "1X1100")
+    if (rec.length >= 10 && /^1\d\d1100/.test(rec)) {
+      const row = parseInt(rec.substring(6, 10), 10);
+      if (isNaN(row) || row > MAX_ROW_MM10) {
+        console.error(`DPL coordinate validation failed: row ${row} exceeds max ${MAX_ROW_MM10}`);
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 function generateDPLLabel(
