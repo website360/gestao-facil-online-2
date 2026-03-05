@@ -368,10 +368,8 @@ export async function printPdfDirect(
       units: 'mm',
       size: { width: 100, height: 60 },
       scaleContent: false,
-      rasterize: true,
-      density: 'best',
-      interpolation: 'nearest-neighbor',
-      colorType: 'grayscale',
+      rasterize: false,
+      colorType: 'default',
       orientation: 'landscape',
     });
 
