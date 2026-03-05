@@ -61,15 +61,15 @@ function drawLabel(
   date: string,
   logoBase64: string | null
 ) {
-  // Etiqueta física: 100x60mm — usar altura total
-  const ML = 2;
-  const MR = 2;
-  const MT = 2;
-  const MB = 2;
+  // Etiqueta física: 100x60mm — margens moderadas para não cortar
+  const ML = 5;
+  const MR = 3;
+  const MT = 5;
+  const MB = 6;
   const PW = 100;
   const PH = 60;
-  const contentW = PW - ML - MR; // 96mm
-  const contentH = PH - MT - MB; // 56mm
+  const contentW = PW - ML - MR; // 92mm
+  const contentH = PH - MT - MB; // 49mm
 
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
@@ -78,10 +78,10 @@ function drawLabel(
   doc.setLineWidth(0.5);
   doc.rect(ML, MT, contentW, contentH);
 
-  // Distribuição vertical proporcional para preencher os 56mm
-  const headerH = 12;  // logo + nome
-  const clientH = 24;  // cliente
-  const bottomH = contentH - headerH - clientH; // 20mm (NF/VOLUME/DATA)
+  // Distribuição vertical proporcional para preencher os 49mm
+  const headerH = 10;  // logo + nome
+  const clientH = 22;  // cliente
+  const bottomH = contentH - headerH - clientH; // 17mm (NF/VOLUME/DATA)
 
   const headerY = MT;
   const clientY = MT + headerH;
