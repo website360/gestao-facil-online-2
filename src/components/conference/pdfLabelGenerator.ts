@@ -64,8 +64,8 @@ function drawLabel(
   const lblW = 12; // label column width
   doc.line(ML + lblW, clientY, ML + lblW, bottomY);
 
-  doc.setFontSize(5.5);
-  doc.text('CLIENTE', ML + 1, clientY + clientH / 2 + 0.8);
+  doc.setFontSize(7);
+  doc.text('CLIENTE', ML + 1, clientY + clientH / 2 + 1);
 
   doc.setFontSize(7);
   const clientText = clientName.toUpperCase();
