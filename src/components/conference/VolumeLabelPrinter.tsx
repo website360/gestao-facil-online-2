@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Printer, CheckCircle, Download, Loader2, Settings2 } from 'lucide-react';
+import { Printer, CheckCircle, Download, Loader2, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { printVolumeLabelsDirect, downloadVolumeLabelsPDF, downloadCalibrationPDF } from './pdfLabelGenerator';
+import { printVolumeLabelsDirect, downloadVolumeLabelsPDF } from './pdfLabelGenerator';
 
 interface VolumeLabelPrinterProps {
   clientName: string;
@@ -22,7 +22,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
 }) => {
   const [printing, setPrinting] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [showCalibration, setShowCalibration] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const handlePrint = async () => {
     if (printing || totalVolumes <= 0) return;
@@ -54,15 +54,6 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
       toast.error('Erro ao gerar PDF.');
     } finally {
       setDownloading(false);
-    }
-  };
-
-  const handleCalibration = async () => {
-    try {
-      await downloadCalibrationPDF({ clientName, totalVolumes, invoiceNumber });
-      toast.success('PDF de calibração baixado. Imprima e verifique se o retângulo aparece inteiro.');
-    } catch {
-      toast.error('Erro ao gerar PDF de calibração.');
     }
   };
 
@@ -115,31 +106,84 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
           </Button>
         </div>
 
-        {/* Calibration section */}
+        {/* Help section */}
         <div className="border-t pt-3">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowCalibration(!showCalibration)}
+            onClick={() => setShowHelp(!showHelp)}
             className="w-full text-muted-foreground text-xs"
           >
-            <Settings2 className="w-3.5 h-3.5 mr-1.5" />
-            {showCalibration ? 'Ocultar calibração' : 'Calibração da impressora'}
+            <HelpCircle className="w-3.5 h-3.5 mr-1.5" />
+            {showHelp ? 'Ocultar ajuda' : 'Ajuda: como configurar a impressora'}
           </Button>
 
-          {showCalibration && (
-            <div className="mt-2 space-y-2 bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
-              <p>Etiqueta: 100×60mm | Área útil: ~83×48mm (escala 92%)</p>
-              <p>Se o conteúdo estiver cortado, imprima a página de calibração abaixo e ajuste a impressora até o retângulo aparecer 100% visível.</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCalibration}
-                className="w-full text-xs"
-              >
-                <Download className="w-3.5 h-3.5 mr-1.5" />
-                Baixar PDF de Calibração (100×60)
-              </Button>
+          {showHelp && (
+            <div className="mt-2 bg-muted/50 rounded-lg p-4 text-xs text-muted-foreground space-y-3">
+              <p className="font-semibold text-sm text-foreground">Passo a passo para configurar a impressora térmica</p>
+
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <span className="font-bold text-foreground min-w-[20px]">1.</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Instalar o QZ Tray</p>
+                    <p>Acesse <span className="font-mono bg-muted px-1 rounded">qz.io</span> e baixe o instalador. Execute e siga as instruções. O QZ Tray deve ficar ativo na bandeja do sistema (ícone ao lado do relógio).</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <span className="font-bold text-foreground min-w-[20px]">2.</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Instalar o driver da impressora</p>
+                    <p>Baixe o driver correto para o modelo da sua impressora (ex: Datamax Mark II) no site do fabricante. Instale e reinicie o computador se necessário.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <span className="font-bold text-foreground min-w-[20px]">3.</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Configurar tamanho da etiqueta</p>
+                    <p>Vá em <span className="font-mono bg-muted px-1 rounded">Painel de Controle → Dispositivos e Impressoras</span>. Clique com o botão direito na impressora → <span className="font-mono bg-muted px-1 rounded">Preferências de Impressão</span>. Defina o tamanho do papel como <strong>100mm × 60mm</strong> (largura × altura).</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <span className="font-bold text-foreground min-w-[20px]">4.</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Ajustar temperatura do cabeçote</p>
+                    <p>Nas preferências da impressora, vá em <span className="font-mono bg-muted px-1 rounded">Opções → Temperatura do Cabeçote</span>. Ajuste entre <strong>10 a 15</strong> para impressão nítida. Valores muito altos borram; muito baixos ficam claros.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <span className="font-bold text-foreground min-w-[20px]">5.</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Ajustar velocidade de impressão</p>
+                    <p>Na mesma tela de preferências, defina a velocidade para <strong>média</strong> (3 a 4 pol/s). Velocidade muito alta pode comprometer a qualidade.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <span className="font-bold text-foreground min-w-[20px]">6.</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Configurar sensor de mídia</p>
+                    <p>Verifique se o sensor de mídia está configurado como <strong>"Gap"</strong> (para etiquetas com espaço entre elas) ou <strong>"Contínuo"</strong> conforme o tipo de rolo utilizado.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <span className="font-bold text-foreground min-w-[20px]">7.</span>
+                  <div>
+                    <p className="font-semibold text-foreground">Teste de impressão</p>
+                    <p>Clique em <strong>"Baixar PDF"</strong> acima, abra o arquivo e imprima. Verifique se a borda aparece completa em todos os lados. Se estiver cortando, ajuste as margens nas preferências da impressora.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-2 mt-2">
+                <p className="font-semibold text-foreground text-xs">Dica:</p>
+                <p>Para impressão direta (botão "Imprimir Etiquetas"), o <strong>QZ Tray</strong> precisa estar rodando. Se o botão não funcionar, use sempre a opção "Baixar PDF" como alternativa.</p>
+              </div>
             </div>
           )}
         </div>
