@@ -234,14 +234,14 @@ function drawLabel(
 
   const valueY = bottomY + bottomH / 2 + 3;
 
-  doc.setFontSize(fontFooterValue);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(fontVolume);
   doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 2, valueY);
 
-  doc.setFont('helvetica', 'bold');
   doc.setFontSize(fontVolume);
   doc.text(`${volumeNumber}/${totalVolumes}`, col2X + col2W / 2, valueY, { align: 'center' });
 
-  doc.setFontSize(fontDate);
+  doc.setFontSize(9);
   doc.text(date, col3X + col3W / 2, valueY, { align: 'center' });
 }
 
