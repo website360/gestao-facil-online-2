@@ -18,19 +18,14 @@ const LOGO_PATH = '/lovable-uploads/00b0624f-8191-44a2-beb9-c9e0ead49c89.png';
 const PAGE_W = 100;
 const PAGE_H = 60;
 
-// Safe-zone margins => usable area: 90 x 52 mm
-const ML = 5;
-const MR = 5;
-const MT = 4;
-const MB = 4;
+// Minimal margins => usable area: 94 x 56 mm
+const ML = 3;
+const MR = 3;
+const MT = 2;
+const MB = 2;
 
 const CONTENT_W = PAGE_W - ML - MR;
 const CONTENT_H = PAGE_H - MT - MB;
-
-// Datamax compatibility: scale down content to 92% to guarantee 100% visibility
-// Effective usable area: ~82.8 x 47.8 mm (centered within the 90x52 safe zone)
-const SCALE_PERCENT = 92;
-const SCALE = SCALE_PERCENT / 100;
 
 /**
  * Load logo and convert to JPEG data URI for better jsPDF compatibility.
@@ -106,74 +101,67 @@ function drawLabel(
   date: string,
   logoBase64: string | null
 ) {
-  // Apply scale transformation: shrink content by SCALE_PERCENT centered in the safe zone
-  // This creates a buffer zone around the content to prevent any clipping
-  const scaledW = CONTENT_W * SCALE;
-  const scaledH = CONTENT_H * SCALE;
-  const offsetX = ML + (CONTENT_W - scaledW) / 2;
-  const offsetY = MT + (CONTENT_H - scaledH) / 2;
+  // Draw directly in the usable area (94x56mm) with no scaling
+  const headerH = 10;
+  const clientH = 28;
+  const bottomH = CONTENT_H - headerH - clientH; // 18mm
 
-  // All coordinates below are relative to the scaled content area
-  const headerH = 8 * SCALE;
-  const clientH = 24 * SCALE;
-  const bottomH = scaledH - headerH - clientH;
-
-  const headerY = offsetY;
-  const clientY = offsetY + headerH;
+  const headerY = MT;
+  const clientY = MT + headerH;
   const bottomY = clientY + clientH;
 
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
 
-  // Scaled font sizes (base sizes * SCALE)
-  const fontCompany = 7 * SCALE;
-  const fontLabel = 5.5 * SCALE;
-  const fontClient = 7 * SCALE;
-  const fontFooterLabel = 5 * SCALE;
-  const fontFooterValue = 6 * SCALE;
-  const fontVolume = 7 * SCALE;
-  const fontDate = 5.5 * SCALE;
+  // Font sizes (real, no scaling)
+  const fontCompany = 9;
+  const fontLabel = 7;
+  const fontClient = 9;
+  const fontFooterLabel = 6;
+  const fontFooterValue = 8;
+  const fontVolume = 10;
+  const fontDate = 7;
 
-  // Header
+  // --- Header ---
   doc.setLineWidth(0.3);
-  doc.line(offsetX, clientY, offsetX + scaledW, clientY);
+  doc.line(ML, clientY, ML + CONTENT_W, clientY);
 
   if (logoBase64) {
     try {
-      const logoW = 5 * SCALE;
-      const logoH = 5 * SCALE;
-      const logoX = offsetX + 1;
+      const logoW = 7;
+      const logoH = 7;
+      const logoX = ML + 1;
       const logoY = headerY + (headerH - logoH) / 2;
       doc.addImage(logoBase64, 'JPEG', logoX, logoY, logoW, logoH);
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(fontCompany);
-      doc.text('IRMAOS MANTOVANI TEXTIL', offsetX + (6 * SCALE) + 1.5, headerY + headerH / 2 + 0.5);
+      doc.text('IRMAOS MANTOVANI TEXTIL', ML + logoW + 3, headerY + headerH / 2 + 1);
     } catch {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(fontCompany);
-      doc.text('IRMAOS MANTOVANI TEXTIL', offsetX + scaledW / 2, headerY + headerH / 2 + 0.5, { align: 'center' });
+      doc.text('IRMAOS MANTOVANI TEXTIL', ML + CONTENT_W / 2, headerY + headerH / 2 + 1, { align: 'center' });
     }
   } else {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(fontCompany);
-    doc.text('IRMAOS MANTOVANI TEXTIL', offsetX + scaledW / 2, headerY + headerH / 2 + 0.5, { align: 'center' });
+    doc.text('IRMAOS MANTOVANI TEXTIL', ML + CONTENT_W / 2, headerY + headerH / 2 + 1, { align: 'center' });
   }
 
-  // Client section
-  doc.line(offsetX, bottomY, offsetX + scaledW, bottomY);
+  // --- Client section ---
+  doc.line(ML, bottomY, ML + CONTENT_W, bottomY);
 
-  const lblW = 12 * SCALE;
-  doc.line(offsetX + lblW, clientY, offsetX + lblW, bottomY);
+  const lblW = 14;
+  doc.line(ML + lblW, clientY, ML + lblW, bottomY);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(fontLabel);
-  doc.text('CLIENTE', offsetX + 1, clientY + clientH / 2 + 0.5);
+  doc.text('CLIENTE', ML + 1, clientY + clientH / 2 + 1);
 
   doc.setFontSize(fontClient);
   const clientText = clientName.toUpperCase();
-  const maxW = scaledW - lblW - 4;
-  const dataX = offsetX + lblW + 1.5;
+  const maxW = CONTENT_W - lblW - 4;
+  const dataX = ML + lblW + 2;
 
   if (doc.getTextWidth(clientText) > maxW) {
     const words = clientText.split(' ');
@@ -204,46 +192,46 @@ function drawLabel(
       }
     }
 
-    const lineSpacing = 3 * SCALE;
+    const lineSpacing = 4;
     const numLines = line3 ? 3 : line2 ? 2 : 1;
     const totalTextH = numLines * lineSpacing;
-    const startY = clientY + (clientH - totalTextH) / 2 + 2 * SCALE;
+    const startY = clientY + (clientH - totalTextH) / 2 + 2;
 
     doc.text(line1, dataX, startY);
     if (line2) doc.text(line2, dataX, startY + lineSpacing);
     if (line3) {
-      const trunc = line3.length > 28 ? `${line3.substring(0, 28)}...` : line3;
+      const trunc = line3.length > 30 ? `${line3.substring(0, 30)}...` : line3;
       doc.text(trunc, dataX, startY + lineSpacing * 2);
     }
   } else {
-    doc.text(clientText, dataX, clientY + clientH / 2 + 0.5);
+    doc.text(clientText, dataX, clientY + clientH / 2 + 1);
   }
 
-  // Footer: NF | VOLUME | DATA
-  const col1W = scaledW * 0.37;
-  const col2W = scaledW * 0.30;
-  const col3W = scaledW - col1W - col2W;
+  // --- Footer: NF | VOLUME | DATA ---
+  const col1W = CONTENT_W * 0.37;
+  const col2W = CONTENT_W * 0.30;
+  const col3W = CONTENT_W - col1W - col2W;
 
-  const col1X = offsetX;
-  const col2X = offsetX + col1W;
+  const col1X = ML;
+  const col2X = ML + col1W;
   const col3X = col2X + col2W;
-  const contentBottomY = offsetY + scaledH;
+  const contentBottomY = MT + CONTENT_H;
 
   doc.setLineWidth(0.3);
   doc.line(col2X, bottomY, col2X, contentBottomY);
   doc.line(col3X, bottomY, col3X, contentBottomY);
 
-  const labelY = bottomY + 3 * SCALE;
+  const labelY = bottomY + 4;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(fontFooterLabel);
-  doc.text('NOTA FISCAL', col1X + 1.5, labelY);
-  doc.text('VOLUME', col2X + 1.5, labelY);
-  doc.text('DATA', col3X + 1.5, labelY);
+  doc.text('NOTA FISCAL', col1X + 2, labelY);
+  doc.text('VOLUME', col2X + 2, labelY);
+  doc.text('DATA', col3X + 2, labelY);
 
-  const valueY = bottomY + bottomH / 2 + 2 * SCALE;
+  const valueY = bottomY + bottomH / 2 + 3;
 
   doc.setFontSize(fontFooterValue);
-  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 1.5, valueY);
+  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 2, valueY);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(fontVolume);
