@@ -369,7 +369,9 @@ export async function printPdfDirect(
       size: { width: 100, height: 60 },
       scaleContent: false,
       rasterize: true,
-      density: 203,
+      density: 'best',
+      interpolation: 'nearest-neighbor',
+      colorType: 'grayscale',
       orientation: 'landscape',
     });
 
