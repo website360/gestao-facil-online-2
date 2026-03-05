@@ -1,38 +1,52 @@
 import jsPDF from 'jspdf';
 import { printPdfDirect } from './qzTrayPrinter';
 
-/**
- * Generates a PDF with volume labels at exact 100mm x 60mm per page.
- * Uses vector drawing for sharp printing on thermal printers.
- * Simple style with thin borders for reliable thermal printing.
- */
-
 interface LabelData {
   clientName: string;
   totalVolumes: number;
   invoiceNumber?: string;
 }
 
+// Logo path in public folder
+const LOGO_PATH = '/lovable-uploads/00b0624f-8191-44a2-beb9-c9e0ead49c89.png';
+
 /**
- * Draw pure black text (single pass).
+ * Load image as base64 for embedding in PDF
  */
+async function loadLogoBase64(): Promise<string | null> {
+  try {
+    const response = await fetch(LOGO_PATH);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    console.warn('Could not load logo for label');
+    return null;
+  }
+}
+
 function drawLabel(
   doc: jsPDF,
   clientName: string,
   invoiceNumber: string,
   volumeNumber: number,
   totalVolumes: number,
-  date: string
+  date: string,
+  logoBase64: string | null
 ) {
-  // Page: 100x60mm. Printer clips ~30mm top & left.
+  // Page: 100mm wide x 80mm tall (extra height to prevent bottom clipping)
+  // Printer clips ~30mm top & left
   const ML = 30;  // left margin (non-printable zone)
   const MR = 2;   // right margin
   const MT = 30;  // top margin (non-printable zone)
-  const MB = 2;   // bottom margin
-  const PW = 100; // page width
-  const PH = 70;  // page height (extra 10mm to avoid bottom clipping)
+  const PW = 100;
+  const PH = 80;
   const contentW = PW - ML - MR; // ~68mm
-  const contentH = PH - MT - MB;  // ~38mm
+  const contentH = 45; // total content height
 
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
@@ -41,29 +55,51 @@ function drawLabel(
   doc.setLineWidth(0.5);
   doc.rect(ML, MT, contentW, contentH);
 
-  // === ROW HEIGHTS (total ~38mm) ===
-  const headerH = 6;    // company name
+  // === ROW HEIGHTS ===
+  const headerH = 10;   // logo + company name
   const clientH = 14;   // client name
-  const bottomH = contentH - headerH - clientH; // ~18mm for NF + VOL + DATA
+  const bottomH = contentH - headerH - clientH; // ~21mm for NF + VOL + DATA
 
   const headerY = MT;
   const clientY = MT + headerH;
   const bottomY = clientY + clientH;
 
-  // === HEADER: Company name ===
+  // === HEADER: Logo + Company name ===
   doc.setLineWidth(0.3);
   doc.line(ML, clientY, ML + contentW, clientY);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + 4, { align: 'center' });
+  // Draw logo image if available
+  if (logoBase64) {
+    try {
+      const logoW = 8;
+      const logoH = 8;
+      const logoX = ML + 2;
+      const logoY = headerY + (headerH - logoH) / 2;
+      doc.addImage(logoBase64, 'PNG', logoX, logoY, logoW, logoH);
+      
+      // Company name next to logo
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.text('IRMAOS MANTOVANI TEXTIL', ML + 12, headerY + headerH / 2 + 1);
+    } catch {
+      // Fallback to text only
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 1, { align: 'center' });
+    }
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 1, { align: 'center' });
+  }
 
   // === CLIENT ROW ===
   doc.line(ML, bottomY, ML + contentW, bottomY);
 
-  const lblW = 12; // label column width
+  const lblW = 12;
   doc.line(ML + lblW, clientY, ML + lblW, bottomY);
 
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.text('CLIENTE', ML + 1, clientY + clientH / 2 + 1);
 
@@ -90,9 +126,9 @@ function drawLabel(
   }
 
   // === BOTTOM ROW: 3 columns — NF | VOLUME | DATA ===
-  const col1W = contentW * 0.38; // Nota Fiscal
-  const col2W = contentW * 0.30; // Volume
-  const col3W = contentW - col1W - col2W; // Data
+  const col1W = contentW * 0.38;
+  const col2W = contentW * 0.30;
+  const col3W = contentW - col1W - col2W;
 
   const col1X = ML;
   const col2X = ML + col1W;
@@ -105,6 +141,7 @@ function drawLabel(
   const midBot = bottomY + bottomH / 2;
 
   // NF
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(6);
   doc.text('NOTA FISCAL', col1X + 1, bottomY + 4);
   doc.setFontSize(9);
@@ -113,10 +150,10 @@ function drawLabel(
   // VOLUME
   doc.setFontSize(6);
   doc.text('VOLUME', col2X + 1, bottomY + 4);
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   const volText = `${volumeNumber}/${totalVolumes}`;
-  doc.text(volText, col2X + col2W / 2, midBot + 3, { align: 'center' });
+  doc.text(volText, col2X + col2W / 2, midBot + 4, { align: 'center' });
 
   // DATA
   doc.setFont('helvetica', 'bold');
@@ -126,29 +163,31 @@ function drawLabel(
   doc.text(date, col3X + col3W / 2, midBot + 3, { align: 'center' });
 }
 
-export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
+export async function generateVolumeLabelsPDF(data: LabelData): Promise<jsPDF> {
   const { clientName, totalVolumes, invoiceNumber = '' } = data;
   const currentDate = new Date().toLocaleDateString('pt-BR');
+
+  // Load logo
+  const logoBase64 = await loadLogoBase64();
 
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
-    format: [100, 70],
+    format: [100, 80],
   });
 
   for (let i = 0; i < totalVolumes; i++) {
     if (i > 0) {
-      doc.addPage([100, 70], 'landscape');
+      doc.addPage([100, 80], 'landscape');
     }
-    drawLabel(doc, clientName, invoiceNumber, i + 1, totalVolumes, currentDate);
+    drawLabel(doc, clientName, invoiceNumber, i + 1, totalVolumes, currentDate, logoBase64);
   }
 
   return doc;
 }
 
-export function getVolumeLabelsPDFBase64(data: LabelData): string {
-  const doc = generateVolumeLabelsPDF(data);
-  // Returns raw base64 string (no data URI prefix)
+export async function getVolumeLabelsPDFBase64(data: LabelData): Promise<string> {
+  const doc = await generateVolumeLabelsPDF(data);
   const dataUri = doc.output('datauristring');
   return dataUri.split(',')[1];
 }
@@ -157,7 +196,7 @@ export async function printVolumeLabelsDirect(
   data: LabelData
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const pdfBase64 = getVolumeLabelsPDFBase64(data);
+    const pdfBase64 = await getVolumeLabelsPDFBase64(data);
     return await printPdfDirect(pdfBase64);
   } catch (error) {
     return {
@@ -167,8 +206,8 @@ export async function printVolumeLabelsDirect(
   }
 }
 
-export function downloadVolumeLabelsPDF(data: LabelData, autoPrint: boolean = false): void {
-  const doc = generateVolumeLabelsPDF(data);
+export async function downloadVolumeLabelsPDF(data: LabelData, autoPrint: boolean = false): Promise<void> {
+  const doc = await generateVolumeLabelsPDF(data);
   const safeName = data.clientName
     .replace(/[^a-zA-Z0-9]/g, '_')
     .substring(0, 20);
