@@ -127,7 +127,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
                   <span className="font-bold text-foreground min-w-[20px]">1.</span>
                   <div>
                     <p className="font-semibold text-foreground">Instalar o QZ Tray</p>
-                    <p>Acesse <span className="font-mono bg-muted px-1 rounded">qz.io</span> e baixe o instalador. Execute e siga as instruções. O QZ Tray deve ficar ativo na bandeja do sistema (ícone ao lado do relógio).</p>
+                    <p>Acesse <a href="https://qz.io/download/" target="_blank" rel="noopener noreferrer" className="text-primary underline font-semibold">qz.io/download</a> e baixe o instalador. Execute e siga as instruções. O QZ Tray deve ficar ativo na bandeja do sistema (ícone ao lado do relógio).</p>
                   </div>
                 </div>
 
