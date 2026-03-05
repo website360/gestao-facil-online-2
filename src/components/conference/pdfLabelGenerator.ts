@@ -68,7 +68,7 @@ function drawLabel(
   const MT = 30;
   const MB = 14;
   const PW = 100;
-  const PH = 60;
+  const PH = 78;
   const contentW = PW - ML - MR; // ~68mm
   const contentH = PH - MT - MB; // 16mm úteis
 
@@ -201,12 +201,12 @@ export async function generateVolumeLabelsPDF(data: LabelData): Promise<jsPDF> {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
-    format: [100, 60],
+    format: [100, 78],
   });
 
   for (let i = 0; i < totalVolumes; i++) {
     if (i > 0) {
-      doc.addPage([100, 60], 'landscape');
+      doc.addPage([100, 78], 'landscape');
     }
     drawLabel(doc, clientName, invoiceNumber, i + 1, totalVolumes, currentDate, logoBase64);
   }
