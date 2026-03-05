@@ -68,7 +68,7 @@ function drawLabel(
   const MT = 30;
   const MB = 14;
   const PW = 100;
-  const PH = 60;
+  const PH = 78;
   const contentW = PW - ML - MR; // ~68mm
   const contentH = PH - MT - MB; // 16mm úteis
 
