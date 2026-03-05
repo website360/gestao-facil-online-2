@@ -67,7 +67,7 @@ function drawLabel(
   doc.setFontSize(7);
   doc.text('CLIENTE', ML + 1, clientY + clientH / 2 + 1);
 
-  doc.setFontSize(7);
+  doc.setFontSize(9);
   const clientText = clientName.toUpperCase();
   const maxW = contentW - lblW - 2;
   const dataX = ML + lblW + 1;
@@ -80,13 +80,13 @@ function drawLabel(
       if (onL1 && doc.getTextWidth(test) <= maxW) { line1 = test; }
       else { onL1 = false; line2 += (line2 ? ' ' : '') + w; }
     }
-    doc.text(line1, dataX, clientY + 4);
+    doc.text(line1, dataX, clientY + 5);
     if (line2) {
-      const trunc = line2.length > 35 ? line2.substring(0, 35) + '...' : line2;
-      doc.text(trunc, dataX, clientY + 8);
+      const trunc = line2.length > 30 ? line2.substring(0, 30) + '...' : line2;
+      doc.text(trunc, dataX, clientY + 10);
     }
   } else {
-    doc.text(clientText, dataX, clientY + clientH / 2 + 1);
+    doc.text(clientText, dataX, clientY + clientH / 2 + 1.5);
   }
 
   // === BOTTOM ROW: 3 columns — NF | VOLUME | DATA ===
