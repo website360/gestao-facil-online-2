@@ -89,45 +89,45 @@ function drawLabel(
   const contentBottomY = MT + contentH;
 
   // === HEADER ===
-  doc.setLineWidth(0.35);
+  doc.setLineWidth(0.4);
   doc.line(ML, clientY, ML + contentW, clientY);
 
   if (logoBase64) {
     try {
-      const logoW = 4.4;
-      const logoH = 4.4;
-      const logoX = ML + 1.2;
+      const logoW = 10;
+      const logoH = 10;
+      const logoX = ML + 2;
       const logoY = headerY + (headerH - logoH) / 2;
       doc.addImage(logoBase64, 'JPEG', logoX, logoY, logoW, logoH);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.8);
-      doc.text('IRMAOS MANTOVANI TEXTIL', ML + 6.8, headerY + headerH / 2 + 0.6);
+      doc.setFontSize(11);
+      doc.text('IRMAOS MANTOVANI TEXTIL', ML + 14, headerY + headerH / 2 + 1.2);
     } catch {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.9);
-      doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 0.6, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 1.2, { align: 'center' });
     }
   } else {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(5.9);
-    doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 0.6, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + headerH / 2 + 1.2, { align: 'center' });
   }
 
   // === CLIENTE ===
   doc.line(ML, bottomY, ML + contentW, bottomY);
 
-  const lblW = 11;
+  const lblW = 18;
   doc.line(ML + lblW, clientY, ML + lblW, bottomY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5.7);
-  doc.text('CLIENTE', ML + 0.8, clientY + clientH / 2 + 0.6);
+  doc.setFontSize(10);
+  doc.text('CLIENTE', ML + 1.5, clientY + clientH / 2 + 1.2);
 
-  doc.setFontSize(6.6);
+  doc.setFontSize(12);
   const clientText = clientName.toUpperCase();
-  const maxW = contentW - lblW - 1.6;
-  const dataX = ML + lblW + 0.8;
+  const maxW = contentW - lblW - 3;
+  const dataX = ML + lblW + 1.5;
 
   if (doc.getTextWidth(clientText) > maxW) {
     const words = clientText.split(' ');
@@ -145,13 +145,13 @@ function drawLabel(
       }
     }
 
-    doc.text(line1, dataX, clientY + 2.5);
+    doc.text(line1, dataX, clientY + 9);
     if (line2) {
-      const trunc = line2.length > 24 ? `${line2.substring(0, 24)}...` : line2;
-      doc.text(trunc, dataX, clientY + 5.0);
+      const trunc = line2.length > 35 ? `${line2.substring(0, 35)}...` : line2;
+      doc.text(trunc, dataX, clientY + 16);
     }
   } else {
-    doc.text(clientText, dataX, clientY + clientH / 2 + 0.8);
+    doc.text(clientText, dataX, clientY + clientH / 2 + 1.5);
   }
 
   // === LINHA INFERIOR: NF | VOLUME | DATA ===
@@ -163,32 +163,31 @@ function drawLabel(
   const col2X = ML + col1W;
   const col3X = col2X + col2W;
 
-  doc.setLineWidth(0.35);
+  doc.setLineWidth(0.4);
   doc.line(col2X, bottomY, col2X, contentBottomY);
   doc.line(col3X, bottomY, col3X, contentBottomY);
 
   // Cabeçalhos da linha inferior
-  const labelY = bottomY + 1.6;
+  const labelY = bottomY + 5;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5.4);
-  doc.text('NOTA FISCAL', col1X + 0.8, labelY);
-  doc.text('VOLUME', col2X + 0.8, labelY);
-  doc.text('DATA', col3X + 0.8, labelY);
+  doc.setFontSize(8);
+  doc.text('NOTA FISCAL', col1X + 1.5, labelY);
+  doc.text('VOLUME', col2X + 1.5, labelY);
+  doc.text('DATA', col3X + 1.5, labelY);
 
-  // Valores da linha inferior (subidos para evitar corte)
-  const valueY = bottomY + bottomH - 0.8;
+  // Valores da linha inferior
+  const valueY = bottomY + bottomH - 3;
 
-  doc.setFontSize(6.3);
-  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 0.8, valueY);
+  doc.setFontSize(11);
+  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 1.5, valueY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.2);
+  doc.setFontSize(14);
   const volText = `${volumeNumber}/${totalVolumes}`;
   doc.text(volText, col2X + col2W / 2, valueY, { align: 'center' });
 
-  doc.setFontSize(5.8);
+  doc.setFontSize(10);
   doc.text(date, col3X + col3W / 2, valueY, { align: 'center' });
-}
 
 export async function generateVolumeLabelsPDF(data: LabelData): Promise<jsPDF> {
   const { clientName, totalVolumes, invoiceNumber = '' } = data;
