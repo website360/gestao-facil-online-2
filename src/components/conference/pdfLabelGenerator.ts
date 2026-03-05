@@ -14,11 +14,11 @@ interface LabelData {
 }
 
 /**
- * Draw stronger text for thermal printers without creating gray blur.
+ * Draw pure black text (single pass, no anti-alias simulation).
  */
-function drawStrongText(doc: jsPDF, text: string, x: number, y: number, options?: any) {
+function drawSolidText(doc: jsPDF, text: string, x: number, y: number, options?: any) {
+  doc.setTextColor(0, 0, 0);
   doc.text(text, x, y, options);
-  doc.text(text, x + 0.08, y, options);
 }
 
 function drawLabel(
@@ -38,23 +38,24 @@ function drawLabel(
   doc.setDrawColor(0, 0, 0);
 
   // Outer border
-  doc.setLineWidth(0.9);
+  doc.setLineWidth(0.7);
   doc.rect(BORDER, BORDER, W - BORDER * 2, H - BORDER * 2);
 
   // === HEADER ===
   const headerY = 7;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-
   const centerX = W / 2;
-  drawStrongText(doc, 'IRMAOS', centerX - 24, headerY, { align: 'right' });
-  drawStrongText(doc, 'MANTOVANI', centerX + 2, headerY, { align: 'left' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  drawSolidText(doc, 'IRMAOS', centerX - 24, headerY, { align: 'right' });
+  drawSolidText(doc, 'MANTOVANI', centerX + 2, headerY, { align: 'left' });
 
   doc.setFontSize(10);
-  drawStrongText(doc, 'TEXTIL', centerX + 2 + doc.getTextWidth('MANTOVANI '), headerY);
+  drawSolidText(doc, 'TEXTIL', centerX + 2 + doc.getTextWidth('MANTOVANI '), headerY);
 
+  // Separator line
   const sepY = 10;
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.5);
   doc.line(MARGIN_X + 1, sepY, W - MARGIN_X - 1, sepY);
 
   // === CLIENTE field ===
@@ -64,23 +65,17 @@ function drawLabel(
   const clienteBoxW = W - MARGIN_X - clienteBoxX - 1;
   const clienteBoxH = 11;
 
-  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  drawStrongText(doc, 'CLIENTE', MARGIN_X + 2, clienteLabelY + 4);
+  doc.setFontSize(10);
+  drawSolidText(doc, 'CLIENTE', MARGIN_X + 2, clienteLabelY + 4);
 
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.5);
   doc.rect(clienteBoxX, clienteLabelY - 1, clienteBoxW, clienteBoxH);
 
-  // Fill data box in pure black for maximum thermal contrast
-  doc.setFillColor(0, 0, 0);
-  doc.rect(clienteBoxX + 0.2, clienteLabelY - 0.8, clienteBoxW - 0.4, clienteBoxH - 0.4, 'F');
-
   doc.setFontSize(10.5);
-  doc.setFont('helvetica', 'bold');
   const maxWidth = clienteBoxW - 3;
   const clientText = clientName.toUpperCase();
 
-  doc.setTextColor(255, 255, 255);
   if (doc.getTextWidth(clientText) > maxWidth) {
     const words = clientText.split(' ');
     let line1 = '';
@@ -97,13 +92,13 @@ function drawLabel(
       }
     }
 
-    drawStrongText(doc, line1, clienteBoxX + 1.2, clienteLabelY + 3);
+    drawSolidText(doc, line1, clienteBoxX + 1.2, clienteLabelY + 3.3);
     if (line2) {
       const truncatedLine2 = line2.length > 35 ? line2.substring(0, 35) + '...' : line2;
-      drawStrongText(doc, truncatedLine2, clienteBoxX + 1.2, clienteLabelY + 7.2);
+      drawSolidText(doc, truncatedLine2, clienteBoxX + 1.2, clienteLabelY + 7.4);
     }
   } else {
-    drawStrongText(doc, clientText, clienteBoxX + 1.2, clienteLabelY + 5.4);
+    drawSolidText(doc, clientText, clienteBoxX + 1.2, clienteLabelY + 5.5);
   }
 
   // === NOTA FISCAL field ===
@@ -113,19 +108,14 @@ function drawLabel(
   const nfBoxW = W - MARGIN_X - nfBoxX - 1;
   const nfBoxH = 9;
 
-  doc.setTextColor(0, 0, 0);
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  drawStrongText(doc, 'NOTA FISCAL', MARGIN_X + 2, nfLabelY + 4);
+  drawSolidText(doc, 'NOTA FISCAL', MARGIN_X + 2, nfLabelY + 4);
 
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.5);
   doc.rect(nfBoxX, nfLabelY - 1, nfBoxW, nfBoxH);
-  doc.setFillColor(0, 0, 0);
-  doc.rect(nfBoxX + 0.2, nfLabelY - 0.8, nfBoxW - 0.4, nfBoxH - 0.4, 'F');
 
-  doc.setTextColor(255, 255, 255);
   doc.setFontSize(11);
-  drawStrongText(doc, (invoiceNumber || '').toUpperCase(), nfBoxX + 1.2, nfLabelY + 4.4);
+  drawSolidText(doc, (invoiceNumber || '').toUpperCase(), nfBoxX + 1.2, nfLabelY + 4.6);
 
   // === VOLUME and DATA fields ===
   const bottomY = 42;
@@ -139,37 +129,26 @@ function drawLabel(
   const dataBoxX = dataLabelX + dataLabelW + 1;
   const dataBoxW = W - MARGIN_X - dataBoxX - 1;
 
-  doc.setTextColor(0, 0, 0);
   doc.setFontSize(10);
-  drawStrongText(doc, 'VOLUME', MARGIN_X + 2, bottomY + 4);
+  drawSolidText(doc, 'VOLUME', MARGIN_X + 2, bottomY + 4);
 
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.5);
   doc.rect(volBoxX, bottomY - 1, volBoxW, bottomBoxH);
-  doc.setFillColor(0, 0, 0);
-  doc.rect(volBoxX + 0.2, bottomY - 0.8, volBoxW - 0.4, bottomBoxH - 0.4, 'F');
 
-  doc.setTextColor(255, 255, 255);
   doc.setFontSize(11);
   const volText = `${volumeNumber}/${totalVolumes}`;
   const volTextW = doc.getTextWidth(volText);
-  drawStrongText(doc, volText, volBoxX + (volBoxW - volTextW) / 2, bottomY + 4.4);
+  drawSolidText(doc, volText, volBoxX + (volBoxW - volTextW) / 2, bottomY + 4.6);
 
-  doc.setTextColor(0, 0, 0);
   doc.setFontSize(10);
-  drawStrongText(doc, 'DATA', dataLabelX + 1, bottomY + 4);
+  drawSolidText(doc, 'DATA', dataLabelX + 1, bottomY + 4);
 
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.5);
   doc.rect(dataBoxX, bottomY - 1, dataBoxW, bottomBoxH);
-  doc.setFillColor(0, 0, 0);
-  doc.rect(dataBoxX + 0.2, bottomY - 0.8, dataBoxW - 0.4, bottomBoxH - 0.4, 'F');
 
-  doc.setTextColor(255, 255, 255);
   doc.setFontSize(11);
   const dateTextW = doc.getTextWidth(date);
-  drawStrongText(doc, date, dataBoxX + (dataBoxW - dateTextW) / 2, bottomY + 4.4);
-
-  // Reset color for next operations
-  doc.setTextColor(0, 0, 0);
+  drawSolidText(doc, date, dataBoxX + (dataBoxW - dateTextW) / 2, bottomY + 4.6);
 }
 
 export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
