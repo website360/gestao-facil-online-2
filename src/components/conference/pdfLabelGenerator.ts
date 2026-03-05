@@ -28,9 +28,9 @@ function drawLabel(
   const ML = 30;  // left margin (non-printable zone)
   const MR = 2;   // right margin
   const MT = 30;  // top margin (non-printable zone)
-  const MB = 1;   // bottom margin
+  const MB = 10;  // bottom margin (printer clips bottom too)
   const contentW = 100 - ML - MR; // ~68mm
-  const contentH = 60 - MT - MB;  // ~29mm
+  const contentH = 60 - MT - MB;  // ~20mm
 
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
@@ -39,10 +39,10 @@ function drawLabel(
   doc.setLineWidth(0.5);
   doc.rect(ML, MT, contentW, contentH);
 
-  // === ROW HEIGHTS (total ~29mm) ===
-  const headerH = 5;    // company name
-  const clientH = 10;   // client name (biggest section)
-  const bottomH = contentH - headerH - clientH; // ~14mm for NF + VOL + DATA
+  // === ROW HEIGHTS (total ~20mm) ===
+  const headerH = 4;    // company name
+  const clientH = 8;    // client name
+  const bottomH = contentH - headerH - clientH; // ~8mm for NF + VOL + DATA
 
   const headerY = MT;
   const clientY = MT + headerH;
