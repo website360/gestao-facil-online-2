@@ -16,20 +16,6 @@ interface LabelData {
 /**
  * Draw pure black text (single pass).
  */
-function drawSolidText(doc: jsPDF, text: string, x: number, y: number, options?: any) {
-  doc.setTextColor(0, 0, 0);
-  doc.text(text, x, y, options);
-}
-
-/**
- * Draw high-contrast white text over black background.
- */
-function drawWhiteText(doc: jsPDF, text: string, x: number, y: number, options?: any) {
-  doc.setTextColor(255, 255, 255);
-  doc.text(text, x, y, options);
-  doc.text(text, x + 0.06, y, options);
-}
-
 function drawLabel(
   doc: jsPDF,
   clientName: string,
@@ -40,133 +26,121 @@ function drawLabel(
 ) {
   const W = 100;
   const H = 60;
-  const BORDER = 1.5;
-  const MARGIN_X = 3;
+  const MARGIN = 2;
 
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
 
   // Outer border
   doc.setLineWidth(0.8);
-  doc.rect(BORDER, BORDER, W - BORDER * 2, H - BORDER * 2);
+  doc.rect(MARGIN, MARGIN, W - MARGIN * 2, H - MARGIN * 2);
 
   // === HEADER ===
-  const headerY = 7;
-  const centerX = W / 2;
-
+  const headerY = 8;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  drawSolidText(doc, 'IRMAOS', centerX - 24, headerY, { align: 'right' });
-  drawSolidText(doc, 'MANTOVANI', centerX + 2, headerY, { align: 'left' });
+  doc.setFontSize(12);
+  doc.text('IRMAOS MANTOVANI TEXTIL', W / 2, headerY, { align: 'center' });
 
-  doc.setFontSize(10);
-  drawSolidText(doc, 'TEXTIL', centerX + 2 + doc.getTextWidth('MANTOVANI '), headerY);
-
-  const sepY = 10;
+  // Header separator
+  const sepY = 11;
   doc.setLineWidth(0.5);
-  doc.line(MARGIN_X + 1, sepY, W - MARGIN_X - 1, sepY);
+  doc.line(MARGIN + 1, sepY, W - MARGIN - 1, sepY);
+
+  // === Row heights ===
+  const row1Y = sepY;        // CLIENTE row top
+  const row1H = 14;
+  const row2Y = row1Y + row1H; // NF row top
+  const row2H = 11;
+  const row3Y = row2Y + row2H; // VOLUME + DATA row top
+  const row3H = 11;
+
+  const labelColW = 22;       // Width for label text column
+  const dataX = MARGIN + labelColW;
+  const dataW = W - MARGIN * 2 - labelColW;
 
   // === CLIENTE field ===
-  const clienteLabelY = 15;
-  const clienteLabelW = 20;
-  const clienteBoxX = clienteLabelW + MARGIN_X + 1;
-  const clienteBoxW = W - MARGIN_X - clienteBoxX - 1;
-  const clienteBoxH = 11;
+  // Horizontal line below CLIENTE row
+  doc.setLineWidth(0.4);
+  doc.line(MARGIN, row2Y, W - MARGIN, row2Y);
+  // Vertical separator
+  doc.line(dataX, row1Y, dataX, row2Y);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  drawSolidText(doc, 'CLIENTE', MARGIN_X + 2, clienteLabelY + 4);
+  doc.setFontSize(9);
+  doc.text('CLIENTE', MARGIN + 2, row1Y + row1H / 2 + 1);
 
-  doc.setLineWidth(0.6);
-  doc.rect(clienteBoxX, clienteLabelY - 1, clienteBoxW, clienteBoxH);
-  doc.setFillColor(0, 0, 0);
-  doc.rect(clienteBoxX + 0.2, clienteLabelY - 0.8, clienteBoxW - 0.4, clienteBoxH - 0.4, 'F');
-
-  doc.setFontSize(10.5);
-  const maxWidth = clienteBoxW - 3;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
   const clientText = clientName.toUpperCase();
+  const maxClientW = dataW - 4;
 
-  if (doc.getTextWidth(clientText) > maxWidth) {
+  if (doc.getTextWidth(clientText) > maxClientW) {
     const words = clientText.split(' ');
     let line1 = '';
     let line2 = '';
     let onLine1 = true;
-
     for (const word of words) {
       const test = line1 + (line1 ? ' ' : '') + word;
-      if (onLine1 && doc.getTextWidth(test) <= maxWidth) {
+      if (onLine1 && doc.getTextWidth(test) <= maxClientW) {
         line1 = test;
       } else {
         onLine1 = false;
         line2 += (line2 ? ' ' : '') + word;
       }
     }
-
-    drawWhiteText(doc, line1, clienteBoxX + 1.2, clienteLabelY + 3.3);
+    doc.text(line1, dataX + 2, row1Y + 5);
     if (line2) {
-      const truncatedLine2 = line2.length > 35 ? line2.substring(0, 35) + '...' : line2;
-      drawWhiteText(doc, truncatedLine2, clienteBoxX + 1.2, clienteLabelY + 7.4);
+      const truncated = line2.length > 30 ? line2.substring(0, 30) + '...' : line2;
+      doc.text(truncated, dataX + 2, row1Y + 10);
     }
   } else {
-    drawWhiteText(doc, clientText, clienteBoxX + 1.2, clienteLabelY + 5.5);
+    doc.text(clientText, dataX + 2, row1Y + row1H / 2 + 1);
   }
 
   // === NOTA FISCAL field ===
-  const nfLabelY = 29;
-  const nfLabelW = 24;
-  const nfBoxX = nfLabelW + MARGIN_X + 1;
-  const nfBoxW = W - MARGIN_X - nfBoxX - 1;
-  const nfBoxH = 9;
+  doc.setLineWidth(0.4);
+  doc.line(MARGIN, row3Y, W - MARGIN, row3Y);
+  doc.line(dataX, row2Y, dataX, row3Y);
 
-  doc.setFontSize(10);
-  drawSolidText(doc, 'NOTA FISCAL', MARGIN_X + 2, nfLabelY + 4);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text('NOTA FISCAL', MARGIN + 2, row2Y + row2H / 2 + 1);
 
-  doc.setLineWidth(0.6);
-  doc.rect(nfBoxX, nfLabelY - 1, nfBoxW, nfBoxH);
-  doc.setFillColor(0, 0, 0);
-  doc.rect(nfBoxX + 0.2, nfLabelY - 0.8, nfBoxW - 0.4, nfBoxH - 0.4, 'F');
-
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  drawWhiteText(doc, (invoiceNumber || '').toUpperCase(), nfBoxX + 1.2, nfLabelY + 4.6);
+  doc.text((invoiceNumber || 'S/N').toUpperCase(), dataX + 2, row2Y + row2H / 2 + 1);
 
-  // === VOLUME and DATA fields ===
-  const bottomY = 42;
+  // === VOLUME + DATA fields (side by side) ===
+  const halfW = (W - MARGIN * 2) / 2;
   const volLabelW = 18;
-  const volBoxX = volLabelW + MARGIN_X + 1;
-  const volBoxW = 16;
-  const bottomBoxH = 9;
+  const volDataX = MARGIN + volLabelW;
+  const dataLabelX = MARGIN + halfW;
+  const dataLabelW = 14;
+  const dataDataX = dataLabelX + dataLabelW;
 
-  const dataLabelX = volBoxX + volBoxW + 2;
-  const dataLabelW = 12;
-  const dataBoxX = dataLabelX + dataLabelW + 1;
-  const dataBoxW = W - MARGIN_X - dataBoxX - 1;
+  // Vertical separators
+  doc.line(volDataX, row3Y, volDataX, row3Y + row3H);
+  doc.line(dataLabelX, row3Y, dataLabelX, row3Y + row3H);
+  doc.line(dataDataX, row3Y, dataDataX, row3Y + row3H);
 
-  doc.setFontSize(10);
-  drawSolidText(doc, 'VOLUME', MARGIN_X + 2, bottomY + 4);
+  // VOLUME label
+  doc.setFontSize(9);
+  doc.text('VOLUME', MARGIN + 2, row3Y + row3H / 2 + 1);
 
-  doc.setLineWidth(0.6);
-  doc.rect(volBoxX, bottomY - 1, volBoxW, bottomBoxH);
-  doc.setFillColor(0, 0, 0);
-  doc.rect(volBoxX + 0.2, bottomY - 0.8, volBoxW - 0.4, bottomBoxH - 0.4, 'F');
-
+  // Volume value
   doc.setFontSize(11);
   const volText = `${volumeNumber}/${totalVolumes}`;
-  const volTextW = doc.getTextWidth(volText);
-  drawWhiteText(doc, volText, volBoxX + (volBoxW - volTextW) / 2, bottomY + 4.6);
+  const volCenterX = volDataX + (dataLabelX - volDataX) / 2;
+  doc.text(volText, volCenterX, row3Y + row3H / 2 + 1, { align: 'center' });
 
-  doc.setFontSize(10);
-  drawSolidText(doc, 'DATA', dataLabelX + 1, bottomY + 4);
+  // DATA label
+  doc.setFontSize(9);
+  doc.text('DATA', dataLabelX + 2, row3Y + row3H / 2 + 1);
 
-  doc.setLineWidth(0.6);
-  doc.rect(dataBoxX, bottomY - 1, dataBoxW, bottomBoxH);
-  doc.setFillColor(0, 0, 0);
-  doc.rect(dataBoxX + 0.2, bottomY - 0.8, dataBoxW - 0.4, bottomBoxH - 0.4, 'F');
-
+  // Date value
   doc.setFontSize(11);
-  const dateTextW = doc.getTextWidth(date);
-  drawWhiteText(doc, date, dataBoxX + (dataBoxW - dateTextW) / 2, bottomY + 4.6);
-
-  doc.setTextColor(0, 0, 0);
+  const dateCenterX = dataDataX + (W - MARGIN - dataDataX) / 2;
+  doc.text(date, dateCenterX, row3Y + row3H / 2 + 1, { align: 'center' });
 }
 
 export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
