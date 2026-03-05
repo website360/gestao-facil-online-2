@@ -94,32 +94,57 @@ export async function findDatamaxPrinter(): Promise<string | null> {
  * Datamax O'Neil E-Class Mark III at 203 DPI (8 dots/mm)
  * Label: 100mm x 60mm in landscape
  */
+// Max row coordinate allowed (mm/10). 60mm label = 0600.
+const MAX_ROW_MM10 = 600;
+
 const DPL_SYSTEM_SETUP = {
   metricMode: '\x02m\r',          // STX m -> metric mode (mm/10)
   edgeSensor: '\x02e\r',          // STX e -> gap/edge sensing
-  gapLength: '\x02c0000\r',       // STX c0000 -> disable continuous mode (required for gap media)
-  maxLabelTravel: '\x02M1500\r',  // STX M1500 -> max TOF search = 150.0mm (safety, avoids long feed)
-  startOffset: '\x02O0220\r',     // STX O0220 -> start-of-print offset (legacy Datamax default)
+  gapLength: '\x02c0000\r',       // STX c0000 -> gap media mode
+  maxLabelTravel: '\x02M0700\r',  // STX M0700 -> max TOF search = 70.0mm (just above 60mm label)
+  zeroOffset: '\x02O0000\r',      // STX O0000 -> no start-of-print offset
   startFormat: '\x02L\r',         // STX L -> enter label format mode
 } as const;
 
 const DPL_LABEL_HEADER = {
-  widthAndDotSize: 'D11\r',        // Label header: width + dot size
-  heat: 'H30\r',                   // Label header: max heat for darker print
-  printSpeed: 'P0\r',              // Label header: slowest print speed
-  feedSpeed: 'S0\r',               // Label header: slow feed speed
+  widthAndDotSize: 'D11\r',        // Dot density inside format
+  heat: 'H30\r',                   // Max heat for darker print
+  printSpeed: 'P0\r',              // Slowest print speed
+  feedSpeed: 'S0\r',               // Slow feed speed
   quantityOne: 'Q0001\r',          // Print exactly 1 label per format
   endAndPrint: 'E\r',              // End format and print
 } as const;
 
+/**
+ * Build system setup commands (sent ONCE per batch).
+ */
 function buildDPLSystemSetup(): string {
   return (
     DPL_SYSTEM_SETUP.metricMode +
     DPL_SYSTEM_SETUP.edgeSensor +
     DPL_SYSTEM_SETUP.gapLength +
     DPL_SYSTEM_SETUP.maxLabelTravel +
-    DPL_SYSTEM_SETUP.startOffset
+    DPL_SYSTEM_SETUP.zeroOffset
   );
+}
+
+/**
+ * Validate that all row coordinates fit within the physical label height.
+ * Row values are in mm/10 (metric mode). Returns true if all rows <= MAX_ROW_MM10.
+ */
+function validateDPLCoordinates(records: string[]): boolean {
+  for (const rec of records) {
+    // Text record format: 1[font][rot]1100[row:4][col:5]data
+    // Row is at characters index 6..9 (4 digits after "1X1100")
+    if (rec.length >= 10 && /^1\d\d1100/.test(rec)) {
+      const row = parseInt(rec.substring(6, 10), 10);
+      if (isNaN(row) || row > MAX_ROW_MM10) {
+        console.error(`DPL coordinate validation failed: row ${row} exceeds max ${MAX_ROW_MM10}`);
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 function generateDPLLabel(
@@ -133,44 +158,54 @@ function generateDPLLabel(
   const volText = `${volumeNumber}/${totalVolumes}`;
   const nf = invoiceNumber || 'S/N';
 
-  // IMPORTANT:
-  // - System commands first (STX...)
-  // - Then STX L
-  // - Then ONLY label formatting records (no STX)
+  // Text records — coordinates in mm/10, ALL rows must be <= 0600 (60mm)
+  // Row layout: 0020=2mm, 0100=10mm, 0200=20mm, 0350=35mm, 0500=50mm
+  const textRecords = [
+    '191100020000050IRMAOS MANTOVANI TEXTIL',  // row 0020 = 2mm
+    '121100100000010CLIENTE:',                  // row 0100 = 10mm
+    '121100100000150' + clientText,             // row 0100 = 10mm
+    '121100200000010NF:',                       // row 0200 = 20mm
+    '121100200000080' + nf,                     // row 0200 = 20mm
+    '121100350000010VOLUME:',                   // row 0350 = 35mm
+    '121100350000150' + volText,                // row 0350 = 35mm
+    '121100500000010DATA:',                     // row 0500 = 50mm
+    '121100500000150' + date,                   // row 0500 = 50mm
+  ];
+
+  // Safety: validate coordinates before generating (prevents "meters of paper")
+  if (!validateDPLCoordinates(textRecords)) {
+    throw new Error('Layout inválido para etiqueta 60mm; impressão bloqueada para evitar desperdício.');
+  }
+
+  // Build single label block (no system setup — that's sent once per batch)
   let label = '';
-
-  label += buildDPLSystemSetup();
   label += DPL_SYSTEM_SETUP.startFormat;
-
   label += DPL_LABEL_HEADER.widthAndDotSize;
   label += DPL_LABEL_HEADER.heat;
   label += DPL_LABEL_HEADER.printSpeed;
   label += DPL_LABEL_HEADER.feedSpeed;
-
-  // Text records (metric coordinates in mm/10)
-  label += '191100020000050IRMAOS MANTOVANI TEXTIL\r';
-  label += '121100080000010CLIENTE:\r';
-  label += '121100080000150' + clientText + '\r';
-  label += '121100140000010NF:\r';
-  label += '121100140000080' + nf + '\r';
-  label += '121100200000010VOLUME:\r';
-  label += '121100200000150' + volText + '\r';
-  label += '121100200000350DATA:\r';
-  label += '121100200000450' + date + '\r';
-
+  for (const rec of textRecords) {
+    label += rec + '\r';
+  }
   label += DPL_LABEL_HEADER.quantityOne;
   label += DPL_LABEL_HEADER.endAndPrint;
 
   return label;
 }
 
+/**
+ * Generate DPL for all volumes. System setup is sent ONCE, then each label
+ * is just STX L ... E (no repeated system commands = no extra feeds).
+ */
 export function generateAllDPLLabels(
   clientName: string,
   totalVolumes: number,
   invoiceNumber: string = ''
 ): string {
   const date = new Date().toLocaleDateString('pt-BR');
-  let allLabels = '';
+
+  // System setup ONCE at the start of the batch
+  let allLabels = buildDPLSystemSetup();
 
   for (let i = 0; i < totalVolumes; i++) {
     allLabels += generateDPLLabel(clientName, invoiceNumber, i + 1, totalVolumes, date);
@@ -189,15 +224,14 @@ export async function printTestLabel(printerName: string): Promise<void> {
 
   const config = qz.configs.create(printerName, { raw: true });
 
-  // Test label using the same validated structure as production labels
-  let testLabel = '';
-  testLabel += buildDPLSystemSetup();
+  // Test label: system setup once + single label block
+  let testLabel = buildDPLSystemSetup();
   testLabel += DPL_SYSTEM_SETUP.startFormat;
   testLabel += DPL_LABEL_HEADER.widthAndDotSize;
   testLabel += DPL_LABEL_HEADER.heat;
   testLabel += DPL_LABEL_HEADER.printSpeed;
   testLabel += DPL_LABEL_HEADER.feedSpeed;
-  testLabel += '121100100000050TESTE DE IMPRESSAO\r';
+  testLabel += '121100200000050TESTE DE IMPRESSAO\r';  // row 0200 = 20mm (centered)
   testLabel += DPL_LABEL_HEADER.quantityOne;
   testLabel += DPL_LABEL_HEADER.endAndPrint;
 
