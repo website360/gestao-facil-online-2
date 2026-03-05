@@ -364,15 +364,17 @@ export async function printPdfDirect(
     }
 
     // 5. Configure and print
+    const LABEL_WIDTH_MM = 100;
+    const LABEL_HEIGHT_MM = 78;
+
     const config = qz.configs.create(selectedPrinter, {
       units: 'mm',
-      size: { width: 100, height: 60 },
-      scaleContent: false,
+      size: { width: LABEL_WIDTH_MM, height: LABEL_HEIGHT_MM },
+      scaleContent: true,
       rasterize: true,
       density: 'best',
       interpolation: 'nearest-neighbor',
       colorType: 'blackwhite',
-      orientation: 'landscape',
     });
 
     await withTimeout(
