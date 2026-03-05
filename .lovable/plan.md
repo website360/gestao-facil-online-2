@@ -1,52 +1,72 @@
 
+Objetivo
+- Corrigir definitivamente o avanço excessivo (“metros de etiqueta”) e garantir 1 etiqueta física de 100x60mm por volume, mantendo impressão escura no modo DPL.
 
-## Problema
+Diagnóstico fechado (causa raiz)
+- O DPL está em modo métrico (`STX m`), mas as linhas dos campos estão 10x acima do tamanho da etiqueta:
+  - `0800`, `1400`, `2000` (mm/10) = 80mm, 140mm, 200mm.
+- Com etiqueta de 60mm, isso força avanço longo para posicionar texto fora da área.
+- O `STX O0220` ainda desloca o início de impressão (+22mm), agravando o problema.
 
-O código DPL atual tem problemas graves de formatação que causam o desperdício de papel e layout quebrado:
+Plano de correção (implementação)
+1) Normalizar coordenadas para caberem em 60mm
+- Arquivo: `src/components/conference/qzTrayPrinter.ts`
+- Reescrever os records de texto para linhas dentro de `0000..0600` (mm/10), preservando colunas.
+- Exemplo de ajuste:
+  - `...0800...` -> `...0080...`
+  - `...1400...` -> `...0140...`
+  - `...2000...` -> `...0200...`
+- Ajustar também `printTestLabel` (`1000` -> `0100`).
 
-1. **Cada comando de sistema (`\x02M`, `\x02O`, `\x02D`, `\x02H`, `\x02S`) está sendo tratado como uma label separada** — a impressora interpreta cada `\x02` como início de novo label, fazendo avançar papel a cada comando.
-2. **O comprimento da label (`M0500`) está em dots (500 dots ≈ 62mm), mas os comandos de posicionamento de texto usam valores muito altos** (row 200 = 200 dots ≈ 25mm, o que está OK, mas a combinação com os múltiplos inícios de label causa o avanço excessivo).
-3. **Os comandos de configuração (D, H, S) devem ser enviados ANTES do `\x02L` (início do formato) e idealmente como comandos de sistema separados, não misturados com STX repetidos.**
+2) Remover deslocamento que cria avanço indevido
+- Remover `STX O0220` do setup (ou zerar explicitamente com `STX O0000`).
+- Manter `STX m`, `STX e`, `STX c0000` e `STX M` com valor de segurança para TOF (sem exagero de avanço).
 
-## Solução
+3) Estruturar envio DPL em bloco estável
+- Enviar comandos de sistema uma vez por lote e, para cada etiqueta, apenas:
+  `STX L -> header/records -> Q0001 -> E`
+- Evitar reconfiguração desnecessária por etiqueta (reduz efeitos colaterais de feed).
 
-Reescrever `generateDPLLabel` com a estrutura DPL correta para E-Class Mark III:
+4) Adicionar proteção anti-regressão
+- Criar validação interna antes de imprimir:
+  - Se qualquer linha de campo passar de 0600 (60mm), abortar impressão e retornar erro claro.
+- Isso impede voltar ao cenário de “metros de etiqueta” em mudanças futuras.
 
+5) Ajustar feedback de erro para operação
+- Se validação falhar, mostrar mensagem objetiva no UI:
+  “Layout inválido para etiqueta 60mm; impressão bloqueada para evitar desperdício.”
+
+Arquivos impactados
+- `src/components/conference/qzTrayPrinter.ts` (principal)
+- (Opcional, apenas mensagem) `src/components/conference/VolumeLabelPrinter.tsx`
+
+Detalhes técnicos (resumo)
 ```text
-STX n          ← limpa buffer (uma vez)
-STX KcRFF      ← set continuous media (ou gap mode)
-STX c           ← set metric mode  
-STX M0480      ← label length 480 dots (60mm × 8 dots/mm)
-STX D15        ← darkness
-STX S0         ← speed
-STX L          ← START label format (tudo entre L e E é UMA etiqueta)
-D11            ← density dentro do formato
-191100020000050IRMAOS MANTOVANI TEXTIL
-121100080000010CLIENTE:
-121100080000150[nome]
-121100140000010NF:
-121100140000080[nf]
-121100200000010VOLUME:
-121100200000150[vol]
-121100200000350DATA:
-121100200000450[data]
-E              ← fim e imprime
+SETUP (1x por lote):
+STX m
+STX c0000
+STX e
+STX Mxxxx
+[sem O0220]
+
+PARA CADA ETIQUETA:
+STX L
+D11
+H30
+P0
+S0
+records de texto com row <= 0600
+Q0001
+E
 ```
 
-Pontos-chave da correção:
-- **Todos os comandos de configuração (D, H, S, M) ficam ANTES do `\x02L`**, cada um com seu próprio `\x02`
-- **Entre `\x02L` e `E` ficam APENAS os comandos de texto/gráfico** — sem `\x02` no meio
-- **Remover `\x02H30`** — o comando H não existe no DPL padrão do E-Class; a densidade é controlada apenas por D e opcionalmente pelo comando `D11` (set dot density) dentro do formato
-- **Ajustar `M` para 480 dots** (60mm × 8 dots/mm) para corresponder exatamente ao tamanho da etiqueta
-- **Remover `Q0001\r` de dentro do bloco** — no DPL do E-Class, `E` já finaliza e imprime 1 cópia; `Q` deve vir antes de `E` se necessário
+Validação obrigatória (física)
+1. Imprimir 1 etiqueta:
+- Deve sair 1 única etiqueta com todo conteúdo dentro do layout.
+- Consumo aproximado: 60mm (sem avanço longo).
 
-## Arquivo impactado
+2. Imprimir 3 volumes:
+- Devem sair exatamente 3 etiquetas (1/3, 2/3, 3/3), sem “pulos” grandes entre elas.
 
-- `src/components/conference/qzTrayPrinter.ts` — reescrever apenas a função `generateDPLLabel`
-
-## Validação
-
-- Deve imprimir **uma única etiqueta de ~60mm** com todas as informações no mesmo label
-- Layout compacto sem avanço excessivo de papel
-- Texto escuro (D15 mantido)
-
+3. Teste de segurança:
+- Forçar coordenada inválida (temporário em dev) e confirmar bloqueio com erro amigável (sem imprimir metros).
