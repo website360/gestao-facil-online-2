@@ -106,9 +106,17 @@ function drawLabel(
   date: string,
   logoBase64: string | null
 ) {
-  const headerH = 8;
-  const clientH = 24;
-  const bottomH = CONTENT_H - headerH - clientH;
+  // Apply scale transformation: shrink content by SCALE_PERCENT centered in the safe zone
+  // This creates a buffer zone around the content to prevent any clipping
+  const scaledW = CONTENT_W * SCALE;
+  const scaledH = CONTENT_H * SCALE;
+  const offsetX = ML + (CONTENT_W - scaledW) / 2;
+  const offsetY = MT + (CONTENT_H - scaledH) / 2;
+
+  // All coordinates below are relative to the scaled content area
+  const headerH = 8 * SCALE;
+  const clientH = 24 * SCALE;
+  const bottomH = scaledH - headerH - clientH;
 
   const headerY = MT;
   const clientY = MT + headerH;
