@@ -193,13 +193,19 @@ function generateDPLLabel(
   return label;
 }
 
+/**
+ * Generate DPL for all volumes. System setup is sent ONCE, then each label
+ * is just STX L ... E (no repeated system commands = no extra feeds).
+ */
 export function generateAllDPLLabels(
   clientName: string,
   totalVolumes: number,
   invoiceNumber: string = ''
 ): string {
   const date = new Date().toLocaleDateString('pt-BR');
-  let allLabels = '';
+
+  // System setup ONCE at the start of the batch
+  let allLabels = buildDPLSystemSetup();
 
   for (let i = 0; i < totalVolumes; i++) {
     allLabels += generateDPLLabel(clientName, invoiceNumber, i + 1, totalVolumes, date);
