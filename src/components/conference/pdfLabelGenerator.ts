@@ -27,9 +27,9 @@ function drawLabel(
   const W = 100;
   const H = 60;
   // Thermal printers clip edges — use very generous margins
-  const ML = 30;  // left margin
+  const ML = 50;  // left margin
   const MR = 4;   // right margin
-  const MT = 30;  // top margin
+  const MT = 50;  // top margin
   const MB = 3;   // bottom margin
   const contentW = W - ML - MR;
   const contentH = H - MT - MB;
