@@ -224,15 +224,14 @@ export async function printTestLabel(printerName: string): Promise<void> {
 
   const config = qz.configs.create(printerName, { raw: true });
 
-  // Test label using the same validated structure as production labels
-  let testLabel = '';
-  testLabel += buildDPLSystemSetup();
+  // Test label: system setup once + single label block
+  let testLabel = buildDPLSystemSetup();
   testLabel += DPL_SYSTEM_SETUP.startFormat;
   testLabel += DPL_LABEL_HEADER.widthAndDotSize;
   testLabel += DPL_LABEL_HEADER.heat;
   testLabel += DPL_LABEL_HEADER.printSpeed;
   testLabel += DPL_LABEL_HEADER.feedSpeed;
-  testLabel += '121100100000050TESTE DE IMPRESSAO\r';
+  testLabel += '121100200000050TESTE DE IMPRESSAO\r';  // row 0200 = 20mm (centered)
   testLabel += DPL_LABEL_HEADER.quantityOne;
   testLabel += DPL_LABEL_HEADER.endAndPrint;
 
