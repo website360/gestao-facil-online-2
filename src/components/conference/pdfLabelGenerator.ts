@@ -14,11 +14,20 @@ interface LabelData {
 }
 
 /**
- * Draw pure black text (single pass, no anti-alias simulation).
+ * Draw pure black text (single pass).
  */
 function drawSolidText(doc: jsPDF, text: string, x: number, y: number, options?: any) {
   doc.setTextColor(0, 0, 0);
   doc.text(text, x, y, options);
+}
+
+/**
+ * Draw high-contrast white text over black background.
+ */
+function drawWhiteText(doc: jsPDF, text: string, x: number, y: number, options?: any) {
+  doc.setTextColor(255, 255, 255);
+  doc.text(text, x, y, options);
+  doc.text(text, x + 0.06, y, options);
 }
 
 function drawLabel(
@@ -38,7 +47,7 @@ function drawLabel(
   doc.setDrawColor(0, 0, 0);
 
   // Outer border
-  doc.setLineWidth(0.7);
+  doc.setLineWidth(0.8);
   doc.rect(BORDER, BORDER, W - BORDER * 2, H - BORDER * 2);
 
   // === HEADER ===
@@ -53,7 +62,6 @@ function drawLabel(
   doc.setFontSize(10);
   drawSolidText(doc, 'TEXTIL', centerX + 2 + doc.getTextWidth('MANTOVANI '), headerY);
 
-  // Separator line
   const sepY = 10;
   doc.setLineWidth(0.5);
   doc.line(MARGIN_X + 1, sepY, W - MARGIN_X - 1, sepY);
@@ -69,8 +77,10 @@ function drawLabel(
   doc.setFontSize(10);
   drawSolidText(doc, 'CLIENTE', MARGIN_X + 2, clienteLabelY + 4);
 
-  doc.setLineWidth(0.5);
+  doc.setLineWidth(0.6);
   doc.rect(clienteBoxX, clienteLabelY - 1, clienteBoxW, clienteBoxH);
+  doc.setFillColor(0, 0, 0);
+  doc.rect(clienteBoxX + 0.2, clienteLabelY - 0.8, clienteBoxW - 0.4, clienteBoxH - 0.4, 'F');
 
   doc.setFontSize(10.5);
   const maxWidth = clienteBoxW - 3;
@@ -92,13 +102,13 @@ function drawLabel(
       }
     }
 
-    drawSolidText(doc, line1, clienteBoxX + 1.2, clienteLabelY + 3.3);
+    drawWhiteText(doc, line1, clienteBoxX + 1.2, clienteLabelY + 3.3);
     if (line2) {
       const truncatedLine2 = line2.length > 35 ? line2.substring(0, 35) + '...' : line2;
-      drawSolidText(doc, truncatedLine2, clienteBoxX + 1.2, clienteLabelY + 7.4);
+      drawWhiteText(doc, truncatedLine2, clienteBoxX + 1.2, clienteLabelY + 7.4);
     }
   } else {
-    drawSolidText(doc, clientText, clienteBoxX + 1.2, clienteLabelY + 5.5);
+    drawWhiteText(doc, clientText, clienteBoxX + 1.2, clienteLabelY + 5.5);
   }
 
   // === NOTA FISCAL field ===
@@ -111,11 +121,13 @@ function drawLabel(
   doc.setFontSize(10);
   drawSolidText(doc, 'NOTA FISCAL', MARGIN_X + 2, nfLabelY + 4);
 
-  doc.setLineWidth(0.5);
+  doc.setLineWidth(0.6);
   doc.rect(nfBoxX, nfLabelY - 1, nfBoxW, nfBoxH);
+  doc.setFillColor(0, 0, 0);
+  doc.rect(nfBoxX + 0.2, nfLabelY - 0.8, nfBoxW - 0.4, nfBoxH - 0.4, 'F');
 
   doc.setFontSize(11);
-  drawSolidText(doc, (invoiceNumber || '').toUpperCase(), nfBoxX + 1.2, nfLabelY + 4.6);
+  drawWhiteText(doc, (invoiceNumber || '').toUpperCase(), nfBoxX + 1.2, nfLabelY + 4.6);
 
   // === VOLUME and DATA fields ===
   const bottomY = 42;
@@ -132,23 +144,29 @@ function drawLabel(
   doc.setFontSize(10);
   drawSolidText(doc, 'VOLUME', MARGIN_X + 2, bottomY + 4);
 
-  doc.setLineWidth(0.5);
+  doc.setLineWidth(0.6);
   doc.rect(volBoxX, bottomY - 1, volBoxW, bottomBoxH);
+  doc.setFillColor(0, 0, 0);
+  doc.rect(volBoxX + 0.2, bottomY - 0.8, volBoxW - 0.4, bottomBoxH - 0.4, 'F');
 
   doc.setFontSize(11);
   const volText = `${volumeNumber}/${totalVolumes}`;
   const volTextW = doc.getTextWidth(volText);
-  drawSolidText(doc, volText, volBoxX + (volBoxW - volTextW) / 2, bottomY + 4.6);
+  drawWhiteText(doc, volText, volBoxX + (volBoxW - volTextW) / 2, bottomY + 4.6);
 
   doc.setFontSize(10);
   drawSolidText(doc, 'DATA', dataLabelX + 1, bottomY + 4);
 
-  doc.setLineWidth(0.5);
+  doc.setLineWidth(0.6);
   doc.rect(dataBoxX, bottomY - 1, dataBoxW, bottomBoxH);
+  doc.setFillColor(0, 0, 0);
+  doc.rect(dataBoxX + 0.2, bottomY - 0.8, dataBoxW - 0.4, bottomBoxH - 0.4, 'F');
 
   doc.setFontSize(11);
   const dateTextW = doc.getTextWidth(date);
-  drawSolidText(doc, date, dataBoxX + (dataBoxW - dateTextW) / 2, bottomY + 4.6);
+  drawWhiteText(doc, date, dataBoxX + (dataBoxW - dateTextW) / 2, bottomY + 4.6);
+
+  doc.setTextColor(0, 0, 0);
 }
 
 export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
