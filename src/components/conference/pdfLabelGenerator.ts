@@ -190,12 +190,12 @@ export async function printVolumeLabelsDirect(
   data: LabelData
 ): Promise<{ success: boolean; message: string }> {
   try {
-    // Use native RAW DPL for Datamax — maximum darkness (D15/H30/S0)
-    return await printVolumeLabelsDPL(data.clientName, data.totalVolumes, data.invoiceNumber || '');
+    const pdfBase64 = getVolumeLabelsPDFBase64(data);
+    return await printPdfDirect(pdfBase64);
   } catch (error) {
     return {
       success: false,
-      message: `Erro ao preparar impressão: ${(error as Error)?.message || 'falha desconhecida'}`,
+      message: `Erro ao preparar impressão em PDF: ${(error as Error)?.message || 'falha desconhecida'}`,
     };
   }
 }
