@@ -28,9 +28,11 @@ function drawLabel(
   const ML = 30;  // left margin (non-printable zone)
   const MR = 2;   // right margin
   const MT = 30;  // top margin (non-printable zone)
-  const MB = 10;  // bottom margin (printer clips bottom too)
-  const contentW = 100 - ML - MR; // ~68mm
-  const contentH = 60 - MT - MB;  // ~20mm
+  const MB = 2;   // bottom margin
+  const PW = 100; // page width
+  const PH = 70;  // page height (extra 10mm to avoid bottom clipping)
+  const contentW = PW - ML - MR; // ~68mm
+  const contentH = PH - MT - MB;  // ~38mm
 
   doc.setTextColor(0, 0, 0);
   doc.setDrawColor(0, 0, 0);
@@ -39,10 +41,10 @@ function drawLabel(
   doc.setLineWidth(0.5);
   doc.rect(ML, MT, contentW, contentH);
 
-  // === ROW HEIGHTS (total ~20mm) ===
-  const headerH = 4;    // company name
-  const clientH = 8;    // client name
-  const bottomH = contentH - headerH - clientH; // ~8mm for NF + VOL + DATA
+  // === ROW HEIGHTS (total ~38mm) ===
+  const headerH = 6;    // company name
+  const clientH = 14;   // client name
+  const bottomH = contentH - headerH - clientH; // ~18mm for NF + VOL + DATA
 
   const headerY = MT;
   const clientY = MT + headerH;
@@ -53,8 +55,8 @@ function drawLabel(
   doc.line(ML, clientY, ML + contentW, clientY);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + 3.5, { align: 'center' });
+  doc.setFontSize(9);
+  doc.text('IRMAOS MANTOVANI TEXTIL', ML + contentW / 2, headerY + 4, { align: 'center' });
 
   // === CLIENT ROW ===
   doc.line(ML, bottomY, ML + contentW, bottomY);
@@ -62,10 +64,10 @@ function drawLabel(
   const lblW = 12; // label column width
   doc.line(ML + lblW, clientY, ML + lblW, bottomY);
 
-  doc.setFontSize(5.5);
-  doc.text('CLIENTE', ML + 1, clientY + clientH / 2 + 0.8);
-
   doc.setFontSize(7);
+  doc.text('CLIENTE', ML + 1, clientY + clientH / 2 + 1);
+
+  doc.setFontSize(9);
   const clientText = clientName.toUpperCase();
   const maxW = contentW - lblW - 2;
   const dataX = ML + lblW + 1;
@@ -78,13 +80,13 @@ function drawLabel(
       if (onL1 && doc.getTextWidth(test) <= maxW) { line1 = test; }
       else { onL1 = false; line2 += (line2 ? ' ' : '') + w; }
     }
-    doc.text(line1, dataX, clientY + 4);
+    doc.text(line1, dataX, clientY + 5);
     if (line2) {
-      const trunc = line2.length > 35 ? line2.substring(0, 35) + '...' : line2;
-      doc.text(trunc, dataX, clientY + 8);
+      const trunc = line2.length > 30 ? line2.substring(0, 30) + '...' : line2;
+      doc.text(trunc, dataX, clientY + 10);
     }
   } else {
-    doc.text(clientText, dataX, clientY + clientH / 2 + 1);
+    doc.text(clientText, dataX, clientY + clientH / 2 + 1.5);
   }
 
   // === BOTTOM ROW: 3 columns — NF | VOLUME | DATA ===
@@ -103,25 +105,25 @@ function drawLabel(
   const midBot = bottomY + bottomH / 2;
 
   // NF
-  doc.setFontSize(5);
-  doc.text('NOTA FISCAL', col1X + 1, bottomY + 3);
-  doc.setFontSize(7);
-  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 1, midBot + 2.5);
+  doc.setFontSize(6);
+  doc.text('NOTA FISCAL', col1X + 1, bottomY + 4);
+  doc.setFontSize(9);
+  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 1, midBot + 3);
 
   // VOLUME
-  doc.setFontSize(5);
-  doc.text('VOLUME', col2X + 1, bottomY + 3);
-  doc.setFontSize(8);
+  doc.setFontSize(6);
+  doc.text('VOLUME', col2X + 1, bottomY + 4);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   const volText = `${volumeNumber}/${totalVolumes}`;
-  doc.text(volText, col2X + col2W / 2, midBot + 2.5, { align: 'center' });
+  doc.text(volText, col2X + col2W / 2, midBot + 3, { align: 'center' });
 
   // DATA
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5);
-  doc.text('DATA', col3X + 1, bottomY + 3);
-  doc.setFontSize(6.5);
-  doc.text(date, col3X + col3W / 2, midBot + 2.5, { align: 'center' });
+  doc.setFontSize(6);
+  doc.text('DATA', col3X + 1, bottomY + 4);
+  doc.setFontSize(8);
+  doc.text(date, col3X + col3W / 2, midBot + 3, { align: 'center' });
 }
 
 export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
@@ -131,12 +133,12 @@ export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
-    format: [100, 60],
+    format: [100, 70],
   });
 
   for (let i = 0; i < totalVolumes; i++) {
     if (i > 0) {
-      doc.addPage([100, 60], 'landscape');
+      doc.addPage([100, 70], 'landscape');
     }
     drawLabel(doc, clientName, invoiceNumber, i + 1, totalVolumes, currentDate);
   }
