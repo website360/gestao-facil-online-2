@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Printer, CheckCircle, Download, Loader2 } from 'lucide-react';
+import { Printer, CheckCircle, Download, Loader2, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { printVolumeLabelsDirect, downloadVolumeLabelsPDF } from './pdfLabelGenerator';
+import { printVolumeLabelsDirect, downloadVolumeLabelsPDF, downloadCalibrationPDF } from './pdfLabelGenerator';
 
 interface VolumeLabelPrinterProps {
   clientName: string;
@@ -22,6 +22,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
 }) => {
   const [printing, setPrinting] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [showCalibration, setShowCalibration] = useState(false);
 
   const handlePrint = async () => {
     if (printing || totalVolumes <= 0) return;
@@ -56,6 +57,15 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
     }
   };
 
+  const handleCalibration = async () => {
+    try {
+      await downloadCalibrationPDF({ clientName, totalVolumes, invoiceNumber });
+      toast.success('PDF de calibração baixado. Imprima e verifique se o retângulo aparece inteiro.');
+    } catch {
+      toast.error('Erro ao gerar PDF de calibração.');
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -86,7 +96,7 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             ) : (
               <Printer className="w-5 h-5 mr-2" />
             )}
-            {printing ? 'Enviando...' : `Imprimir ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''}` }
+            {printing ? 'Enviando...' : `Imprimir ${totalVolumes} Etiqueta${totalVolumes > 1 ? 's' : ''}`}
           </Button>
 
           <Button
@@ -103,6 +113,35 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
             )}
             {downloading ? 'Gerando...' : 'Baixar PDF (alternativa)'}
           </Button>
+        </div>
+
+        {/* Calibration section */}
+        <div className="border-t pt-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowCalibration(!showCalibration)}
+            className="w-full text-muted-foreground text-xs"
+          >
+            <Settings2 className="w-3.5 h-3.5 mr-1.5" />
+            {showCalibration ? 'Ocultar calibração' : 'Calibração da impressora'}
+          </Button>
+
+          {showCalibration && (
+            <div className="mt-2 space-y-2 bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
+              <p>Etiqueta: 100×60mm | Área útil: ~83×48mm (escala 92%)</p>
+              <p>Se o conteúdo estiver cortado, imprima a página de calibração abaixo e ajuste a impressora até o retângulo aparecer 100% visível.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCalibration}
+                className="w-full text-xs"
+              >
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                Baixar PDF de Calibração (100×60)
+              </Button>
+            </div>
+          )}
         </div>
 
         <Button
