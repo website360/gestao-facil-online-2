@@ -43,10 +43,10 @@ const VolumeLabelPrinter: React.FC<VolumeLabelPrinterProps> = ({
     }
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     setDownloading(true);
     try {
-      downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
+      await downloadVolumeLabelsPDF({ clientName, totalVolumes, invoiceNumber });
       toast.success('PDF baixado! Abra e imprima na impressora térmica.');
       onPrint();
     } catch {
