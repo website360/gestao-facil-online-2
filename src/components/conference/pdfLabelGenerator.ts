@@ -18,19 +18,14 @@ const LOGO_PATH = '/lovable-uploads/00b0624f-8191-44a2-beb9-c9e0ead49c89.png';
 const PAGE_W = 100;
 const PAGE_H = 60;
 
-// Safe-zone margins => usable area: 90 x 52 mm
-const ML = 5;
-const MR = 5;
-const MT = 4;
-const MB = 4;
+// Minimal margins => usable area: 94 x 56 mm
+const ML = 3;
+const MR = 3;
+const MT = 2;
+const MB = 2;
 
 const CONTENT_W = PAGE_W - ML - MR;
 const CONTENT_H = PAGE_H - MT - MB;
-
-// Datamax compatibility: scale down content to 92% to guarantee 100% visibility
-// Effective usable area: ~82.8 x 47.8 mm (centered within the 90x52 safe zone)
-const SCALE_PERCENT = 92;
-const SCALE = SCALE_PERCENT / 100;
 
 /**
  * Load logo and convert to JPEG data URI for better jsPDF compatibility.
