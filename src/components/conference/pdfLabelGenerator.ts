@@ -105,25 +105,25 @@ function drawLabel(
   const midBot = bottomY + bottomH / 2;
 
   // NF
-  doc.setFontSize(5);
-  doc.text('NOTA FISCAL', col1X + 1, bottomY + 3);
-  doc.setFontSize(7);
-  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 1, midBot + 2.5);
+  doc.setFontSize(6);
+  doc.text('NOTA FISCAL', col1X + 1, bottomY + 4);
+  doc.setFontSize(9);
+  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 1, midBot + 3);
 
   // VOLUME
-  doc.setFontSize(5);
-  doc.text('VOLUME', col2X + 1, bottomY + 3);
-  doc.setFontSize(8);
+  doc.setFontSize(6);
+  doc.text('VOLUME', col2X + 1, bottomY + 4);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   const volText = `${volumeNumber}/${totalVolumes}`;
-  doc.text(volText, col2X + col2W / 2, midBot + 2.5, { align: 'center' });
+  doc.text(volText, col2X + col2W / 2, midBot + 3, { align: 'center' });
 
   // DATA
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(5);
-  doc.text('DATA', col3X + 1, bottomY + 3);
-  doc.setFontSize(6.5);
-  doc.text(date, col3X + col3W / 2, midBot + 2.5, { align: 'center' });
+  doc.setFontSize(6);
+  doc.text('DATA', col3X + 1, bottomY + 4);
+  doc.setFontSize(8);
+  doc.text(date, col3X + col3W / 2, midBot + 3, { align: 'center' });
 }
 
 export function generateVolumeLabelsPDF(data: LabelData): jsPDF {
