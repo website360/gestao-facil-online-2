@@ -363,6 +363,29 @@ const SalesManagement = () => {
     setReprintLabelsModalOpen(true);
   };
 
+  const handleSendToBling = async (saleId: string) => {
+    setSendingToBling(saleId);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-to-bling', {
+        body: { sale_id: saleId },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      toast.success(data?.message || 'Pedido enviado ao Bling com sucesso!');
+      fetchSales();
+    } catch (error: any) {
+      console.error('Erro ao enviar para Bling:', error);
+      toast.error('Erro ao enviar para o Bling');
+    } finally {
+      setSendingToBling(null);
+    }
+  };
+
   // Get selected sale data for modals
   const selectedSale = selectedSaleId ? sales.find(sale => sale.id === selectedSaleId) : null;
   const selectedDeliverySale = selectedSaleForDelivery ? sales.find(sale => sale.id === selectedSaleForDelivery) : null;
