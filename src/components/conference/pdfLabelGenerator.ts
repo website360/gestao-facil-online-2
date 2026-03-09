@@ -120,11 +120,11 @@ function drawLabel(
   // Font sizes (real, no scaling)
   const fontCompany = 9;
   const fontLabel = 7;
-  const fontClient = 13;
+  const fontClient = 15; // +2pt
   const fontFooterLabel = 6;
   const fontFooterValue = 8;
-  const fontVolume = 10;
-  const fontDate = 7;
+  const fontVolume = 14; // +4pt
+  const fontDate = 11; // +4pt
 
   // --- Header ---
   doc.setLineWidth(0.3);
