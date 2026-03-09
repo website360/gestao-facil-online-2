@@ -10,6 +10,19 @@ import { formatCurrency } from '@/lib/utils';
 import SaleAttachmentsDropdown from './SaleAttachmentsDropdown';
 import SalePDFGenerator from './SalePDFGenerator';
 
+const BlingIcon = ({ orderId }: { orderId: string }) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <span className="inline-flex items-center justify-center h-5 w-5 rounded bg-blue-600 text-white text-[9px] font-bold cursor-default flex-shrink-0">
+        B
+      </span>
+    </TooltipTrigger>
+    <TooltipContent>
+      <p>Enviado ao Bling (ID: {orderId})</p>
+    </TooltipContent>
+  </Tooltip>
+);
+
 interface Sale {
   id: string;
   client_id: string;
