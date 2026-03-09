@@ -68,6 +68,7 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
   const [codeMessage, setCodeMessage] = useState('');
   const [showVolumeModal, setShowVolumeModal] = useState(false);
   const [needsDimensions, setNeedsDimensions] = useState(false);
+  const [zoomedPhoto, setZoomedPhoto] = useState<{ url: string; name: string } | null>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
   const quantityInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -336,6 +337,7 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
   };
   const conferenceProgress = saleItems.length > 0 ? conferenceItems.length / saleItems.length * 100 : 0;
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
         <DialogHeader>
@@ -406,7 +408,14 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
                       {/* Miniatura do produto encontrado */}
                       <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-16 h-16 bg-gray-100 border rounded-lg overflow-hidden flex-shrink-0">
+                          <div
+                            className={`w-16 h-16 bg-gray-100 border rounded-lg overflow-hidden flex-shrink-0 ${foundItem.products?.photo_url ? 'cursor-pointer hover:ring-2 hover:ring-primary transition-all' : ''}`}
+                            onClick={() => {
+                              if (foundItem.products?.photo_url) {
+                                setZoomedPhoto({ url: foundItem.products.photo_url, name: foundItem.products.name });
+                              }
+                            }}
+                          >
                             {foundItem.products?.photo_url ? (
                               <img
                                 src={foundItem.products.photo_url}
@@ -616,6 +625,29 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
         needsDimensions={needsDimensions}
       />
     </Dialog>
+
+      {/* Modal de Foto Ampliada */}
+      <Dialog open={!!zoomedPhoto} onOpenChange={() => setZoomedPhoto(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col items-center gap-4 p-6">
+          <DialogHeader>
+            <DialogTitle className="text-center">{zoomedPhoto?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 flex items-center justify-center overflow-hidden">
+            {zoomedPhoto && (
+              <img
+                src={zoomedPhoto.url}
+                alt={zoomedPhoto.name}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+              />
+            )}
+          </div>
+          <Button variant="outline" onClick={() => setZoomedPhoto(null)}>
+            <X className="w-4 h-4 mr-2" />
+            Fechar
+          </Button>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 export default ConferenceModal;
