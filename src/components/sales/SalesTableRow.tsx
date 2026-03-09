@@ -9,7 +9,8 @@ import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, F
 import { formatCurrency } from '@/lib/utils';
 import SaleAttachmentsDropdown from './SaleAttachmentsDropdown';
 import SalePDFGenerator from './SalePDFGenerator';
-import blingIconSrc from '@/assets/bling-icon.png';
+import blingIconSrc from '@/assets/bling-logo.png';
+import erpIconSrc from '@/assets/bling-icon.png';
 
 const BlingIcon = ({ orderId }: { orderId: string }) => (
   <Tooltip>
