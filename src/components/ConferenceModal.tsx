@@ -68,6 +68,7 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
   const [codeMessage, setCodeMessage] = useState('');
   const [showVolumeModal, setShowVolumeModal] = useState(false);
   const [needsDimensions, setNeedsDimensions] = useState(false);
+  const [zoomedPhoto, setZoomedPhoto] = useState<{ url: string; name: string } | null>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
   const quantityInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
