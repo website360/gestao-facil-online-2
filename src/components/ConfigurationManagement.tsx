@@ -61,6 +61,7 @@ const ConfigurationManagement = () => {
       { value: 'shipping', label: 'Frete', icon: Truck, component: <ShippingOptionsTab /> },
       { value: 'correios', label: 'Correios', icon: Mail, component: <CorreiosConfigurationTab /> },
       { value: 'discount', label: 'Desconto', icon: Percent, component: <DiscountConfigurationTab /> },
+      { value: 'bling', label: 'Bling', icon: Package, component: <BlingConfigurationTab /> },
     ];
   };
 
