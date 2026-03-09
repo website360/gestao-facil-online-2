@@ -407,7 +407,14 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
                       {/* Miniatura do produto encontrado */}
                       <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-16 h-16 bg-gray-100 border rounded-lg overflow-hidden flex-shrink-0">
+                          <div
+                            className={`w-16 h-16 bg-gray-100 border rounded-lg overflow-hidden flex-shrink-0 ${foundItem.products?.photo_url ? 'cursor-pointer hover:ring-2 hover:ring-primary transition-all' : ''}`}
+                            onClick={() => {
+                              if (foundItem.products?.photo_url) {
+                                setZoomedPhoto({ url: foundItem.products.photo_url, name: foundItem.products.name });
+                              }
+                            }}
+                          >
                             {foundItem.products?.photo_url ? (
                               <img
                                 src={foundItem.products.photo_url}
