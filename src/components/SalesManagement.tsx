@@ -71,7 +71,7 @@ const SalesManagement = () => {
   const [selectedSaleForShippingLabel, setSelectedSaleForShippingLabel] = useState<string | null>(null);
   const [reprintLabelsModalOpen, setReprintLabelsModalOpen] = useState(false);
   const [selectedSaleForReprintLabels, setSelectedSaleForReprintLabels] = useState<string | null>(null);
-  const [sendingToBling, setSendingToBling] = useState<string | null>(null);
+  // const [sendingToBling, setSendingToBling] = useState<string | null>(null); // BLING DESATIVADO
 
   // Bulk selection hook
   const {
