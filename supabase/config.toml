@@ -24,6 +24,8 @@ verify_jwt = true
 
 [functions.update-user-email]
 verify_jwt = true
-
 [functions.send-to-bling]
+verify_jwt = false
+
+[functions.bling-oauth-callback]
 verify_jwt = false
