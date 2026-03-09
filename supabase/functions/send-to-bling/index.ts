@@ -1,0 +1,254 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Não autorizado" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Validate user
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(
+      authHeader.replace("Bearer ", "")
+    );
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Não autorizado" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = claimsData.claims.sub as string;
+
+    // Use service role for DB operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+
+    if (!profile || profile.role !== "admin") {
+      return new Response(
+        JSON.stringify({ error: "Apenas administradores podem enviar para o Bling" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { sale_id } = await req.json();
+    if (!sale_id) {
+      return new Response(JSON.stringify({ error: "sale_id é obrigatório" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check if already sent
+    const { data: sale, error: saleError } = await supabase
+      .from("sales")
+      .select(`
+        *,
+        clients (name, cpf, cnpj, client_type, email, phone, street, number, complement, neighborhood, city, state, cep),
+        sale_items (id, quantity, unit_price, total_price, discount_percentage, products (internal_code, name, stock_unit))
+      `)
+      .eq("id", sale_id)
+      .single();
+
+    if (saleError || !sale) {
+      return new Response(JSON.stringify({ error: "Venda não encontrada" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (sale.bling_order_id) {
+      return new Response(
+        JSON.stringify({
+          error: "Venda já enviada ao Bling",
+          bling_order_id: sale.bling_order_id,
+        }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Get Bling config
+    const { data: configData } = await supabase
+      .from("system_configurations")
+      .select("value")
+      .eq("key", "bling_config")
+      .single();
+
+    if (!configData) {
+      return new Response(
+        JSON.stringify({ error: "Configuração do Bling não encontrada" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const blingConfig = JSON.parse(configData.value);
+    if (!blingConfig.enabled) {
+      return new Response(
+        JSON.stringify({ error: "Integração Bling desativada" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { client_id, client_secret, refresh_token } = blingConfig;
+    if (!client_id || !client_secret || !refresh_token) {
+      return new Response(
+        JSON.stringify({ error: "Credenciais do Bling incompletas" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Exchange refresh_token for access_token
+    const basicAuth = btoa(`${client_id}:${client_secret}`);
+    const tokenResponse = await fetch("https://api.bling.com.br/Api/v3/oauth/token", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${basicAuth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(refresh_token)}`,
+    });
+
+    const tokenBody = await tokenResponse.text();
+    if (!tokenResponse.ok) {
+      console.error("Bling token error:", tokenBody);
+      return new Response(
+        JSON.stringify({
+          error: "Falha ao obter token do Bling. Verifique as credenciais.",
+          details: tokenBody,
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const tokenData = JSON.parse(tokenBody);
+    const accessToken = tokenData.access_token;
+    const newRefreshToken = tokenData.refresh_token;
+
+    // Save new refresh_token back to config
+    if (newRefreshToken) {
+      const updatedConfig = { ...blingConfig, refresh_token: newRefreshToken };
+      await supabase
+        .from("system_configurations")
+        .update({ value: JSON.stringify(updatedConfig) })
+        .eq("key", "bling_config");
+    }
+
+    // Build Bling order payload
+    const client = sale.clients;
+    const isJuridica = client?.client_type === "juridica";
+    const documento = isJuridica ? (client?.cnpj ?? "") : (client?.cpf ?? "");
+
+    const itens = (sale.sale_items ?? []).map((item: any) => ({
+      codigo: item.products?.internal_code ?? "",
+      descricao: item.products?.name ?? "",
+      unidade: item.products?.stock_unit ?? "UN",
+      quantidade: item.quantity ?? 0,
+      valor: item.unit_price ?? 0,
+      desconto: {
+        valor: item.discount_percentage
+          ? (item.unit_price * item.quantity * item.discount_percentage) / 100
+          : 0,
+      },
+    }));
+
+    const totalProdutos = itens.reduce(
+      (sum: number, item: any) => sum + item.quantidade * item.valor - (item.desconto?.valor ?? 0),
+      0
+    );
+
+    const payload = {
+      data: new Date(sale.created_at).toISOString().split("T")[0],
+      contato: {
+        nome: client?.name ?? "",
+        tipoPessoa: isJuridica ? "J" : "F",
+        numeroDocumento: documento.replace(/\D/g, ""),
+      },
+      itens,
+      transporte: {
+        frete: sale.shipping_cost ?? 0,
+      },
+      observacoes: sale.notes ?? "",
+      totalProdutos,
+    };
+
+    console.log("Sending to Bling:", JSON.stringify(payload, null, 2));
+
+    // Send order to Bling
+    const blingResponse = await fetch(
+      "https://api.bling.com.br/Api/v3/pedidos/vendas",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const blingBody = await blingResponse.text();
+
+    if (!blingResponse.ok) {
+      console.error("Bling API error:", blingBody);
+      return new Response(
+        JSON.stringify({
+          error: "Erro ao enviar pedido ao Bling",
+          details: blingBody,
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const blingResult = JSON.parse(blingBody);
+    const blingOrderId = blingResult?.data?.id?.toString() ?? blingResult?.id?.toString() ?? null;
+
+    // Save bling_order_id to sale
+    if (blingOrderId) {
+      await supabase
+        .from("sales")
+        .update({ bling_order_id: blingOrderId })
+        .eq("id", sale_id);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        bling_order_id: blingOrderId,
+        message: "Pedido enviado ao Bling com sucesso!",
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    console.error("send-to-bling error:", err);
+    return new Response(
+      JSON.stringify({ error: (err as Error).message ?? "Erro interno" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
