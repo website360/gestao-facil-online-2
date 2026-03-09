@@ -7,13 +7,17 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Eye, EyeOff, ExternalLink, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
+import { Save, Eye, EyeOff, ExternalLink, CheckCircle2, XCircle, Link2 } from 'lucide-react';
 
 interface BlingConfig {
   enabled: boolean;
   client_id: string;
   client_secret: string;
   refresh_token: string;
+  access_token?: string;
+  access_token_expires_at?: number;
+  authorized?: boolean;
+  authorized_at?: string;
 }
 
 const defaultConfig: BlingConfig = {
@@ -26,14 +30,23 @@ const defaultConfig: BlingConfig = {
 const BlingConfigurationTab = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
   const [config, setConfig] = useState<BlingConfig>(defaultConfig);
   const [showSecret, setShowSecret] = useState(false);
-  const [showToken, setShowToken] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     fetchConfiguration();
+  }, []);
+
+  // Listen for OAuth success message from popup
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'bling-oauth-success') {
+        toast.success('Bling autorizado com sucesso!');
+        fetchConfiguration();
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   const fetchConfiguration = async () => {
@@ -84,36 +97,13 @@ const BlingConfigurationTab = () => {
     }
   };
 
-  const handleTestConnection = async () => {
-    if (!config.client_id || !config.client_secret) {
-      toast.error('Preencha o Client ID e Client Secret para testar');
-      return;
-    }
-    setTesting(true);
-    setConnectionStatus('idle');
-    try {
-      // Teste básico: validar que os campos estão preenchidos
-      // A validação real será feita pela Edge Function futuramente
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      if (config.client_id.length > 5 && config.client_secret.length > 5) {
-        setConnectionStatus('success');
-        toast.success('Credenciais parecem válidas! A validação completa será feita ao enviar o primeiro pedido.');
-      } else {
-        setConnectionStatus('error');
-        toast.error('Credenciais inválidas. Verifique os dados informados.');
-      }
-    } catch {
-      setConnectionStatus('error');
-      toast.error('Erro ao testar conexão');
-    } finally {
-      setTesting(false);
-    }
+  const getCallbackUrl = () => {
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'hsugdbkauxbjuogzmukp';
+    return `https://${projectId}.supabase.co/functions/v1/bling-oauth-callback`;
   };
 
   const updateConfig = (field: keyof BlingConfig, value: string | boolean) => {
     setConfig(prev => ({ ...prev, [field]: value }));
-    setConnectionStatus('idle');
   };
 
   if (loading) {
@@ -151,18 +141,48 @@ const BlingConfigurationTab = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Step-by-step instructions */}
           <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-            <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Como obter as credenciais</h4>
+            <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Como configurar</h4>
             <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-decimal list-inside">
               <li>Acesse o <a href="https://developer.bling.com.br" target="_blank" rel="noopener noreferrer" className="underline font-medium inline-flex items-center gap-1">Painel de Desenvolvedores do Bling <ExternalLink className="h-3 w-3" /></a></li>
-              <li>Crie um novo aplicativo</li>
-              <li>Copie o <strong>Client ID</strong> e <strong>Client Secret</strong></li>
-              <li>Autorize o aplicativo para obter o <strong>Refresh Token</strong></li>
+              <li>Crie um novo aplicativo e configure a <strong>URL de callback</strong> abaixo</li>
+              <li>Copie o <strong>Client ID</strong> e <strong>Client Secret</strong> e salve aqui</li>
+              <li>Use o <strong>Link de Convite</strong> do Bling para autorizar o aplicativo</li>
             </ol>
           </div>
 
           <Separator />
 
+          {/* Callback URL */}
+          <div className="bg-muted/50 p-4 rounded-lg border">
+            <Label className="text-sm font-semibold">URL de Callback (cole no aplicativo do Bling)</Label>
+            <div className="flex gap-2 mt-2">
+              <Input
+                readOnly
+                value={getCallbackUrl()}
+                className="font-mono text-xs bg-background"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(getCallbackUrl());
+                  toast.success('URL copiada!');
+                }}
+              >
+                Copiar
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Configure esta URL como "URL de redirecionamento" no aplicativo do Bling
+            </p>
+          </div>
+
+          <Separator />
+
+          {/* Credentials */}
           <div className="space-y-4 max-w-lg">
             <div className="space-y-2">
               <Label htmlFor="client_id">Client ID</Label>
@@ -197,59 +217,60 @@ const BlingConfigurationTab = () => {
                 </Button>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="refresh_token">Refresh Token</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="refresh_token"
-                  type={showToken ? 'text' : 'password'}
-                  value={config.refresh_token}
-                  onChange={(e) => updateConfig('refresh_token', e.target.value)}
-                  placeholder="Cole o Refresh Token"
-                  disabled={!config.enabled}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowToken(!showToken)}
-                  disabled={!config.enabled}
-                >
-                  {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Obtido após autorizar o aplicativo no fluxo OAuth do Bling
-              </p>
-            </div>
           </div>
 
           <Separator />
 
+          {/* Save button */}
           <div className="flex items-center gap-3">
             <Button onClick={handleSave} disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
               {saving ? 'Salvando...' : 'Salvar Configurações'}
             </Button>
-            <Button
-              variant="outline"
-              onClick={handleTestConnection}
-              disabled={testing || !config.enabled}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${testing ? 'animate-spin' : ''}`} />
-              {testing ? 'Testando...' : 'Testar Conexão'}
-            </Button>
-            {connectionStatus === 'success' && (
-              <span className="flex items-center gap-1 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" /> Credenciais válidas
-              </span>
+          </div>
+
+          <Separator />
+
+          {/* Authorization status */}
+          <div className="space-y-3">
+            <h4 className="font-semibold">Status da Autorização</h4>
+            {config.authorized ? (
+              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                <CheckCircle2 className="h-5 w-5" />
+                <div>
+                  <p className="font-medium">Bling autorizado com sucesso!</p>
+                  {config.authorized_at && (
+                    <p className="text-xs opacity-75">
+                      Autorizado em: {new Date(config.authorized_at).toLocaleString('pt-BR')}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <XCircle className="h-5 w-5" />
+                <div>
+                  <p className="font-medium">Bling não autorizado</p>
+                  <p className="text-xs opacity-75">
+                    Salve as credenciais acima e depois use o Link de Convite do Bling para autorizar
+                  </p>
+                </div>
+              </div>
             )}
-            {connectionStatus === 'error' && (
-              <span className="flex items-center gap-1 text-sm text-destructive">
-                <XCircle className="h-4 w-4" /> Credenciais inválidas
-              </span>
-            )}
+
+            <div className="bg-muted/50 p-4 rounded-lg border">
+              <h5 className="font-medium text-sm mb-2 flex items-center gap-2">
+                <Link2 className="h-4 w-4" />
+                Como autorizar usando o Link de Convite
+              </h5>
+              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                <li><strong>Salve</strong> o Client ID e Client Secret acima primeiro</li>
+                <li>No painel do Bling, copie o <strong>Link de Convite</strong> do seu aplicativo</li>
+                <li>Abra o link em uma nova aba (você será redirecionado para o Bling)</li>
+                <li>Autorize o aplicativo — o Bling redirecionará automaticamente para cá</li>
+                <li>O status acima mudará para <strong>"Autorizado"</strong></li>
+              </ol>
+            </div>
           </div>
 
           <Separator />
