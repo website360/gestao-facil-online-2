@@ -157,9 +157,14 @@ Deno.serve(async (req) => {
       accessToken = tokenData.access_token;
       newRefreshToken = tokenData.refresh_token;
 
-    // Save new refresh_token back to config
+    // Save new tokens back to config
     if (newRefreshToken) {
-      const updatedConfig = { ...blingConfig, refresh_token: newRefreshToken };
+      const updatedConfig = {
+        ...blingConfig,
+        refresh_token: newRefreshToken,
+        access_token: accessToken,
+        access_token_expires_at: Date.now() + 21600 * 1000,
+      };
       await supabase
         .from("system_configurations")
         .update({ value: JSON.stringify(updatedConfig) })
