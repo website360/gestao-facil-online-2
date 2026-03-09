@@ -115,40 +115,47 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { client_id, client_secret, refresh_token } = blingConfig;
+    const { client_id, client_secret, refresh_token, access_token: cachedAccessToken, access_token_expires_at } = blingConfig;
     if (!client_id || !client_secret || !refresh_token) {
       return new Response(
-        JSON.stringify({ error: "Credenciais do Bling incompletas" }),
+        JSON.stringify({ error: "Credenciais do Bling incompletas. Autorize o aplicativo nas configurações." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Exchange refresh_token for access_token
-    const basicAuth = btoa(`${client_id}:${client_secret}`);
-    const tokenResponse = await fetch("https://api.bling.com.br/Api/v3/oauth/token", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${basicAuth}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(refresh_token)}`,
-    });
+    let accessToken = cachedAccessToken;
+    let newRefreshToken: string | null = null;
 
-    const tokenBody = await tokenResponse.text();
-    if (!tokenResponse.ok) {
-      console.error("Bling token error:", tokenBody);
-      return new Response(
-        JSON.stringify({
-          error: "Falha ao obter token do Bling. Verifique as credenciais.",
-          details: tokenBody,
-        }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Use cached token if still valid (with 5 min buffer)
+    const tokenStillValid = cachedAccessToken && access_token_expires_at && Date.now() < (access_token_expires_at - 300000);
 
-    const tokenData = JSON.parse(tokenBody);
-    const accessToken = tokenData.access_token;
-    const newRefreshToken = tokenData.refresh_token;
+    if (!tokenStillValid) {
+      // Exchange refresh_token for access_token
+      const basicAuth = btoa(`${client_id}:${client_secret}`);
+      const tokenResponse = await fetch("https://api.bling.com.br/Api/v3/oauth/token", {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(refresh_token)}`,
+      });
+
+      const tokenBody = await tokenResponse.text();
+      if (!tokenResponse.ok) {
+        console.error("Bling token error:", tokenBody);
+        return new Response(
+          JSON.stringify({
+            error: "Falha ao obter token do Bling. Reautorize o aplicativo nas configurações.",
+            details: tokenBody,
+          }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const tokenData = JSON.parse(tokenBody);
+      accessToken = tokenData.access_token;
+      newRefreshToken = tokenData.refresh_token;
 
     // Save new refresh_token back to config
     if (newRefreshToken) {
