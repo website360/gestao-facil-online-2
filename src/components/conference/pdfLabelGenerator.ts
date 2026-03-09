@@ -120,7 +120,7 @@ function drawLabel(
   // Font sizes (real, no scaling)
   const fontCompany = 9;
   const fontLabel = 7;
-  const fontClient = 9;
+  const fontClient = 13;
   const fontFooterLabel = 6;
   const fontFooterValue = 8;
   const fontVolume = 10;
