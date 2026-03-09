@@ -156,6 +156,7 @@ Deno.serve(async (req) => {
       const tokenData = JSON.parse(tokenBody);
       accessToken = tokenData.access_token;
       newRefreshToken = tokenData.refresh_token;
+    }
 
     // Save new tokens back to config
     if (newRefreshToken) {
