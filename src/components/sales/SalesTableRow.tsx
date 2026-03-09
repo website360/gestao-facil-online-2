@@ -774,9 +774,9 @@ const SalesTableRow = ({
                   variant="ghost"
                   onClick={() => !sale.bling_order_id && onSendToBling(sale.id)}
                   disabled={sendingToBling === sale.id}
-                  className={`h-8 w-8 p-0 ${sale.bling_order_id ? 'text-green-600 cursor-default' : 'text-gray-500 hover:text-blue-600'}`}
+                  className={`h-8 w-8 p-0 ${sale.bling_order_id ? 'cursor-default' : 'hover:opacity-80'}`}
                 >
-                  <Send className="h-4 w-4" />
+                  <img src={blingIconSrc} alt="Bling" className={`h-5 w-5 ${sale.bling_order_id ? '' : 'opacity-40 grayscale'}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
