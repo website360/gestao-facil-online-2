@@ -104,6 +104,8 @@ const SalesTable = ({
   onFinalizeSale,
   onGenerateShippingLabel,
   onReprintLabels,
+  onSendToBling,
+  sendingToBling,
   getStatusColor,
   getStatusLabel,
   formatSaleId,
