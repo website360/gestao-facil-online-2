@@ -79,15 +79,37 @@ const BlingConfigurationTab = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Fetch latest config to preserve OAuth tokens
+      const { data: latestData } = await supabase
+        .from('system_configurations')
+        .select('value')
+        .eq('key', 'bling_config')
+        .maybeSingle();
+
+      let mergedConfig = { ...config };
+      if (latestData?.value) {
+        try {
+          const existing = JSON.parse(latestData.value);
+          // Preserve token fields from DB, only update user-editable fields
+          mergedConfig = {
+            ...existing,
+            enabled: config.enabled,
+            client_id: config.client_id,
+            client_secret: config.client_secret,
+          };
+        } catch { /* ignore parse errors */ }
+      }
+
       const { error } = await supabase
         .from('system_configurations')
         .upsert({
           key: 'bling_config',
-          value: JSON.stringify(config),
+          value: JSON.stringify(mergedConfig),
           description: 'Configurações de integração com o Bling ERP (OAuth 2.0)',
         }, { onConflict: 'key' });
 
       if (error) throw error;
+      setConfig(mergedConfig);
       toast.success('Configurações do Bling salvas com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar:', error);
