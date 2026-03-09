@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, CreditCard, DollarSign, Truck, FileText, Mail, Percent } from 'lucide-react';
+import { Building2, CreditCard, DollarSign, Truck, FileText, Mail, Percent, Package } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
