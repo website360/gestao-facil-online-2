@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, FileText, Truck, Settings, Scale, PackageCheck, Printer } from 'lucide-react';
+import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, FileText, Truck, Settings, Scale, PackageCheck, Printer, Send } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import SaleAttachmentsDropdown from './SaleAttachmentsDropdown';
 import SalePDFGenerator from './SalePDFGenerator';
@@ -39,6 +39,7 @@ interface Sale {
   shipping_option_name?: string | null;
   shipping_option_visible?: boolean;
   ready_for_shipping_label?: boolean;
+  bling_order_id?: string | null;
 }
 
 interface SalesTableRowProps {
@@ -62,6 +63,8 @@ interface SalesTableRowProps {
   onFinalizeSale: (saleId: string) => void;
   onGenerateShippingLabel: (saleId: string) => void;
   onReprintLabels: (saleId: string) => void;
+  onSendToBling?: (saleId: string) => void;
+  sendingToBling?: string | null;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -98,7 +101,9 @@ const SalesTableRow = ({
   onItemSelect,
   showBulkActions = false,
   onGenerateShippingLabel,
-  onReprintLabels
+  onReprintLabels,
+  onSendToBling,
+  sendingToBling
 }: SalesTableRowProps) => {
   const openTrackingPage = (trackingCode: string) => {
     const url = `https://www2.correios.com.br/sistemas/rastreamento/resultado.cfm?objeto=${trackingCode}`;
@@ -739,6 +744,26 @@ const SalesTableRow = ({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Finalizar Venda</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Botão Enviar para Bling - apenas para admin */}
+          {userRole === 'admin' && onSendToBling && ['nota_fiscal', 'aguardando_entrega', 'entrega_realizada', 'finalizada'].includes(sale.status) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => !sale.bling_order_id && onSendToBling(sale.id)}
+                  disabled={sendingToBling === sale.id}
+                  className={`h-8 w-8 p-0 ${sale.bling_order_id ? 'text-green-600 cursor-default' : 'text-gray-500 hover:text-blue-600'}`}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{sale.bling_order_id ? `Enviado ao Bling (ID: ${sale.bling_order_id})` : sendingToBling === sale.id ? 'Enviando...' : 'Enviar para Bling'}</p>
               </TooltipContent>
             </Tooltip>
           )}

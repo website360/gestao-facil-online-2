@@ -768,6 +768,7 @@ export type Database = {
       }
       sales: {
         Row: {
+          bling_order_id: string | null
           boleto_due_dates: number[] | null
           boleto_installments: number | null
           budget_id: string | null
@@ -809,6 +810,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bling_order_id?: string | null
           boleto_due_dates?: number[] | null
           boleto_installments?: number | null
           budget_id?: string | null
@@ -850,6 +852,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bling_order_id?: string | null
           boleto_due_dates?: number[] | null
           boleto_installments?: number | null
           budget_id?: string | null

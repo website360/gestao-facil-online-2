@@ -15,6 +15,7 @@ interface Sale {
   invoice_number?: string | null;
   total_volumes?: number | null;
   total_weight_kg?: number | null;
+  bling_order_id?: string | null;
   clients: { name: string } | null;
   created_by_profile: { name: string } | null;
   budgets?: { created_by: string } | null;
@@ -195,6 +196,7 @@ export const useSalesManagement = () => {
           separation_percentage,
           separation_complete,
           ready_for_shipping_label,
+          bling_order_id,
           clients(name),
           budgets(created_by)
         `)

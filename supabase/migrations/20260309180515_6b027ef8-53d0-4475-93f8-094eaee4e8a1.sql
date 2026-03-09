@@ -1,0 +1,1 @@
+ALTER TABLE public.sales ADD COLUMN bling_order_id TEXT NULL;
