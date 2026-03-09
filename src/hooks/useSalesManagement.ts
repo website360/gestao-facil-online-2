@@ -196,6 +196,7 @@ export const useSalesManagement = () => {
           separation_percentage,
           separation_complete,
           ready_for_shipping_label,
+          bling_order_id,
           clients(name),
           budgets(created_by)
         `)

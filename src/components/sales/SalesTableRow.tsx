@@ -101,7 +101,9 @@ const SalesTableRow = ({
   onItemSelect,
   showBulkActions = false,
   onGenerateShippingLabel,
-  onReprintLabels
+  onReprintLabels,
+  onSendToBling,
+  sendingToBling
 }: SalesTableRowProps) => {
   const openTrackingPage = (trackingCode: string) => {
     const url = `https://www2.correios.com.br/sistemas/rastreamento/resultado.cfm?objeto=${trackingCode}`;
