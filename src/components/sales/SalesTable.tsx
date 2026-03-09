@@ -373,6 +373,8 @@ const SalesTable = ({
                 showBulkActions={showBulkActions}
                 onGenerateShippingLabel={onGenerateShippingLabel}
                 onReprintLabels={onReprintLabels}
+                onSendToBling={onSendToBling}
+                sendingToBling={sendingToBling}
               />
             ))}
           </TableBody>
