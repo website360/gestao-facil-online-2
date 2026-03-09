@@ -101,8 +101,8 @@ const SalesManagementContent = ({
   onFinalizeSale,
   onGenerateShippingLabel,
   onReprintLabels,
-  onSendToBling,
-  sendingToBling,
+  // onSendToBling, // BLING DESATIVADO
+  // sendingToBling, // BLING DESATIVADO
   getStatusColor,
   getStatusLabel,
   formatSaleId,
