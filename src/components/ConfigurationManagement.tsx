@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, CreditCard, DollarSign, Truck, FileText, Mail, Percent, Package } from 'lucide-react';
+import { Building2, CreditCard, DollarSign, Truck, FileText, Mail, Percent } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
@@ -12,7 +12,7 @@ import ShippingOptionsTab from './configuration/ShippingOptionsTab';
 import PDFConfigurationTab from './configuration/PDFConfigurationTab';
 import CorreiosConfigurationTab from './configuration/CorreiosConfigurationTab';
 import DiscountConfigurationTab from './configuration/DiscountConfigurationTab';
-import BlingConfigurationTab from './configuration/BlingConfigurationTab';
+// import BlingConfigurationTab from './configuration/BlingConfigurationTab'; // BLING DESATIVADO
 
 const ConfigurationManagement = () => {
   const { user } = useAuth();
@@ -61,7 +61,7 @@ const ConfigurationManagement = () => {
       { value: 'shipping', label: 'Frete', icon: Truck, component: <ShippingOptionsTab /> },
       { value: 'correios', label: 'Correios', icon: Mail, component: <CorreiosConfigurationTab /> },
       { value: 'discount', label: 'Desconto', icon: Percent, component: <DiscountConfigurationTab /> },
-      { value: 'bling', label: 'Bling', icon: Package, component: <BlingConfigurationTab /> },
+      // { value: 'bling', label: 'Bling', icon: Package, component: <BlingConfigurationTab /> }, // BLING DESATIVADO
     ];
   };
 

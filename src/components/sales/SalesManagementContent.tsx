@@ -32,7 +32,7 @@ interface Sale {
   total_volumes?: number;
   total_weight_kg?: number;
   ready_for_shipping_label?: boolean;
-  bling_order_id?: string | null;
+  // bling_order_id?: string | null; // BLING DESATIVADO
 }
 
 interface SalesManagementContentProps {
@@ -64,8 +64,8 @@ interface SalesManagementContentProps {
   onFinalizeSale: (saleId: string) => void;
   onGenerateShippingLabel: (saleId: string) => void;
   onReprintLabels: (saleId: string) => void;
-  onSendToBling?: (saleId: string) => void;
-  sendingToBling?: string | null;
+  // onSendToBling?: (saleId: string) => void; // BLING DESATIVADO
+  // sendingToBling?: string | null; // BLING DESATIVADO
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -101,8 +101,8 @@ const SalesManagementContent = ({
   onFinalizeSale,
   onGenerateShippingLabel,
   onReprintLabels,
-  onSendToBling,
-  sendingToBling,
+  // onSendToBling, // BLING DESATIVADO
+  // sendingToBling, // BLING DESATIVADO
   getStatusColor,
   getStatusLabel,
   formatSaleId,
@@ -156,8 +156,7 @@ const SalesManagementContent = ({
             getCurrentResponsible={getCurrentResponsible}
             onGenerateShippingLabel={onGenerateShippingLabel}
             onReprintLabels={onReprintLabels}
-            onSendToBling={onSendToBling}
-            sendingToBling={sendingToBling}
+            // BLING DESATIVADO: onSendToBling={onSendToBling} sendingToBling={sendingToBling}
           />
 
           <SalesPagination
