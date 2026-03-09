@@ -625,27 +625,28 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
       />
     </Dialog>
 
-    {/* Modal de Foto Ampliada */}
-    <Dialog open={!!zoomedPhoto} onOpenChange={() => setZoomedPhoto(null)}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col items-center gap-4 p-6">
-        <DialogHeader>
-          <DialogTitle className="text-center">{zoomedPhoto?.name}</DialogTitle>
-        </DialogHeader>
-        <div className="flex-1 flex items-center justify-center overflow-hidden">
-          {zoomedPhoto && (
-            <img
-              src={zoomedPhoto.url}
-              alt={zoomedPhoto.name}
-              className="max-w-full max-h-[70vh] object-contain rounded-lg"
-            />
-          )}
-        </div>
-        <Button variant="outline" onClick={() => setZoomedPhoto(null)}>
-          <X className="w-4 h-4 mr-2" />
-          Fechar
-        </Button>
-      </DialogContent>
-    </Dialog>
+      {/* Modal de Foto Ampliada */}
+      <Dialog open={!!zoomedPhoto} onOpenChange={() => setZoomedPhoto(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col items-center gap-4 p-6">
+          <DialogHeader>
+            <DialogTitle className="text-center">{zoomedPhoto?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 flex items-center justify-center overflow-hidden">
+            {zoomedPhoto && (
+              <img
+                src={zoomedPhoto.url}
+                alt={zoomedPhoto.name}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+              />
+            )}
+          </div>
+          <Button variant="outline" onClick={() => setZoomedPhoto(null)}>
+            <X className="w-4 h-4 mr-2" />
+            Fechar
+          </Button>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 export default ConferenceModal;
