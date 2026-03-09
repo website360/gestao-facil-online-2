@@ -87,7 +87,7 @@ const ConfigurationManagement = () => {
       </div>
 
       <Tabs defaultValue={availableTabs[0]?.value} className="w-full">
-        <TabsList className={`grid w-full ${availableTabs.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-6'} gap-1 h-auto`}>
+        <TabsList className={`grid w-full ${availableTabs.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : availableTabs.length <= 6 ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-7'} gap-1 h-auto`}>
           {availableTabs.map((tab) => (
             <TabsTrigger 
               key={tab.value} 
