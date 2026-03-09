@@ -208,7 +208,7 @@ Deno.serve(async (req) => {
         situacao: "A",
         numeroDocumento: docLimpo,
         contribuinte: isJuridica ? 1 : 9,
-        telefone: client?.phone ?? "",
+        telefone: (client?.phone ?? "").replace(/\D/g, "").replace(/^0+$/, "") || "",
         email: client?.email ?? "",
         endereco: {
           endereco: client?.street ?? "",
