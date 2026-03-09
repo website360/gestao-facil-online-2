@@ -528,7 +528,7 @@ const SalesTableRow = ({
             </Tooltip>
           )}
           {formatSaleId(sale)}
-          {sale.bling_order_id && <BlingIcon orderId={sale.bling_order_id} />}
+          
         </div>
       </TableCell>
       <TableCell className="font-medium text-gray-800 py-4 px-6">{sale.clients?.name}</TableCell>
