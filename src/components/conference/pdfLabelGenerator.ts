@@ -241,7 +241,7 @@ function drawLabel(
   doc.setFontSize(fontVolume);
   doc.text(`${volumeNumber}/${totalVolumes}`, col2X + col2W / 2, valueY, { align: 'center' });
 
-  doc.setFontSize(9);
+  doc.setFontSize(fontDate);
   doc.text(date, col3X + col3W / 2, valueY, { align: 'center' });
 }
 
