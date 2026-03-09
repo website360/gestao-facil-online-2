@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, CreditCard, DollarSign, Truck, FileText, Mail, Percent } from 'lucide-react';
+import { Building2, CreditCard, DollarSign, Truck, FileText, Mail, Percent, Package } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
@@ -12,6 +12,7 @@ import ShippingOptionsTab from './configuration/ShippingOptionsTab';
 import PDFConfigurationTab from './configuration/PDFConfigurationTab';
 import CorreiosConfigurationTab from './configuration/CorreiosConfigurationTab';
 import DiscountConfigurationTab from './configuration/DiscountConfigurationTab';
+import BlingConfigurationTab from './configuration/BlingConfigurationTab';
 
 const ConfigurationManagement = () => {
   const { user } = useAuth();
@@ -60,6 +61,7 @@ const ConfigurationManagement = () => {
       { value: 'shipping', label: 'Frete', icon: Truck, component: <ShippingOptionsTab /> },
       { value: 'correios', label: 'Correios', icon: Mail, component: <CorreiosConfigurationTab /> },
       { value: 'discount', label: 'Desconto', icon: Percent, component: <DiscountConfigurationTab /> },
+      { value: 'bling', label: 'Bling', icon: Package, component: <BlingConfigurationTab /> },
     ];
   };
 
@@ -85,7 +87,7 @@ const ConfigurationManagement = () => {
       </div>
 
       <Tabs defaultValue={availableTabs[0]?.value} className="w-full">
-        <TabsList className={`grid w-full ${availableTabs.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-6'} gap-1 h-auto`}>
+        <TabsList className={`grid w-full ${availableTabs.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : availableTabs.length <= 6 ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-7'} gap-1 h-auto`}>
           {availableTabs.map((tab) => (
             <TabsTrigger 
               key={tab.value} 
