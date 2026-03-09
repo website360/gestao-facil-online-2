@@ -176,6 +176,86 @@ Deno.serve(async (req) => {
     const client = sale.clients;
     const isJuridica = client?.client_type === "juridica";
     const documento = isJuridica ? (client?.cnpj ?? "") : (client?.cpf ?? "");
+    const docLimpo = documento.replace(/\D/g, "");
+
+    // Search for existing contact in Bling by document number
+    let blingContatoId: number | null = null;
+
+    if (docLimpo) {
+      const searchResponse = await fetch(
+        `https://api.bling.com.br/Api/v3/contatos?pesquisa=${encodeURIComponent(docLimpo)}&limite=1`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      const searchBody = await searchResponse.text();
+      if (searchResponse.ok) {
+        try {
+          const searchData = JSON.parse(searchBody);
+          if (searchData?.data?.length > 0) {
+            blingContatoId = searchData.data[0].id;
+            console.log("Found existing Bling contact:", blingContatoId);
+          }
+        } catch { /* ignore parse errors */ }
+      }
+    }
+
+    // If contact not found, create it in Bling
+    if (!blingContatoId) {
+      const contatoPayload = {
+        nome: client?.name ?? "Cliente",
+        tipo: isJuridica ? "J" : "F",
+        numeroDocumento: docLimpo,
+        contribuinte: isJuridica ? 1 : 9,
+        telefone: client?.phone ?? "",
+        email: client?.email ?? "",
+        endereco: {
+          endereco: client?.street ?? "",
+          numero: client?.number ?? "",
+          complemento: client?.complement ?? "",
+          bairro: client?.neighborhood ?? "",
+          cep: (client?.cep ?? "").replace(/\D/g, ""),
+          municipio: client?.city ?? "",
+          uf: client?.state ?? "",
+        },
+      };
+
+      console.log("Creating Bling contact:", JSON.stringify(contatoPayload, null, 2));
+
+      const createResponse = await fetch(
+        "https://api.bling.com.br/Api/v3/contatos",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(contatoPayload),
+        }
+      );
+      const createBody = await createResponse.text();
+      console.log("Create contact response:", createResponse.status, createBody);
+
+      if (!createResponse.ok) {
+        return new Response(
+          JSON.stringify({
+            error: "Erro ao criar contato no Bling",
+            details: createBody,
+          }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const createData = JSON.parse(createBody);
+      blingContatoId = createData?.data?.id ?? null;
+    }
+
+    if (!blingContatoId) {
+      return new Response(
+        JSON.stringify({ error: "Não foi possível obter o ID do contato no Bling" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const itens = (sale.sale_items ?? []).map((item: any) => ({
       codigo: item.products?.internal_code ?? "",
@@ -198,9 +278,7 @@ Deno.serve(async (req) => {
     const payload = {
       data: new Date(sale.created_at).toISOString().split("T")[0],
       contato: {
-        nome: client?.name ?? "",
-        tipoPessoa: isJuridica ? "J" : "F",
-        numeroDocumento: documento.replace(/\D/g, ""),
+        id: blingContatoId,
       },
       itens,
       transporte: {
