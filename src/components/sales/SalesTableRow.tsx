@@ -9,13 +9,16 @@ import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, F
 import { formatCurrency } from '@/lib/utils';
 import SaleAttachmentsDropdown from './SaleAttachmentsDropdown';
 import SalePDFGenerator from './SalePDFGenerator';
+import blingIconSrc from '@/assets/bling-icon.png';
 
 const BlingIcon = ({ orderId }: { orderId: string }) => (
   <Tooltip>
     <TooltipTrigger asChild>
-      <span className="inline-flex items-center justify-center h-5 w-5 rounded bg-blue-600 text-white text-[9px] font-bold cursor-default flex-shrink-0">
-        B
-      </span>
+      <img 
+        src={blingIconSrc} 
+        alt="Bling" 
+        className="h-5 w-5 rounded flex-shrink-0 cursor-default" 
+      />
     </TooltipTrigger>
     <TooltipContent>
       <p>Enviado ao Bling (ID: {orderId})</p>
