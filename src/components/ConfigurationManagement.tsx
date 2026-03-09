@@ -12,6 +12,7 @@ import ShippingOptionsTab from './configuration/ShippingOptionsTab';
 import PDFConfigurationTab from './configuration/PDFConfigurationTab';
 import CorreiosConfigurationTab from './configuration/CorreiosConfigurationTab';
 import DiscountConfigurationTab from './configuration/DiscountConfigurationTab';
+import BlingConfigurationTab from './configuration/BlingConfigurationTab';
 
 const ConfigurationManagement = () => {
   const { user } = useAuth();
