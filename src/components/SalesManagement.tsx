@@ -434,8 +434,7 @@ const SalesManagement = () => {
         getCurrentResponsible={getCurrentResponsible}
         onGenerateShippingLabel={handleGenerateShippingLabel}
         onReprintLabels={handleReprintLabels}
-        {/* onSendToBling={handleSendToBling} // BLING DESATIVADO */}
-        {/* sendingToBling={sendingToBling} // BLING DESATIVADO */}
+        // BLING DESATIVADO: onSendToBling={handleSendToBling} sendingToBling={sendingToBling}
       />
 
       {/* Modals */}

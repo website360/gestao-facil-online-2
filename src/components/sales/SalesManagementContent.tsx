@@ -156,8 +156,7 @@ const SalesManagementContent = ({
             getCurrentResponsible={getCurrentResponsible}
             onGenerateShippingLabel={onGenerateShippingLabel}
             onReprintLabels={onReprintLabels}
-            {/* onSendToBling={onSendToBling} // BLING DESATIVADO */}
-            {/* sendingToBling={sendingToBling} // BLING DESATIVADO */}
+            // BLING DESATIVADO: onSendToBling={onSendToBling} sendingToBling={sendingToBling}
           />
 
           <SalesPagination
