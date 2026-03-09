@@ -39,7 +39,7 @@ interface Sale {
   total_volumes?: number;
   total_weight_kg?: number;
   ready_for_shipping_label?: boolean;
-  bling_order_id?: string | null;
+  // bling_order_id?: string | null; // BLING DESATIVADO
 }
 
 interface SalesTableProps {
