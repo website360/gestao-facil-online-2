@@ -63,6 +63,8 @@ interface SalesTableRowProps {
   onFinalizeSale: (saleId: string) => void;
   onGenerateShippingLabel: (saleId: string) => void;
   onReprintLabels: (saleId: string) => void;
+  onSendToBling?: (saleId: string) => void;
+  sendingToBling?: string | null;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
