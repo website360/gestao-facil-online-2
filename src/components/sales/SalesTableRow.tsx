@@ -767,7 +767,7 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
-          {/* Botão Enviar para Bling - apenas para admin */}
+          {/* BLING DESATIVADO TEMPORARIAMENTE - Reativar quando integração voltar
           {userRole === 'admin' && onSendToBling && ['nota_fiscal', 'aguardando_entrega', 'entrega_realizada', 'finalizada'].includes(sale.status) && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -786,6 +786,7 @@ const SalesTableRow = ({
               </TooltipContent>
             </Tooltip>
           )}
+          */}
 
           {/* Comprovantes de pagamento - apenas para admin e gerente */}
           {(userRole === 'admin' || userRole === 'gerente') && sale.budget_id && (
