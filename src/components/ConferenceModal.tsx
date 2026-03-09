@@ -337,6 +337,7 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
   };
   const conferenceProgress = saleItems.length > 0 ? conferenceItems.length / saleItems.length * 100 : 0;
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
         <DialogHeader>
