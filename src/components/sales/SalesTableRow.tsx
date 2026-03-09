@@ -9,23 +9,24 @@ import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, F
 import { formatCurrency } from '@/lib/utils';
 import SaleAttachmentsDropdown from './SaleAttachmentsDropdown';
 import SalePDFGenerator from './SalePDFGenerator';
-import blingIconSrc from '@/assets/bling-logo.png';
-import erpIconSrc from '@/assets/bling-icon.png';
-
-const BlingIcon = ({ orderId }: { orderId: string }) => (
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <img 
-        src={blingIconSrc} 
-        alt="Bling" 
-        className="h-5 w-5 rounded flex-shrink-0 cursor-default" 
-      />
-    </TooltipTrigger>
-    <TooltipContent>
-      <p>Enviado ao Bling (ID: {orderId})</p>
-    </TooltipContent>
-  </Tooltip>
-);
+// BLING DESATIVADO TEMPORARIAMENTE - Reativar quando integração voltar
+// import blingIconSrc from '@/assets/bling-logo.png';
+// import erpIconSrc from '@/assets/bling-icon.png';
+//
+// const BlingIcon = ({ orderId }: { orderId: string }) => (
+//   <Tooltip>
+//     <TooltipTrigger asChild>
+//       <img 
+//         src={blingIconSrc} 
+//         alt="Bling" 
+//         className="h-5 w-5 rounded flex-shrink-0 cursor-default" 
+//       />
+//     </TooltipTrigger>
+//     <TooltipContent>
+//       <p>Enviado ao Bling (ID: {orderId})</p>
+//     </TooltipContent>
+//   </Tooltip>
+// );
 
 interface Sale {
   id: string;
