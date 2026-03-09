@@ -748,6 +748,26 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
+          {/* Botão Enviar para Bling - apenas para admin */}
+          {userRole === 'admin' && onSendToBling && ['nota_fiscal', 'aguardando_entrega', 'entrega_realizada', 'finalizada'].includes(sale.status) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => !sale.bling_order_id && onSendToBling(sale.id)}
+                  disabled={sendingToBling === sale.id}
+                  className={`h-8 w-8 p-0 ${sale.bling_order_id ? 'text-green-600 cursor-default' : 'text-gray-500 hover:text-blue-600'}`}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{sale.bling_order_id ? `Enviado ao Bling (ID: ${sale.bling_order_id})` : sendingToBling === sale.id ? 'Enviando...' : 'Enviar para Bling'}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
           {/* Comprovantes de pagamento - apenas para admin e gerente */}
           {(userRole === 'admin' || userRole === 'gerente') && sale.budget_id && (
             <SaleAttachmentsDropdown saleId={sale.id} saleStatus={sale.status} />
