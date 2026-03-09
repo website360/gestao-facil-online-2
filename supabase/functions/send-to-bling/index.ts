@@ -205,6 +205,7 @@ Deno.serve(async (req) => {
       const contatoPayload = {
         nome: client?.name ?? "Cliente",
         tipo: isJuridica ? "J" : "F",
+        situacao: "A",
         numeroDocumento: docLimpo,
         contribuinte: isJuridica ? 1 : 9,
         telefone: client?.phone ?? "",
