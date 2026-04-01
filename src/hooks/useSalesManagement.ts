@@ -621,14 +621,8 @@ export const useSalesManagement = () => {
   const clearDateFilter = () => {
     setStartDate(undefined);
     setEndDate(undefined);
+    fetchSales(null, null);
   };
-
-  // Refetch when dates are cleared (both undefined)
-  useEffect(() => {
-    if (startDate === undefined && endDate === undefined) {
-      fetchSales();
-    }
-  }, [startDate, endDate]);
 
   return {
     sales,
