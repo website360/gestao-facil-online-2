@@ -215,11 +215,11 @@ export const useSalesManagement = () => {
         .order('created_at', { ascending: false });
 
       // Apply date range filter
-      if (startDate) {
-        query = query.gte('created_at', startDate.toISOString());
+      if (effectiveStartDate) {
+        query = query.gte('created_at', effectiveStartDate.toISOString());
       }
-      if (endDate) {
-        const endOfDay = new Date(endDate);
+      if (effectiveEndDate) {
+        const endOfDay = new Date(effectiveEndDate);
         endOfDay.setHours(23, 59, 59, 999);
         query = query.lte('created_at', endOfDay.toISOString());
       }
