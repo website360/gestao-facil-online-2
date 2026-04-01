@@ -636,6 +636,10 @@ export const useSalesManagement = () => {
     handleConfirmInvoice,
     handleReturnToSales,
     getStatusLabel,
-    isDeleting
+    isDeleting,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate
   };
 };
