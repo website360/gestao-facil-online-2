@@ -169,9 +169,11 @@ export const useSalesManagement = () => {
     }
   };
 
-  const fetchSales = async () => {
+  const fetchSales = async (overrideStartDate?: Date | undefined | null, overrideEndDate?: Date | undefined | null) => {
+    const effectiveStartDate = overrideStartDate !== undefined ? overrideStartDate : startDate;
+    const effectiveEndDate = overrideEndDate !== undefined ? overrideEndDate : endDate;
     try {
-      console.log('Fetching sales from database...');
+      console.log('Fetching sales from database...', 'startDate:', effectiveStartDate, 'endDate:', effectiveEndDate);
       setLoading(true);
       
       // Query otimizada: buscar apenas os campos necessários para a listagem
