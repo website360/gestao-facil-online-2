@@ -42,7 +42,11 @@ const SalesManagement = () => {
     handleConfirmInvoice,
     handleReturnToSales,
     getStatusLabel,
-    isDeleting
+    isDeleting,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate
   } = useSalesManagement();
 
   // Modal states
