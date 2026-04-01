@@ -70,6 +70,12 @@ interface SalesManagementContentProps {
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
   getCurrentResponsible: (sale: Sale) => string;
+  startDate?: Date;
+  endDate?: Date;
+  onStartDateChange?: (date: Date | undefined) => void;
+  onEndDateChange?: (date: Date | undefined) => void;
+  onApplyDateFilter?: () => void;
+  onClearDateFilter?: () => void;
 }
 
 const SalesManagementContent = ({

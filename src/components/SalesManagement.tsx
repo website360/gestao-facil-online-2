@@ -438,6 +438,16 @@ const SalesManagement = () => {
         getCurrentResponsible={getCurrentResponsible}
         onGenerateShippingLabel={handleGenerateShippingLabel}
         onReprintLabels={handleReprintLabels}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        onApplyDateFilter={fetchSales}
+        onClearDateFilter={() => {
+          setStartDate(undefined);
+          setEndDate(undefined);
+          setTimeout(() => fetchSales(), 0);
+        }}
         // BLING DESATIVADO: onSendToBling={handleSendToBling} sendingToBling={sendingToBling}
       />
 
