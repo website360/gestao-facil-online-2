@@ -47,6 +47,16 @@ export const useSalesManagement = () => {
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Date range filter - default last 45 days
+  const getDefault45DaysAgo = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 45);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+  const [startDate, setStartDate] = useState<Date | undefined>(getDefault45DaysAgo());
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
   const checkConferenceStatus = async (saleId: string) => {
     try {
