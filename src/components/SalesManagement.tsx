@@ -444,11 +444,7 @@ const SalesManagement = () => {
         onStartDateChange={setStartDate}
         onEndDateChange={setEndDate}
         onApplyDateFilter={fetchSales}
-        onClearDateFilter={() => {
-          setStartDate(undefined);
-          setEndDate(undefined);
-          setTimeout(() => fetchSales(), 0);
-        }}
+        onClearDateFilter={clearDateFilter}
         // BLING DESATIVADO: onSendToBling={handleSendToBling} sendingToBling={sendingToBling}
       />
 
