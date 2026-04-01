@@ -47,6 +47,16 @@ export const useSalesManagement = () => {
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Date range filter - default last 45 days
+  const getDefault45DaysAgo = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 45);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+  const [startDate, setStartDate] = useState<Date | undefined>(getDefault45DaysAgo());
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
 
   const checkConferenceStatus = async (saleId: string) => {
     try {
@@ -165,7 +175,7 @@ export const useSalesManagement = () => {
       setLoading(true);
       
       // Query otimizada: buscar apenas os campos necessários para a listagem
-      const { data: salesData, error: salesError } = await supabase
+      let query = supabase
         .from('sales')
         .select(`
           id,
@@ -200,8 +210,21 @@ export const useSalesManagement = () => {
           clients(name),
           budgets(created_by)
         `)
-        .order('created_at', { ascending: false })
-        .limit(500); // Limitar a 500 registros mais recentes
+        .order('created_at', { ascending: false });
+
+      // Apply date range filter
+      if (startDate) {
+        query = query.gte('created_at', startDate.toISOString());
+      }
+      if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        query = query.lte('created_at', endOfDay.toISOString());
+      }
+
+      query = query.limit(1000);
+
+      const { data: salesData, error: salesError } = await query;
 
       if (salesError) {
         console.error('Error fetching sales:', salesError);
@@ -593,6 +616,18 @@ export const useSalesManagement = () => {
     filterAndSortSales();
   }, [sales, searchTerm, statusFilter, userRole, sortField, sortDirection]);
 
+  const clearDateFilter = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
+
+  // Refetch when dates are cleared (both undefined)
+  useEffect(() => {
+    if (startDate === undefined && endDate === undefined) {
+      fetchSales();
+    }
+  }, [startDate, endDate]);
+
   return {
     sales,
     filteredSales,
@@ -613,6 +648,11 @@ export const useSalesManagement = () => {
     handleConfirmInvoice,
     handleReturnToSales,
     getStatusLabel,
-    isDeleting
+    isDeleting,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    clearDateFilter
   };
 };

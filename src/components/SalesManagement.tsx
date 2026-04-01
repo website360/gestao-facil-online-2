@@ -42,7 +42,12 @@ const SalesManagement = () => {
     handleConfirmInvoice,
     handleReturnToSales,
     getStatusLabel,
-    isDeleting
+    isDeleting,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    clearDateFilter
   } = useSalesManagement();
 
   // Modal states
@@ -434,6 +439,12 @@ const SalesManagement = () => {
         getCurrentResponsible={getCurrentResponsible}
         onGenerateShippingLabel={handleGenerateShippingLabel}
         onReprintLabels={handleReprintLabels}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        onApplyDateFilter={fetchSales}
+        onClearDateFilter={clearDateFilter}
         // BLING DESATIVADO: onSendToBling={handleSendToBling} sendingToBling={sendingToBling}
       />
 

@@ -70,6 +70,12 @@ interface SalesManagementContentProps {
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
   getCurrentResponsible: (sale: Sale) => string;
+  startDate?: Date;
+  endDate?: Date;
+  onStartDateChange?: (date: Date | undefined) => void;
+  onEndDateChange?: (date: Date | undefined) => void;
+  onApplyDateFilter?: () => void;
+  onClearDateFilter?: () => void;
 }
 
 const SalesManagementContent = ({
@@ -106,7 +112,13 @@ const SalesManagementContent = ({
   getStatusColor,
   getStatusLabel,
   formatSaleId,
-  getCurrentResponsible
+  getCurrentResponsible,
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
+  onApplyDateFilter,
+  onClearDateFilter
 }: SalesManagementContentProps) => {
   const ITEMS_PER_PAGE = 20;
   const totalPages = Math.ceil(sales.length / ITEMS_PER_PAGE);
@@ -126,6 +138,12 @@ const SalesManagementContent = ({
             setStatusFilter={setStatusFilter}
             userRole={userRole}
             filteredSalesCount={sales.length}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={onStartDateChange}
+            onEndDateChange={onEndDateChange}
+            onApplyDateFilter={onApplyDateFilter}
+            onClearDateFilter={onClearDateFilter}
           />
 
           <SalesTable
