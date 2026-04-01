@@ -46,7 +46,8 @@ const SalesManagement = () => {
     startDate,
     setStartDate,
     endDate,
-    setEndDate
+    setEndDate,
+    clearDateFilter
   } = useSalesManagement();
 
   // Modal states
