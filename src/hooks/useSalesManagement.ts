@@ -616,6 +616,18 @@ export const useSalesManagement = () => {
     filterAndSortSales();
   }, [sales, searchTerm, statusFilter, userRole, sortField, sortDirection]);
 
+  const clearDateFilter = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
+
+  // Refetch when dates are cleared (both undefined)
+  useEffect(() => {
+    if (startDate === undefined && endDate === undefined) {
+      fetchSales();
+    }
+  }, [startDate, endDate]);
+
   return {
     sales,
     filteredSales,
@@ -640,6 +652,7 @@ export const useSalesManagement = () => {
     startDate,
     setStartDate,
     endDate,
-    setEndDate
+    setEndDate,
+    clearDateFilter
   };
 };
