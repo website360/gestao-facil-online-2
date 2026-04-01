@@ -169,9 +169,11 @@ export const useSalesManagement = () => {
     }
   };
 
-  const fetchSales = async () => {
+  const fetchSales = async (overrideStartDate?: Date | undefined | null, overrideEndDate?: Date | undefined | null) => {
+    const effectiveStartDate = overrideStartDate !== undefined ? overrideStartDate : startDate;
+    const effectiveEndDate = overrideEndDate !== undefined ? overrideEndDate : endDate;
     try {
-      console.log('Fetching sales from database...');
+      console.log('Fetching sales from database...', 'startDate:', effectiveStartDate, 'endDate:', effectiveEndDate);
       setLoading(true);
       
       // Query otimizada: buscar apenas os campos necessários para a listagem
@@ -213,11 +215,11 @@ export const useSalesManagement = () => {
         .order('created_at', { ascending: false });
 
       // Apply date range filter
-      if (startDate) {
-        query = query.gte('created_at', startDate.toISOString());
+      if (effectiveStartDate) {
+        query = query.gte('created_at', effectiveStartDate.toISOString());
       }
-      if (endDate) {
-        const endOfDay = new Date(endDate);
+      if (effectiveEndDate) {
+        const endOfDay = new Date(effectiveEndDate);
         endOfDay.setHours(23, 59, 59, 999);
         query = query.lte('created_at', endOfDay.toISOString());
       }
@@ -619,14 +621,8 @@ export const useSalesManagement = () => {
   const clearDateFilter = () => {
     setStartDate(undefined);
     setEndDate(undefined);
+    fetchSales(null, null);
   };
-
-  // Refetch when dates are cleared (both undefined)
-  useEffect(() => {
-    if (startDate === undefined && endDate === undefined) {
-      fetchSales();
-    }
-  }, [startDate, endDate]);
 
   return {
     sales,
