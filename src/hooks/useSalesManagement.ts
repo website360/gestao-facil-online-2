@@ -171,85 +171,99 @@ export const useSalesManagement = () => {
   const fetchSales = async (overrideStartDate?: Date | undefined | null, overrideEndDate?: Date | undefined | null) => {
     const effectiveStartDate = overrideStartDate !== undefined ? overrideStartDate : startDate;
     const effectiveEndDate = overrideEndDate !== undefined ? overrideEndDate : endDate;
+
     try {
       console.log('Fetching sales from database...', 'startDate:', effectiveStartDate, 'endDate:', effectiveEndDate);
       setLoading(true);
-      
-      // Query otimizada: buscar apenas os campos necessários para a listagem
-      let query = supabase
-        .from('sales')
-        .select(`
-          id,
-          client_id,
-          budget_id,
-          created_by,
-          status,
-          total_amount,
-          notes,
-          created_at,
-          updated_at,
-          separation_user_id,
-          separation_completed_at,
-          conference_user_id,
-          conference_completed_at,
-          invoice_user_id,
-          invoice_completed_at,
-          delivery_user_id,
-          delivery_completed_at,
-          payment_method_id,
-          payment_type_id,
-          shipping_option_id,
-          shipping_cost,
-          tracking_code,
-          invoice_number,
-          total_volumes,
-          total_weight_kg,
-          separation_percentage,
-          separation_complete,
-          ready_for_shipping_label,
-          bling_order_id,
-          clients(name),
-          budgets(created_by)
-        `)
-        .order('created_at', { ascending: false });
 
-      // Apply date range filter
-      if (effectiveStartDate && effectiveStartDate instanceof Date) {
-        query = query.gte('created_at', effectiveStartDate.toISOString());
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      let hasMore = true;
+      const allSalesData: any[] = [];
+
+      while (hasMore) {
+        let query = supabase
+          .from('sales')
+          .select(`
+            id,
+            client_id,
+            budget_id,
+            created_by,
+            status,
+            total_amount,
+            notes,
+            created_at,
+            updated_at,
+            separation_user_id,
+            separation_completed_at,
+            conference_user_id,
+            conference_completed_at,
+            invoice_user_id,
+            invoice_completed_at,
+            delivery_user_id,
+            delivery_completed_at,
+            payment_method_id,
+            payment_type_id,
+            shipping_option_id,
+            shipping_cost,
+            tracking_code,
+            invoice_number,
+            total_volumes,
+            total_weight_kg,
+            separation_percentage,
+            separation_complete,
+            ready_for_shipping_label,
+            bling_order_id,
+            clients(name),
+            budgets(created_by)
+          `)
+          .order('created_at', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (effectiveStartDate instanceof Date) {
+          query = query.gte('created_at', effectiveStartDate.toISOString());
+        }
+
+        if (effectiveEndDate instanceof Date) {
+          const endOfDay = new Date(effectiveEndDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          query = query.lte('created_at', endOfDay.toISOString());
+        }
+
+        const { data: salesBatch, error: salesError } = await query;
+
+        if (salesError) {
+          console.error('Error fetching sales:', salesError);
+          throw salesError;
+        }
+
+        if (!salesBatch || salesBatch.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        allSalesData.push(...salesBatch);
+        hasMore = salesBatch.length === PAGE_SIZE;
+        from += PAGE_SIZE;
       }
-      if (effectiveEndDate && effectiveEndDate instanceof Date) {
-        const endOfDay = new Date(effectiveEndDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        query = query.lte('created_at', endOfDay.toISOString());
-      }
 
-      query = query.limit(1000);
+      console.log('Sales data fetched:', allSalesData.length, 'records');
 
-      const { data: salesData, error: salesError } = await query;
-
-      if (salesError) {
-        console.error('Error fetching sales:', salesError);
-        throw salesError;
-      }
-
-      console.log('Sales data fetched:', salesData?.length || 0, 'records');
-
-      if (!salesData || salesData.length === 0) {
+      if (allSalesData.length === 0) {
         console.log('No sales data found');
         setSales([]);
         return;
       }
 
-      // Buscar informações de shipping_options em uma única query
-      const shippingOptionIds = [...new Set(salesData.map(sale => sale.shipping_option_id).filter(Boolean))];
-      let shippingOptionsMap = new Map<string, { name: string; delivery_visible: boolean }>();
-      
+      const shippingOptionIds = [...new Set(allSalesData.map(sale => sale.shipping_option_id).filter(Boolean))];
+      const shippingOptionsMap = new Map<string, { name: string; delivery_visible: boolean }>();
+
       if (shippingOptionIds.length > 0) {
         const { data: shippingData, error: shippingError } = await supabase
           .from('shipping_options')
           .select('id, name, delivery_visible')
           .in('id', shippingOptionIds);
-          
+
         if (!shippingError && shippingData) {
           shippingData.forEach(opt => {
             shippingOptionsMap.set(opt.id, { name: opt.name, delivery_visible: opt.delivery_visible });
@@ -257,17 +271,16 @@ export const useSalesManagement = () => {
         }
       }
 
-      // Buscar profiles em uma única query
       const allUserIds = [...new Set([
-        ...salesData.map(sale => sale.created_by),
-        ...salesData.map(sale => sale.separation_user_id).filter(Boolean),
-        ...salesData.map(sale => sale.conference_user_id).filter(Boolean),
-        ...salesData.map(sale => sale.invoice_user_id).filter(Boolean),
-        ...salesData.map(sale => sale.delivery_user_id).filter(Boolean)
+        ...allSalesData.map(sale => sale.created_by),
+        ...allSalesData.map(sale => sale.separation_user_id).filter(Boolean),
+        ...allSalesData.map(sale => sale.conference_user_id).filter(Boolean),
+        ...allSalesData.map(sale => sale.invoice_user_id).filter(Boolean),
+        ...allSalesData.map(sale => sale.delivery_user_id).filter(Boolean)
       ])];
-      
-      let profilesMap = new Map<string, { name: string }>();
-      
+
+      const profilesMap = new Map<string, { name: string }>();
+
       if (allUserIds.length > 0) {
         const { data: profilesData } = await supabase
           .from('profiles')
@@ -281,8 +294,7 @@ export const useSalesManagement = () => {
         }
       }
 
-      // Processar vendas de forma síncrona (sem queries adicionais por venda)
-      const enrichedSales = salesData.map((sale) => {
+      const enrichedSales = allSalesData.map((sale) => {
         const shippingOption = shippingOptionsMap.get(sale.shipping_option_id || '');
 
         return {
@@ -296,7 +308,6 @@ export const useSalesManagement = () => {
           conference_user_profile: sale.conference_user_id ? profilesMap.get(sale.conference_user_id) : null,
           invoice_user_profile: sale.invoice_user_id ? profilesMap.get(sale.invoice_user_id) : null,
           delivery_user_profile: sale.delivery_user_id ? profilesMap.get(sale.delivery_user_id) : null,
-          // Usar os valores já salvos na tabela sales (evitar queries N+1)
           conference_complete: sale.conference_completed_at !== null,
           conference_percentage: sale.conference_completed_at ? 100 : 0,
           separation_complete: sale.separation_complete || false,
