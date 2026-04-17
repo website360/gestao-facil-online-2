@@ -289,12 +289,77 @@ export async function getVolumeLabelsPDFBase64(
   return dataUri.split(',')[1];
 }
 
+/**
+ * Generate a single-label PDF (1 page) for a specific volume number.
+ * Used for batched printing to avoid overflowing the printer buffer.
+ */
+async function getSingleLabelPDFBase64(
+  data: LabelData,
+  volumeNumber: number,
+  logoBase64: string | null
+): Promise<string> {
+  const { clientName, totalVolumes, invoiceNumber = '' } = data;
+  const currentDate = new Date().toLocaleDateString('pt-BR');
+
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: [PAGE_W, PAGE_H],
+  });
+
+  drawLabel(doc, clientName, invoiceNumber, volumeNumber, totalVolumes, currentDate, logoBase64);
+
+  const dataUri = doc.output('datauristring');
+  return dataUri.split(',')[1];
+}
+
+/**
+ * Print volume labels in small batches (1 label per job) to avoid
+ * overflowing the Datamax printer buffer on large quantities.
+ * A short delay between jobs lets the firmware process each label.
+ */
 export async function printVolumeLabelsDirect(
   data: LabelData
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const pdfBase64 = await getVolumeLabelsPDFBase64(data, { includeCalibrationPage: false });
-    return await printPdfDirect(pdfBase64);
+    const { totalVolumes } = data;
+    if (totalVolumes <= 0) {
+      return { success: false, message: 'Nenhum volume para imprimir.' };
+    }
+
+    // Pre-load the logo once and reuse for all labels
+    const logoBase64 = await loadLogoBase64();
+
+    const DELAY_BETWEEN_LABELS_MS = 700;
+    const failures: string[] = [];
+
+    for (let i = 1; i <= totalVolumes; i++) {
+      const singlePdf = await getSingleLabelPDFBase64(data, i, logoBase64);
+      const result = await printPdfDirect(singlePdf);
+
+      if (!result.success) {
+        failures.push(`Etiqueta ${i}/${totalVolumes}: ${result.message}`);
+        // Stop on first failure to avoid spamming the printer
+        break;
+      }
+
+      // Give the printer time to process before sending the next job
+      if (i < totalVolumes) {
+        await new Promise((r) => setTimeout(r, DELAY_BETWEEN_LABELS_MS));
+      }
+    }
+
+    if (failures.length > 0) {
+      return {
+        success: false,
+        message: `Falha na impressão em lote. ${failures.join(' | ')}`,
+      };
+    }
+
+    return {
+      success: true,
+      message: `${totalVolumes} etiqueta${totalVolumes > 1 ? 's' : ''} enviada${totalVolumes > 1 ? 's' : ''} para a impressora.`,
+    };
   } catch (error) {
     return {
       success: false,
