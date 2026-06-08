@@ -94,8 +94,10 @@ export const useBudgetManagement = (userRole?: string) => {
       console.log('=== FETCHING BUDGETS (OPTIMIZED) ===');
       console.log('User role:', userRole);
       
-      // Query otimizada: buscar apenas campos essenciais
-      let query = supabase
+      // Query otimizada: buscar apenas campos essenciais.
+      // Usamos uma função para reconstruir a query a cada lote de paginação,
+      // pois o query builder do Supabase não pode ser reutilizado após o await.
+      const buildBudgetsQuery = () => supabase
         .from('budgets')
         .select(`
           id,
@@ -157,10 +159,9 @@ export const useBudgetManagement = (userRole?: string) => {
           )
         `);
 
-      // Se for cliente, mostrar apenas seus próprios orçamentos
+      // Resolver o clientId quando for cliente (mostrar apenas seus próprios orçamentos)
+      let clientId: string | null = null;
       if (userRole === 'cliente') {
-        let clientId = null;
-        
         if (isClient && clientData) {
           clientId = clientData.id;
         } else {
@@ -176,33 +177,54 @@ export const useBudgetManagement = (userRole?: string) => {
             }
           }
         }
-        
-        if (clientId) {
-          query = query.or(`client_id.eq.${clientId},created_by.eq.${clientId}`);
-        } else {
+
+        if (!clientId) {
           setBudgets([]);
           setFilteredBudgets([]);
           setLoading(false);
           return;
         }
       }
-      
-      // Para vendedores, mostrar apenas orçamentos criados por eles
-      if ((userRole === 'vendedor_externo' || userRole === 'vendedor_interno') && user?.id) {
-        query = query.eq('created_by', user.id);
-      }
-      
-      const { data: budgetsData, error: budgetsError } = await query
-        .order('created_at', { ascending: false })
-        .limit(300); // Limitar a 300 registros mais recentes
 
-      if (budgetsError) {
-        console.error('Error fetching budgets:', budgetsError);
-        toast.error('Erro ao carregar orçamentos');
-        return;
+      // Aplica os filtros de acordo com o papel do usuário a uma query recém-criada
+      const buildFilteredQuery = () => {
+        let query = buildBudgetsQuery();
+        if (userRole === 'cliente' && clientId) {
+          query = query.or(`client_id.eq.${clientId},created_by.eq.${clientId}`);
+        }
+        // Para vendedores, mostrar apenas orçamentos criados por eles
+        if ((userRole === 'vendedor_externo' || userRole === 'vendedor_interno') && user?.id) {
+          query = query.eq('created_by', user.id);
+        }
+        return query;
+      };
+
+      // Buscar TODOS os registros disponíveis paginando em lotes,
+      // pois o PostgREST/Supabase limita cada requisição a no máximo 1000 linhas.
+      const PAGE_SIZE = 1000;
+      const budgetsData: any[] = [];
+      let from = 0;
+      while (true) {
+        const { data: pageData, error: budgetsError } = await buildFilteredQuery()
+          .order('created_at', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (budgetsError) {
+          console.error('Error fetching budgets:', budgetsError);
+          toast.error('Erro ao carregar orçamentos');
+          return;
+        }
+
+        if (pageData && pageData.length > 0) {
+          budgetsData.push(...pageData);
+        }
+
+        // Se o lote retornou menos que o tamanho da página, chegamos ao fim
+        if (!pageData || pageData.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
       }
 
-      console.log('Budgets fetched:', budgetsData?.length || 0, 'records');
+      console.log('Budgets fetched:', budgetsData.length, 'records');
       
       if (budgetsData && budgetsData.length > 0) {
         // Buscar perfis dos criadores em uma única query otimizada
