@@ -24,6 +24,7 @@ interface BlingConfig {
   dry_run?: boolean;
   payment_method_map?: Record<string, number>;
   default_forma_pagamento_id?: number | string;
+  bling_formas?: BlingForma[];
 }
 
 interface LocalPaymentMethod {
@@ -91,6 +92,10 @@ const BlingConfigurationTab = () => {
         try {
           const parsed = JSON.parse(data.value);
           setConfig({ ...defaultConfig, ...parsed });
+          // Recarrega as formas do Bling em cache para o mapeamento ficar visível
+          if (Array.isArray(parsed.bling_formas) && parsed.bling_formas.length > 0) {
+            setBlingFormas(parsed.bling_formas);
+          }
         } catch {
           console.error('Erro ao parsear configuração do Bling');
         }
@@ -156,6 +161,11 @@ const BlingConfigurationTab = () => {
             default_forma_pagamento_id: config.default_forma_pagamento_id ?? '',
           };
         } catch { /* ignore parse errors */ }
+      }
+
+      // Cacheia as formas do Bling para reexibir o mapeamento ao reabrir a tela
+      if (blingFormas.length > 0) {
+        mergedConfig.bling_formas = blingFormas;
       }
 
       const { error } = await supabase
