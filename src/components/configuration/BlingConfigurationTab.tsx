@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Eye, EyeOff, ExternalLink, CheckCircle2, XCircle, Link2, RefreshCw, FlaskConical } from 'lucide-react';
+import { Save, Eye, EyeOff, ExternalLink, CheckCircle2, XCircle, Link2, RefreshCw, FlaskConical, BookOpen, ChevronDown } from 'lucide-react';
 import BlingSyncLogs from './BlingSyncLogs';
 
 interface BlingConfig {
@@ -56,6 +57,7 @@ const BlingConfigurationTab = () => {
   const [paymentMethods, setPaymentMethods] = useState<LocalPaymentMethod[]>([]);
   const [blingFormas, setBlingFormas] = useState<BlingForma[]>([]);
   const [loadingFormas, setLoadingFormas] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(true);
 
   useEffect(() => {
     fetchConfiguration();
@@ -231,16 +233,70 @@ const BlingConfigurationTab = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Step-by-step instructions */}
-          <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-            <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Como configurar</h4>
-            <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-decimal list-inside">
-              <li>Acesse o <a href="https://developer.bling.com.br" target="_blank" rel="noopener noreferrer" className="underline font-medium inline-flex items-center gap-1">Painel de Desenvolvedores do Bling <ExternalLink className="h-3 w-3" /></a></li>
-              <li>Crie um novo aplicativo e configure a <strong>URL de callback</strong> abaixo</li>
-              <li>Copie o <strong>Client ID</strong> e <strong>Client Secret</strong> e salve aqui</li>
-              <li>Use o <strong>Link de Convite</strong> do Bling para autorizar o aplicativo</li>
-            </ol>
-          </div>
+          {/* Passo a passo completo */}
+          <Collapsible open={guideOpen} onOpenChange={setGuideOpen}>
+            <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <CollapsibleTrigger className="flex w-full items-center justify-between p-4 text-left">
+                <span className="flex items-center gap-2 font-semibold text-blue-800 dark:text-blue-300">
+                  <BookOpen className="h-4 w-4" />
+                  Passo a passo da integração com o Bling
+                </span>
+                <ChevronDown className={`h-4 w-4 text-blue-700 transition-transform ${guideOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 space-y-4 text-sm text-blue-800 dark:text-blue-300">
+
+                  <div>
+                    <p className="font-semibold mb-1">Parte 1 — Criar o aplicativo no Bling</p>
+                    <ol className="space-y-1 list-decimal list-inside text-blue-700 dark:text-blue-400">
+                      <li>Acesse o <a href="https://developer.bling.com.br" target="_blank" rel="noopener noreferrer" className="underline font-medium inline-flex items-center gap-1">Painel de Desenvolvedores do Bling <ExternalLink className="h-3 w-3" /></a> e faça login.</li>
+                      <li>Clique em <strong>Criar aplicativo</strong> e escolha o tipo <strong>“Aplicativo privado”</strong> (uso da própria empresa).</li>
+                      <li>No campo <strong>URL de redirecionamento (callback)</strong>, cole a URL exibida na seção “URL de Callback” logo abaixo desta tela.</li>
+                      <li>Em <strong>Escopos / Permissões</strong>, marque pelo menos: <strong>Pedidos de Venda</strong>, <strong>Contatos</strong> e <strong>Formas de Pagamento</strong> (leitura e escrita).</li>
+                      <li>Salve o aplicativo e copie o <strong>Client ID</strong> e o <strong>Client Secret</strong>.</li>
+                    </ol>
+                  </div>
+
+                  <div>
+                    <p className="font-semibold mb-1">Parte 2 — Conectar o sistema ao Bling</p>
+                    <ol className="space-y-1 list-decimal list-inside text-blue-700 dark:text-blue-400">
+                      <li>Ative a integração no botão <strong>Ativado/Desativado</strong> no topo desta tela.</li>
+                      <li>Cole o <strong>Client ID</strong> e o <strong>Client Secret</strong> nos campos abaixo e clique em <strong>Salvar Configurações</strong>.</li>
+                      <li>No painel do Bling, copie o <strong>Link de Convite</strong> do seu aplicativo e abra-o em uma nova aba.</li>
+                      <li>Autorize o aplicativo no Bling — você será redirecionado de volta e o <strong>Status da Autorização</strong> mudará para “Autorizado”.</li>
+                    </ol>
+                  </div>
+
+                  <div>
+                    <p className="font-semibold mb-1">Parte 3 — Mapear as formas de pagamento</p>
+                    <ol className="space-y-1 list-decimal list-inside text-blue-700 dark:text-blue-400">
+                      <li>Na seção <strong>Formas de pagamento</strong>, clique em <strong>Buscar do Bling</strong>.</li>
+                      <li>Para cada forma de pagamento do sistema, selecione a forma equivalente no Bling.</li>
+                      <li>Defina uma <strong>Forma padrão (fallback)</strong> para usar quando não houver mapeamento específico.</li>
+                      <li>Clique em <strong>Salvar Configurações</strong>. <span className="opacity-80">(Sem mapeamento, o pedido é enviado sem as parcelas.)</span></li>
+                    </ol>
+                  </div>
+
+                  <div>
+                    <p className="font-semibold mb-1">Parte 4 — Testar e enviar</p>
+                    <ol className="space-y-1 list-decimal list-inside text-blue-700 dark:text-blue-400">
+                      <li><strong>Ative o Modo de teste (dry-run)</strong> e salve. Assim você valida o envio sem criar pedidos no Bling.</li>
+                      <li>Na tela de <strong>Vendas</strong>, em uma venda já faturada, clique no ícone do Bling para enviar.</li>
+                      <li>Confira o resultado na seção <strong>Log de envios ao Bling</strong> (abaixo). Em dry-run, nada é enviado de verdade.</li>
+                      <li>Quando estiver tudo certo, <strong>desligue o dry-run</strong> e salve — os próximos envios criam o pedido de venda real no Bling.</li>
+                      <li>Se um envio falhar, use o botão <strong>Reenviar</strong> na tela de log.</li>
+                    </ol>
+                  </div>
+
+                  <div className="bg-blue-100/60 dark:bg-blue-900/30 rounded-md p-3 text-xs text-blue-700 dark:text-blue-400">
+                    <strong>Observações:</strong> o ícone de envio na tela de Vendas aparece para os papéis <strong>Nota Fiscal</strong> e <strong>Admin</strong>.
+                    O pedido de venda <strong>não emite a NF-e automaticamente</strong> — a emissão continua sendo feita no Bling. O sistema evita envios duplicados (uma venda já enviada não é reenviada).
+                  </div>
+
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
 
           <Separator />
 
