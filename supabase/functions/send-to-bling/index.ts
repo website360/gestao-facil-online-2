@@ -331,13 +331,18 @@ Deno.serve(async (req) => {
     }
 
     // ---- Itens ----
-    // O Bling não aplica desconto por item neste endpoint, então embutimos o
-    // desconto direto no preço unitário (valor líquido). Assim o total que o
-    // Bling calcula (qtd × valor) bate com o somatório das parcelas.
+    // O valor enviado por item é o "valor de Nota Fiscal":
+    //   preço unitário × (1 − desconto%) × (% Nota Fiscal)
+    // O desconto é embutido no preço (o Bling não aplica desconto por item aqui),
+    // e o percentual de nota fiscal é aplicado sobre o valor líquido.
+    // (Sem informação de % nota fiscal, considera 100%.)
+    const invoicePct = sale.invoice_percentage == null ? 100 : Number(sale.invoice_percentage);
+    const invoiceRatio = invoicePct / 100;
     const itens = (sale.sale_items ?? []).map((item: any) => {
       const unit = Number(item.unit_price ?? 0);
       const pct = Number(item.discount_percentage ?? 0);
-      const valor = pct ? round2(unit * (1 - pct / 100)) : round2(unit);
+      const netUnit = pct ? unit * (1 - pct / 100) : unit;
+      const valor = round2(netUnit * invoiceRatio);
       return {
         codigo: item.products?.internal_code ?? "",
         descricao: item.products?.name ?? "",
