@@ -51,7 +51,22 @@ const BlingSyncLogs = () => {
       const { data, error } = await supabase.functions.invoke('send-to-bling', {
         body: { sale_id: saleId },
       });
-      if (error) throw error;
+      if (error) {
+        let msg = 'Erro ao reenviar para o Bling';
+        try {
+          const ctx = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            if (body?.error) msg = body.error;
+            if (body?.details) {
+              const det = typeof body.details === 'string' ? body.details : JSON.stringify(body.details);
+              msg += `: ${det}`;
+            }
+          }
+        } catch { /* mantém msg genérica */ }
+        toast.error(msg.slice(0, 400));
+        return;
+      }
       if (data?.error) {
         toast.error(data.error);
       } else if (data?.dry_run) {

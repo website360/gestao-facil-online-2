@@ -20,6 +20,16 @@ import ReprintLabelsModal from './sales/ReprintLabelsModal';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { formatSaleId } from '@/lib/budgetFormatter';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const SalesManagement = () => {
   const {
@@ -77,6 +87,7 @@ const SalesManagement = () => {
   const [reprintLabelsModalOpen, setReprintLabelsModalOpen] = useState(false);
   const [selectedSaleForReprintLabels, setSelectedSaleForReprintLabels] = useState<string | null>(null);
   const [sendingToBling, setSendingToBling] = useState<string | null>(null);
+  const [blingConfirmSaleId, setBlingConfirmSaleId] = useState<string | null>(null);
 
   // Bulk selection hook
   const {
@@ -368,13 +379,34 @@ const SalesManagement = () => {
     setReprintLabelsModalOpen(true);
   };
 
+  // Abre o modal de confirmação antes de enviar ao Bling
+  const requestSendToBling = (saleId: string) => {
+    setBlingConfirmSaleId(saleId);
+  };
+
   const handleSendToBling = async (saleId: string) => {
     setSendingToBling(saleId);
     try {
       const { data, error } = await supabase.functions.invoke('send-to-bling', {
         body: { sale_id: saleId },
       });
-      if (error) throw error;
+      if (error) {
+        // Extrair a mensagem real retornada pela função (corpo da resposta de erro)
+        let msg = 'Erro ao enviar para o Bling';
+        try {
+          const ctx = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            if (body?.error) msg = body.error;
+            if (body?.details) {
+              const det = typeof body.details === 'string' ? body.details : JSON.stringify(body.details);
+              msg += `: ${det}`;
+            }
+          }
+        } catch { /* mantém msg genérica */ }
+        toast.error(msg.slice(0, 400));
+        return;
+      }
       if (data?.error) {
         toast.error(data.error);
         return;
@@ -391,6 +423,13 @@ const SalesManagement = () => {
     } finally {
       setSendingToBling(null);
     }
+  };
+
+  const confirmSendToBling = async () => {
+    if (!blingConfirmSaleId) return;
+    const saleId = blingConfirmSaleId;
+    setBlingConfirmSaleId(null);
+    await handleSendToBling(saleId);
   };
 
   // Get selected sale data for modals
@@ -448,7 +487,7 @@ const SalesManagement = () => {
         onEndDateChange={setEndDate}
         onApplyDateFilter={fetchSales}
         onClearDateFilter={clearDateFilter}
-        onSendToBling={handleSendToBling}
+        onSendToBling={requestSendToBling}
         sendingToBling={sendingToBling}
       />
 
@@ -574,6 +613,22 @@ const SalesManagement = () => {
         }}
         sale={selectedSaleForReprintLabels ? sales.find(s => s.id === selectedSaleForReprintLabels) : null}
       />
+
+      <AlertDialog open={!!blingConfirmSaleId} onOpenChange={(open) => !open && setBlingConfirmSaleId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Enviar venda para o Bling?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação cria o pedido de venda no Bling com os dados do cliente, itens e parcelas.
+              Confirma o envio?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSendToBling}>Enviar ao Bling</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
