@@ -750,7 +750,7 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
-          {userRole === 'nota_fiscal' && onSendToBling && ['nota_fiscal', 'aguardando_entrega', 'entrega_realizada', 'finalizada'].includes(sale.status) && (
+          {(userRole === 'nota_fiscal' || userRole === 'admin') && onSendToBling && ['nota_fiscal', 'aguardando_entrega', 'entrega_realizada', 'finalizada'].includes(sale.status) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
