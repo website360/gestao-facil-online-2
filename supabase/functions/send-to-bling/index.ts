@@ -6,23 +6,122 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+// Formata uma data (Date) como YYYY-MM-DD
+const toYMD = (d: Date) => d.toISOString().split("T")[0];
+
+// Soma "days" dias a uma data base e devolve YYYY-MM-DD
+const addDays = (base: Date, days: number) => {
+  const d = new Date(base.getTime());
+  d.setDate(d.getDate() + (days || 0));
+  return toYMD(d);
+};
+
+// Arredonda para 2 casas
+const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+/**
+ * Monta o array de parcelas para o pedido do Bling a partir dos campos de
+ * pagamento da venda. Retorna [] quando não há informação suficiente ou
+ * quando não há forma de pagamento mapeada (nesse caso o pedido é enviado
+ * sem parcelas, sem travar o envio).
+ */
+function buildParcelas(sale: any, blingFormaId: number | null) {
+  const total = Number(sale.total_amount ?? 0);
+  if (!total || total <= 0) return [];
+
+  const saleDate = new Date(sale.created_at ?? Date.now());
+
+  // Define os "dias para vencimento" de cada parcela conforme o tipo de pagamento
+  let dueDays: number[] = [];
+
+  if (Array.isArray(sale.boleto_due_dates) && sale.boleto_due_dates.length > 0) {
+    dueDays = sale.boleto_due_dates.map((d: any) => Number(d) || 0);
+  } else if (Array.isArray(sale.check_due_dates) && sale.check_due_dates.length > 0) {
+    dueDays = sale.check_due_dates.map((d: any) => Number(d) || 0);
+  } else {
+    const installments = Number(
+      sale.installments ?? sale.boleto_installments ?? sale.check_installments ?? 1
+    );
+    if (installments > 1) {
+      // Parcelas mensais (30, 60, 90...) quando não há datas específicas
+      dueDays = Array.from({ length: installments }, (_, i) => (i + 1) * 30);
+    } else {
+      dueDays = [0]; // à vista
+    }
+  }
+
+  const count = dueDays.length;
+  if (count === 0) return [];
+
+  // Sem forma de pagamento mapeada não enviamos parcelas (evita rejeição do Bling)
+  if (!blingFormaId) return [];
+
+  const base = round2(total / count);
+  const parcelas = dueDays.map((days, i) => {
+    const valor = i === count - 1 ? round2(total - base * (count - 1)) : base;
+    return {
+      dataVencimento: addDays(saleDate, days),
+      valor,
+      observacoes: `Parcela ${i + 1}/${count}`,
+      formaPagamento: { id: blingFormaId },
+    };
+  });
+
+  return parcelas;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Variáveis usadas também no registro de log/erro
+  let saleId: string | null = null;
+  let userId: string | null = null;
+  let isDryRun = false;
+  let requestPayload: unknown = null;
+
+  // Helper para gravar no log de envios (best-effort, não derruba o fluxo)
+  const writeLog = async (entry: {
+    success: boolean;
+    bling_order_id?: string | null;
+    bling_order_number?: string | null;
+    error_message?: string | null;
+    response_payload?: unknown;
+  }) => {
+    try {
+      await supabase.from("bling_sync_logs").insert({
+        sale_id: saleId,
+        success: entry.success,
+        dry_run: isDryRun,
+        bling_order_id: entry.bling_order_id ?? null,
+        bling_order_number: entry.bling_order_number ?? null,
+        error_message: entry.error_message ?? null,
+        request_payload: requestPayload ?? null,
+        response_payload: entry.response_payload ?? null,
+        created_by: userId,
+      });
+    } catch (e) {
+      console.error("Falha ao gravar bling_sync_logs:", e);
+    }
+  };
+
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Não autorizado" }, 401);
     }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     // Validate user
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -32,16 +131,10 @@ Deno.serve(async (req) => {
       authHeader.replace("Bearer ", "")
     );
     if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Não autorizado" }, 401);
     }
 
-    const userId = claimsData.claims.sub as string;
-
-    // Use service role for DB operations
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    userId = claimsData.claims.sub as string;
 
     // Check if user is admin
     const { data: profile } = await supabase
@@ -51,21 +144,17 @@ Deno.serve(async (req) => {
       .single();
 
     if (!profile || profile.role !== "admin") {
-      return new Response(
-        JSON.stringify({ error: "Apenas administradores podem enviar para o Bling" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return json({ error: "Apenas administradores podem enviar para o Bling" }, 403);
     }
 
-    const { sale_id } = await req.json();
-    if (!sale_id) {
-      return new Response(JSON.stringify({ error: "sale_id é obrigatório" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const body = await req.json().catch(() => ({}));
+    saleId = body.sale_id ?? null;
+    const dryRunRequested = body.dry_run === true;
+    if (!saleId) {
+      return json({ error: "sale_id é obrigatório" }, 400);
     }
 
-    // Check if already sent
+    // Carrega a venda com itens, cliente e campos de pagamento
     const { data: sale, error: saleError } = await supabase
       .from("sales")
       .select(`
@@ -73,23 +162,17 @@ Deno.serve(async (req) => {
         clients (name, cpf, cnpj, client_type, email, phone, street, number, complement, neighborhood, city, state, cep),
         sale_items (id, quantity, unit_price, total_price, discount_percentage, products (internal_code, name, stock_unit))
       `)
-      .eq("id", sale_id)
+      .eq("id", saleId)
       .single();
 
     if (saleError || !sale) {
-      return new Response(JSON.stringify({ error: "Venda não encontrada" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Venda não encontrada" }, 404);
     }
 
     if (sale.bling_order_id) {
-      return new Response(
-        JSON.stringify({
-          error: "Venda já enviada ao Bling",
-          bling_order_id: sale.bling_order_id,
-        }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return json(
+        { error: "Venda já enviada ao Bling", bling_order_id: sale.bling_order_id },
+        409
       );
     }
 
@@ -101,25 +184,31 @@ Deno.serve(async (req) => {
       .single();
 
     if (!configData) {
-      return new Response(
-        JSON.stringify({ error: "Configuração do Bling não encontrada" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return json({ error: "Configuração do Bling não encontrada" }, 400);
     }
 
     const blingConfig = JSON.parse(configData.value);
     if (!blingConfig.enabled) {
-      return new Response(
-        JSON.stringify({ error: "Integração Bling desativada" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return json({ error: "Integração Bling desativada" }, 400);
     }
 
-    const { client_id, client_secret, refresh_token, access_token: cachedAccessToken, access_token_expires_at } = blingConfig;
+    // Dry-run pode vir do request ou estar ligado globalmente na config
+    isDryRun = dryRunRequested || blingConfig.dry_run === true;
+
+    const {
+      client_id,
+      client_secret,
+      refresh_token,
+      access_token: cachedAccessToken,
+      access_token_expires_at,
+      payment_method_map,
+      default_forma_pagamento_id,
+    } = blingConfig;
+
     if (!client_id || !client_secret || !refresh_token) {
-      return new Response(
-        JSON.stringify({ error: "Credenciais do Bling incompletas. Autorize o aplicativo nas configurações." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return json(
+        { error: "Credenciais do Bling incompletas. Autorize o aplicativo nas configurações." },
+        400
       );
     }
 
@@ -127,10 +216,10 @@ Deno.serve(async (req) => {
     let newRefreshToken: string | null = null;
 
     // Use cached token if still valid (with 5 min buffer)
-    const tokenStillValid = cachedAccessToken && access_token_expires_at && Date.now() < (access_token_expires_at - 300000);
+    const tokenStillValid =
+      cachedAccessToken && access_token_expires_at && Date.now() < access_token_expires_at - 300000;
 
     if (!tokenStillValid) {
-      // Exchange refresh_token for access_token
       const basicAuth = btoa(`${client_id}:${client_secret}`);
       const tokenResponse = await fetch("https://api.bling.com.br/Api/v3/oauth/token", {
         method: "POST",
@@ -144,12 +233,13 @@ Deno.serve(async (req) => {
       const tokenBody = await tokenResponse.text();
       if (!tokenResponse.ok) {
         console.error("Bling token error:", tokenBody);
-        return new Response(
-          JSON.stringify({
+        await writeLog({ success: false, error_message: `Falha no token: ${tokenBody}` });
+        return json(
+          {
             error: "Falha ao obter token do Bling. Reautorize o aplicativo nas configurações.",
             details: tokenBody,
-          }),
-          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          },
+          502
         );
       }
 
@@ -172,21 +262,18 @@ Deno.serve(async (req) => {
         .eq("key", "bling_config");
     }
 
-    // Build Bling order payload
+    // ---- Contato ----
     const client = sale.clients;
     const isJuridica = client?.client_type === "juridica";
-    const documento = isJuridica ? (client?.cnpj ?? "") : (client?.cpf ?? "");
+    const documento = isJuridica ? client?.cnpj ?? "" : client?.cpf ?? "";
     const docLimpo = documento.replace(/\D/g, "");
 
-    // Search for existing contact in Bling by document number
     let blingContatoId: number | null = null;
 
     if (docLimpo) {
       const searchResponse = await fetch(
         `https://api.bling.com.br/Api/v3/contatos?pesquisa=${encodeURIComponent(docLimpo)}&limite=1`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
+        { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       const searchBody = await searchResponse.text();
       if (searchResponse.ok) {
@@ -194,14 +281,13 @@ Deno.serve(async (req) => {
           const searchData = JSON.parse(searchBody);
           if (searchData?.data?.length > 0) {
             blingContatoId = searchData.data[0].id;
-            console.log("Found existing Bling contact:", blingContatoId);
           }
-        } catch { /* ignore parse errors */ }
+        } catch { /* ignore */ }
       }
     }
 
-    // If contact not found, create it in Bling
-    if (!blingContatoId) {
+    // Em dry-run não criamos contato (mantém somente leitura). Em envio real, cria se não existir.
+    if (!blingContatoId && !isDryRun) {
       const contatoPayload = {
         nome: client?.name ?? "Cliente",
         tipo: isJuridica ? "J" : "F",
@@ -221,43 +307,31 @@ Deno.serve(async (req) => {
         },
       };
 
-      console.log("Creating Bling contact:", JSON.stringify(contatoPayload, null, 2));
-
-      const createResponse = await fetch(
-        "https://api.bling.com.br/Api/v3/contatos",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(contatoPayload),
-        }
-      );
+      const createResponse = await fetch("https://api.bling.com.br/Api/v3/contatos", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(contatoPayload),
+      });
       const createBody = await createResponse.text();
-      console.log("Create contact response:", createResponse.status, createBody);
 
       if (!createResponse.ok) {
-        return new Response(
-          JSON.stringify({
-            error: "Erro ao criar contato no Bling",
-            details: createBody,
-          }),
-          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        await writeLog({ success: false, error_message: `Erro ao criar contato: ${createBody}` });
+        return json({ error: "Erro ao criar contato no Bling", details: createBody }, 502);
       }
 
       const createData = JSON.parse(createBody);
       blingContatoId = createData?.data?.id ?? null;
     }
 
-    if (!blingContatoId) {
-      return new Response(
-        JSON.stringify({ error: "Não foi possível obter o ID do contato no Bling" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!blingContatoId && !isDryRun) {
+      await writeLog({ success: false, error_message: "Não foi possível obter o ID do contato no Bling" });
+      return json({ error: "Não foi possível obter o ID do contato no Bling" }, 400);
     }
 
+    // ---- Itens ----
     const itens = (sale.sale_items ?? []).map((item: any) => ({
       codigo: item.products?.internal_code ?? "",
       descricao: item.products?.name ?? "",
@@ -276,71 +350,113 @@ Deno.serve(async (req) => {
       0
     );
 
-    const payload = {
-      data: new Date(sale.created_at).toISOString().split("T")[0],
-      contato: {
-        id: blingContatoId,
-      },
+    // ---- Forma de pagamento / parcelas ----
+    const blingFormaId =
+      (payment_method_map && sale.payment_method_id
+        ? Number(payment_method_map[sale.payment_method_id])
+        : null) ||
+      (default_forma_pagamento_id ? Number(default_forma_pagamento_id) : null) ||
+      null;
+
+    const parcelas = buildParcelas(sale, blingFormaId);
+
+    // ---- Payload do pedido ----
+    const payload: Record<string, unknown> = {
+      data: toYMD(new Date(sale.created_at)),
+      contato: { id: blingContatoId },
       itens,
-      transporte: {
-        frete: sale.shipping_cost ?? 0,
-      },
+      transporte: { frete: sale.shipping_cost ?? 0 },
       observacoes: sale.notes ?? "",
       totalProdutos,
     };
+    if (parcelas.length > 0) {
+      payload.parcelas = parcelas;
+    }
 
-    console.log("Sending to Bling:", JSON.stringify(payload, null, 2));
+    requestPayload = payload;
+    console.log("Bling payload:", JSON.stringify(payload, null, 2));
 
-    // Send order to Bling
-    const blingResponse = await fetch(
-      "https://api.bling.com.br/Api/v3/pedidos/vendas",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+    // ---- Dry-run: não envia, apenas registra ----
+    if (isDryRun) {
+      await writeLog({
+        success: true,
+        response_payload: { dry_run: true, note: "Pedido NÃO enviado (dry-run)", payload },
+      });
+      return json({
+        success: true,
+        dry_run: true,
+        message: "Dry-run: pedido montado e validado, mas NÃO enviado ao Bling.",
+        parcelas_count: parcelas.length,
+        forma_pagamento_id: blingFormaId,
+        payload,
+      });
+    }
+
+    // ---- Envio real ----
+    const blingResponse = await fetch("https://api.bling.com.br/Api/v3/pedidos/vendas", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
     const blingBody = await blingResponse.text();
+    let blingResult: any = null;
+    try { blingResult = JSON.parse(blingBody); } catch { /* keep raw */ }
 
     if (!blingResponse.ok) {
       console.error("Bling API error:", blingBody);
-      return new Response(
-        JSON.stringify({
-          error: "Erro ao enviar pedido ao Bling",
-          details: blingBody,
-        }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const blingResult = JSON.parse(blingBody);
-    const blingOrderId = blingResult?.data?.id?.toString() ?? blingResult?.id?.toString() ?? null;
-
-    // Save bling_order_id to sale
-    if (blingOrderId) {
       await supabase
         .from("sales")
-        .update({ bling_order_id: blingOrderId })
-        .eq("id", sale_id);
+        .update({ bling_last_error: blingBody.slice(0, 2000) })
+        .eq("id", saleId);
+      await writeLog({
+        success: false,
+        error_message: blingBody.slice(0, 2000),
+        response_payload: blingResult ?? blingBody,
+      });
+      return json({ error: "Erro ao enviar pedido ao Bling", details: blingBody }, 502);
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
+    const blingOrderId = blingResult?.data?.id?.toString() ?? blingResult?.id?.toString() ?? null;
+    const blingOrderNumber =
+      blingResult?.data?.numero?.toString() ?? blingResult?.numero?.toString() ?? null;
+    const blingSituacao =
+      blingResult?.data?.situacao?.valor?.toString() ??
+      blingResult?.data?.situacao?.id?.toString() ??
+      null;
+
+    // Grava retorno na venda
+    await supabase
+      .from("sales")
+      .update({
         bling_order_id: blingOrderId,
-        message: "Pedido enviado ao Bling com sucesso!",
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+        bling_order_number: blingOrderNumber,
+        bling_status: blingSituacao,
+        bling_sent_at: new Date().toISOString(),
+        bling_last_error: null,
+      })
+      .eq("id", saleId);
+
+    await writeLog({
+      success: true,
+      bling_order_id: blingOrderId,
+      bling_order_number: blingOrderNumber,
+      response_payload: blingResult ?? blingBody,
+    });
+
+    return json({
+      success: true,
+      bling_order_id: blingOrderId,
+      bling_order_number: blingOrderNumber,
+      message: "Pedido enviado ao Bling com sucesso!",
+    });
   } catch (err) {
     console.error("send-to-bling error:", err);
-    return new Response(
-      JSON.stringify({ error: (err as Error).message ?? "Erro interno" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    const msg = (err as Error).message ?? "Erro interno";
+    await writeLog({ success: false, error_message: msg });
+    return json({ error: msg }, 500);
   }
 });

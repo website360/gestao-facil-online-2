@@ -76,7 +76,7 @@ const SalesManagement = () => {
   const [selectedSaleForShippingLabel, setSelectedSaleForShippingLabel] = useState<string | null>(null);
   const [reprintLabelsModalOpen, setReprintLabelsModalOpen] = useState(false);
   const [selectedSaleForReprintLabels, setSelectedSaleForReprintLabels] = useState<string | null>(null);
-  // const [sendingToBling, setSendingToBling] = useState<string | null>(null); // BLING DESATIVADO
+  const [sendingToBling, setSendingToBling] = useState<string | null>(null);
 
   // Bulk selection hook
   const {
@@ -368,27 +368,30 @@ const SalesManagement = () => {
     setReprintLabelsModalOpen(true);
   };
 
-  // BLING DESATIVADO TEMPORARIAMENTE - Reativar quando integração voltar
-  // const handleSendToBling = async (saleId: string) => {
-  //   setSendingToBling(saleId);
-  //   try {
-  //     const { data, error } = await supabase.functions.invoke('send-to-bling', {
-  //       body: { sale_id: saleId },
-  //     });
-  //     if (error) throw error;
-  //     if (data?.error) {
-  //       toast.error(data.error);
-  //       return;
-  //     }
-  //     toast.success(data?.message || 'Pedido enviado ao Bling com sucesso!');
-  //     fetchSales();
-  //   } catch (error: any) {
-  //     console.error('Erro ao enviar para Bling:', error);
-  //     toast.error('Erro ao enviar para o Bling');
-  //   } finally {
-  //     setSendingToBling(null);
-  //   }
-  // };
+  const handleSendToBling = async (saleId: string) => {
+    setSendingToBling(saleId);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-to-bling', {
+        body: { sale_id: saleId },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      if (data?.dry_run) {
+        toast.success(data?.message || 'Dry-run: pedido validado, mas não enviado ao Bling.');
+      } else {
+        toast.success(data?.message || 'Pedido enviado ao Bling com sucesso!');
+      }
+      fetchSales();
+    } catch (error: any) {
+      console.error('Erro ao enviar para Bling:', error);
+      toast.error('Erro ao enviar para o Bling');
+    } finally {
+      setSendingToBling(null);
+    }
+  };
 
   // Get selected sale data for modals
   const selectedSale = selectedSaleId ? sales.find(sale => sale.id === selectedSaleId) : null;
@@ -445,7 +448,8 @@ const SalesManagement = () => {
         onEndDateChange={setEndDate}
         onApplyDateFilter={fetchSales}
         onClearDateFilter={clearDateFilter}
-        // BLING DESATIVADO: onSendToBling={handleSendToBling} sendingToBling={sendingToBling}
+        onSendToBling={handleSendToBling}
+        sendingToBling={sendingToBling}
       />
 
       {/* Modals */}

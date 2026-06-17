@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.bling-oauth-callback]
 verify_jwt = false
+
+[functions.bling-formas-pagamento]
+verify_jwt = false

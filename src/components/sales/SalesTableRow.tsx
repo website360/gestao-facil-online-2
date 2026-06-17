@@ -9,24 +9,7 @@ import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, F
 import { formatCurrency } from '@/lib/utils';
 import SaleAttachmentsDropdown from './SaleAttachmentsDropdown';
 import SalePDFGenerator from './SalePDFGenerator';
-// BLING DESATIVADO TEMPORARIAMENTE - Reativar quando integração voltar
-// import blingIconSrc from '@/assets/bling-logo.png';
-// import erpIconSrc from '@/assets/bling-icon.png';
-//
-// const BlingIcon = ({ orderId }: { orderId: string }) => (
-//   <Tooltip>
-//     <TooltipTrigger asChild>
-//       <img 
-//         src={blingIconSrc} 
-//         alt="Bling" 
-//         className="h-5 w-5 rounded flex-shrink-0 cursor-default" 
-//       />
-//     </TooltipTrigger>
-//     <TooltipContent>
-//       <p>Enviado ao Bling (ID: {orderId})</p>
-//     </TooltipContent>
-//   </Tooltip>
-// );
+import blingIconSrc from '@/assets/bling-logo.png';
 
 interface Sale {
   id: string;
@@ -57,7 +40,7 @@ interface Sale {
   shipping_option_name?: string | null;
   shipping_option_visible?: boolean;
   ready_for_shipping_label?: boolean;
-  // bling_order_id?: string | null; // BLING DESATIVADO
+  bling_order_id?: string | null;
 }
 
 interface SalesTableRowProps {
@@ -81,8 +64,8 @@ interface SalesTableRowProps {
   onFinalizeSale: (saleId: string) => void;
   onGenerateShippingLabel: (saleId: string) => void;
   onReprintLabels: (saleId: string) => void;
-  // onSendToBling?: (saleId: string) => void; // BLING DESATIVADO
-  // sendingToBling?: string | null; // BLING DESATIVADO
+  onSendToBling?: (saleId: string) => void;
+  sendingToBling?: string | null;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -120,8 +103,8 @@ const SalesTableRow = ({
   showBulkActions = false,
   onGenerateShippingLabel,
   onReprintLabels,
-  // onSendToBling, // BLING DESATIVADO
-  // sendingToBling // BLING DESATIVADO
+  onSendToBling,
+  sendingToBling
 }: SalesTableRowProps) => {
   const openTrackingPage = (trackingCode: string) => {
     const url = `https://www2.correios.com.br/sistemas/rastreamento/resultado.cfm?objeto=${trackingCode}`;
@@ -767,7 +750,6 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
-          {/* BLING DESATIVADO TEMPORARIAMENTE - Reativar quando integração voltar
           {userRole === 'admin' && onSendToBling && ['nota_fiscal', 'aguardando_entrega', 'entrega_realizada', 'finalizada'].includes(sale.status) && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -786,7 +768,6 @@ const SalesTableRow = ({
               </TooltipContent>
             </Tooltip>
           )}
-          */}
 
           {/* Comprovantes de pagamento - apenas para admin e gerente */}
           {(userRole === 'admin' || userRole === 'gerente') && sale.budget_id && (

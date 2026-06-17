@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      bling_sync_logs: {
+        Row: {
+          bling_order_id: string | null
+          bling_order_number: string | null
+          created_at: string
+          created_by: string | null
+          dry_run: boolean
+          error_message: string | null
+          id: string
+          request_payload: Json | null
+          response_payload: Json | null
+          sale_id: string | null
+          success: boolean
+        }
+        Insert: {
+          bling_order_id?: string | null
+          bling_order_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          dry_run?: boolean
+          error_message?: string | null
+          id?: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          sale_id?: string | null
+          success?: boolean
+        }
+        Update: {
+          bling_order_id?: string | null
+          bling_order_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          dry_run?: boolean
+          error_message?: string | null
+          id?: string
+          request_payload?: Json | null
+          response_payload?: Json | null
+          sale_id?: string | null
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bling_sync_logs_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_items: {
         Row: {
           budget_id: string
@@ -768,7 +818,11 @@ export type Database = {
       }
       sales: {
         Row: {
+          bling_last_error: string | null
           bling_order_id: string | null
+          bling_order_number: string | null
+          bling_sent_at: string | null
+          bling_status: string | null
           boleto_due_dates: number[] | null
           boleto_installments: number | null
           budget_id: string | null
@@ -810,7 +864,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bling_last_error?: string | null
           bling_order_id?: string | null
+          bling_order_number?: string | null
+          bling_sent_at?: string | null
+          bling_status?: string | null
           boleto_due_dates?: number[] | null
           boleto_installments?: number | null
           budget_id?: string | null
@@ -852,7 +910,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bling_last_error?: string | null
           bling_order_id?: string | null
+          bling_order_number?: string | null
+          bling_sent_at?: string | null
+          bling_status?: string | null
           boleto_due_dates?: number[] | null
           boleto_installments?: number | null
           budget_id?: string | null

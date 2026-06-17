@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Eye, EyeOff, ExternalLink, CheckCircle2, XCircle, Link2 } from 'lucide-react';
+import { Save, Eye, EyeOff, ExternalLink, CheckCircle2, XCircle, Link2, RefreshCw, FlaskConical } from 'lucide-react';
+import BlingSyncLogs from './BlingSyncLogs';
 
 interface BlingConfig {
   enabled: boolean;
@@ -18,6 +20,19 @@ interface BlingConfig {
   access_token_expires_at?: number;
   authorized?: boolean;
   authorized_at?: string;
+  dry_run?: boolean;
+  payment_method_map?: Record<string, number>;
+  default_forma_pagamento_id?: number | string;
+}
+
+interface LocalPaymentMethod {
+  id: string;
+  name: string;
+}
+
+interface BlingForma {
+  id: number;
+  descricao: string;
 }
 
 const defaultConfig: BlingConfig = {
@@ -25,7 +40,12 @@ const defaultConfig: BlingConfig = {
   client_id: '',
   client_secret: '',
   refresh_token: '',
+  dry_run: false,
+  payment_method_map: {},
+  default_forma_pagamento_id: '',
 };
+
+const NONE = '__none__';
 
 const BlingConfigurationTab = () => {
   const [loading, setLoading] = useState(false);
@@ -33,8 +53,13 @@ const BlingConfigurationTab = () => {
   const [config, setConfig] = useState<BlingConfig>(defaultConfig);
   const [showSecret, setShowSecret] = useState(false);
 
+  const [paymentMethods, setPaymentMethods] = useState<LocalPaymentMethod[]>([]);
+  const [blingFormas, setBlingFormas] = useState<BlingForma[]>([]);
+  const [loadingFormas, setLoadingFormas] = useState(false);
+
   useEffect(() => {
     fetchConfiguration();
+    fetchPaymentMethods();
   }, []);
 
   // Listen for OAuth success message from popup
@@ -76,6 +101,34 @@ const BlingConfigurationTab = () => {
     }
   };
 
+  const fetchPaymentMethods = async () => {
+    const { data } = await supabase
+      .from('payment_methods')
+      .select('id, name')
+      .eq('active', true)
+      .order('name');
+    if (data) setPaymentMethods(data as LocalPaymentMethod[]);
+  };
+
+  const fetchBlingFormas = async () => {
+    setLoadingFormas(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('bling-formas-pagamento');
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      setBlingFormas(data?.formas ?? []);
+      toast.success(`${data?.formas?.length ?? 0} formas de pagamento carregadas do Bling`);
+    } catch (error) {
+      console.error('Erro ao buscar formas do Bling:', error);
+      toast.error('Erro ao buscar formas de pagamento do Bling');
+    } finally {
+      setLoadingFormas(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -86,16 +139,19 @@ const BlingConfigurationTab = () => {
         .eq('key', 'bling_config')
         .maybeSingle();
 
-      let mergedConfig = { ...config };
+      let mergedConfig: BlingConfig = { ...config };
       if (latestData?.value) {
         try {
           const existing = JSON.parse(latestData.value);
-          // Preserve token fields from DB, only update user-editable fields
+          // Preserve token fields from DB, update user-editable fields
           mergedConfig = {
             ...existing,
             enabled: config.enabled,
             client_id: config.client_id,
             client_secret: config.client_secret,
+            dry_run: config.dry_run,
+            payment_method_map: config.payment_method_map ?? {},
+            default_forma_pagamento_id: config.default_forma_pagamento_id ?? '',
           };
         } catch { /* ignore parse errors */ }
       }
@@ -126,6 +182,18 @@ const BlingConfigurationTab = () => {
 
   const updateConfig = (field: keyof BlingConfig, value: string | boolean) => {
     setConfig(prev => ({ ...prev, [field]: value }));
+  };
+
+  const setMethodMapping = (methodId: string, blingFormaId: string) => {
+    setConfig(prev => {
+      const map = { ...(prev.payment_method_map ?? {}) };
+      if (blingFormaId === NONE) {
+        delete map[methodId];
+      } else {
+        map[methodId] = Number(blingFormaId);
+      }
+      return { ...prev, payment_method_map: map };
+    });
   };
 
   if (loading) {
@@ -243,6 +311,107 @@ const BlingConfigurationTab = () => {
 
           <Separator />
 
+          {/* Dry-run (modo teste) */}
+          <div className="flex items-start justify-between bg-amber-50 dark:bg-amber-950/30 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+            <div className="flex gap-3">
+              <FlaskConical className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div>
+                <Label htmlFor="bling-dryrun" className="font-semibold text-amber-800 dark:text-amber-300">
+                  Modo de teste (dry-run)
+                </Label>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 max-w-xl">
+                  Quando ativado, ao "Enviar para Bling" o sistema monta e valida o pedido (contato, itens, parcelas)
+                  mas <strong>NÃO envia</strong> de fato ao Bling — apenas registra no log. Use para testar com segurança.
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="bling-dryrun"
+              checked={!!config.dry_run}
+              onCheckedChange={(checked) => updateConfig('dry_run', checked)}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Mapeamento de formas de pagamento */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-semibold">Formas de pagamento</h4>
+                <p className="text-xs text-muted-foreground">
+                  Relacione cada forma de pagamento do sistema com a forma correspondente no Bling (necessário para enviar as parcelas).
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={fetchBlingFormas}
+                disabled={loadingFormas || !config.authorized}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${loadingFormas ? 'animate-spin' : ''}`} />
+                Buscar do Bling
+              </Button>
+            </div>
+
+            {!config.authorized && (
+              <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                Autorize o Bling primeiro para poder buscar as formas de pagamento.
+              </p>
+            )}
+
+            {blingFormas.length > 0 && (
+              <div className="space-y-3 max-w-2xl">
+                {paymentMethods.map((pm) => (
+                  <div key={pm.id} className="grid grid-cols-2 gap-3 items-center">
+                    <Label className="text-sm">{pm.name}</Label>
+                    <Select
+                      value={config.payment_method_map?.[pm.id]?.toString() ?? NONE}
+                      onValueChange={(v) => setMethodMapping(pm.id, v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a forma no Bling" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE}>— Não mapear —</SelectItem>
+                        {blingFormas.map((f) => (
+                          <SelectItem key={f.id} value={f.id.toString()}>
+                            {f.descricao}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+
+                <div className="grid grid-cols-2 gap-3 items-center pt-2 border-t">
+                  <Label className="text-sm font-medium">Forma padrão (fallback)</Label>
+                  <Select
+                    value={config.default_forma_pagamento_id?.toString() || NONE}
+                    onValueChange={(v) =>
+                      setConfig(prev => ({ ...prev, default_forma_pagamento_id: v === NONE ? '' : Number(v) }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Forma padrão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>— Nenhuma —</SelectItem>
+                      {blingFormas.map((f) => (
+                        <SelectItem key={f.id} value={f.id.toString()}>
+                          {f.descricao}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
           {/* Save button */}
           <div className="flex items-center gap-3">
             <Button onClick={handleSave} disabled={saving}>
@@ -294,19 +463,11 @@ const BlingConfigurationTab = () => {
               </ol>
             </div>
           </div>
-
-          <Separator />
-
-          <div className="bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-            <h4 className="font-semibold text-yellow-800 dark:text-yellow-300 mb-2">Funcionalidades da Integração</h4>
-            <div className="text-sm text-yellow-700 dark:text-yellow-400 space-y-1">
-              <p>• <strong>Envio de Pedidos:</strong> Vendas finalizadas podem ser enviadas como pedidos de venda no Bling</p>
-              <p>• <strong>Sincronização:</strong> O sistema rastreará quais vendas já foram enviadas para evitar duplicações</p>
-              <p>• <strong>API v3:</strong> Utiliza a API mais recente do Bling para máxima compatibilidade</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
+
+      {/* Log de envios */}
+      <BlingSyncLogs />
     </div>
   );
 };

@@ -39,7 +39,7 @@ interface Sale {
   total_volumes?: number;
   total_weight_kg?: number;
   ready_for_shipping_label?: boolean;
-  // bling_order_id?: string | null; // BLING DESATIVADO
+  bling_order_id?: string | null;
 }
 
 interface SalesTableProps {
@@ -66,8 +66,8 @@ interface SalesTableProps {
   onFinalizeSale: (saleId: string) => void;
   onGenerateShippingLabel: (saleId: string) => void;
   onReprintLabels: (saleId: string) => void;
-  // onSendToBling?: (saleId: string) => void; // BLING DESATIVADO
-  // sendingToBling?: string | null; // BLING DESATIVADO
+  onSendToBling?: (saleId: string) => void;
+  sendingToBling?: string | null;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
@@ -104,8 +104,8 @@ const SalesTable = ({
   onFinalizeSale,
   onGenerateShippingLabel,
   onReprintLabels,
-  // onSendToBling, // BLING DESATIVADO
-  // sendingToBling, // BLING DESATIVADO
+  onSendToBling,
+  sendingToBling,
   getStatusColor,
   getStatusLabel,
   formatSaleId,
@@ -373,7 +373,8 @@ const SalesTable = ({
                 showBulkActions={showBulkActions}
                 onGenerateShippingLabel={onGenerateShippingLabel}
                 onReprintLabels={onReprintLabels}
-                // BLING DESATIVADO: onSendToBling={onSendToBling} sendingToBling={sendingToBling}
+                onSendToBling={onSendToBling}
+                sendingToBling={sendingToBling}
               />
             ))}
           </TableBody>
