@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { printPdfDirect } from './qzTrayPrinter';
+import { formatInvoiceNumber } from '@/lib/utils';
 
 interface LabelData {
   clientName: string;
@@ -236,7 +237,7 @@ function drawLabel(
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(fontVolume);
-  doc.text((invoiceNumber || 'S/N').toUpperCase(), col1X + 2, valueY);
+  doc.text(formatInvoiceNumber(invoiceNumber).toUpperCase(), col1X + 2, valueY);
 
   doc.setFontSize(fontVolume);
   doc.text(`${volumeNumber}/${totalVolumes}`, col2X + col2W / 2, valueY, { align: 'center' });

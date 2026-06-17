@@ -3,6 +3,7 @@
  * QZ Tray must be installed on the user's machine: https://qz.io/download
  */
 import qz from 'qz-tray';
+import { formatInvoiceNumber } from '@/lib/utils';
 
 let isConnected = false;
 let securityConfigured = false;
@@ -156,7 +157,7 @@ function generateDPLLabel(
 ): string {
   const clientText = clientName.toUpperCase().substring(0, 30);
   const volText = `${volumeNumber}/${totalVolumes}`;
-  const nf = invoiceNumber || 'S/N';
+  const nf = formatInvoiceNumber(invoiceNumber);
 
   // Text records — coordinates in mm/10, ALL rows must be <= 0600 (60mm)
   // Row layout: 0020=2mm, 0100=10mm, 0200=20mm, 0350=35mm, 0500=50mm

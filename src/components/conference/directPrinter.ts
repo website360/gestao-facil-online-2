@@ -4,6 +4,8 @@
  * Etiqueta 100mm x 60mm com bordas finas
  */
 
+import { formatInvoiceNumber } from '@/lib/utils';
+
 interface LabelData {
   clientName: string;
   totalVolumes: number;
@@ -19,7 +21,7 @@ function generateLabelHTML(
 ): string {
   const clientText = clientName.toUpperCase().substring(0, 35);
   const volText = `${volumeNumber}/${totalVolumes}`;
-  const nf = invoiceNumber || '';
+  const nf = formatInvoiceNumber(invoiceNumber);
 
   return `
 <div class="label">
