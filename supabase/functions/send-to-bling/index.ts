@@ -331,24 +331,24 @@ Deno.serve(async (req) => {
     }
 
     // ---- Itens ----
-    const itens = (sale.sale_items ?? []).map((item: any) => ({
-      codigo: item.products?.internal_code ?? "",
-      descricao: item.products?.name ?? "",
-      unidade: item.products?.stock_unit ?? "UN",
-      quantidade: item.quantity ?? 0,
-      valor: item.unit_price ?? 0,
-      desconto: {
-        valor: item.discount_percentage
-          ? round2((item.unit_price * item.quantity * item.discount_percentage) / 100)
-          : 0,
-      },
-    }));
+    // O Bling não aplica desconto por item neste endpoint, então embutimos o
+    // desconto direto no preço unitário (valor líquido). Assim o total que o
+    // Bling calcula (qtd × valor) bate com o somatório das parcelas.
+    const itens = (sale.sale_items ?? []).map((item: any) => {
+      const unit = Number(item.unit_price ?? 0);
+      const pct = Number(item.discount_percentage ?? 0);
+      const valor = pct ? round2(unit * (1 - pct / 100)) : round2(unit);
+      return {
+        codigo: item.products?.internal_code ?? "",
+        descricao: item.products?.name ?? "",
+        unidade: item.products?.stock_unit ?? "UN",
+        quantidade: item.quantity ?? 0,
+        valor,
+      };
+    });
 
     const totalProdutos = round2(
-      itens.reduce(
-        (sum: number, item: any) => sum + item.quantidade * item.valor - (item.desconto?.valor ?? 0),
-        0
-      )
+      itens.reduce((sum: number, item: any) => sum + item.quantidade * item.valor, 0)
     );
 
     // Total que o Bling calcula a partir do payload (produtos + frete).
