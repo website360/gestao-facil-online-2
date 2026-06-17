@@ -143,8 +143,8 @@ Deno.serve(async (req) => {
       .eq("id", userId)
       .single();
 
-    if (!profile || profile.role !== "admin") {
-      return json({ error: "Apenas administradores podem enviar para o Bling" }, 403);
+    if (!profile || (profile.role !== "admin" && profile.role !== "nota_fiscal")) {
+      return json({ error: "Sem permissão para enviar para o Bling" }, 403);
     }
 
     const body = await req.json().catch(() => ({}));
