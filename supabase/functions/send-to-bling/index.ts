@@ -31,8 +31,7 @@ const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
  * quando não há forma de pagamento mapeada (nesse caso o pedido é enviado
  * sem parcelas, sem travar o envio).
  */
-function buildParcelas(sale: any, blingFormaId: number | null) {
-  const total = Number(sale.total_amount ?? 0);
+function buildParcelas(sale: any, blingFormaId: number | null, total: number) {
   if (!total || total <= 0) return [];
 
   const saleDate = new Date(sale.created_at ?? Date.now());
@@ -340,15 +339,22 @@ Deno.serve(async (req) => {
       valor: item.unit_price ?? 0,
       desconto: {
         valor: item.discount_percentage
-          ? (item.unit_price * item.quantity * item.discount_percentage) / 100
+          ? round2((item.unit_price * item.quantity * item.discount_percentage) / 100)
           : 0,
       },
     }));
 
-    const totalProdutos = itens.reduce(
-      (sum: number, item: any) => sum + item.quantidade * item.valor - (item.desconto?.valor ?? 0),
-      0
+    const totalProdutos = round2(
+      itens.reduce(
+        (sum: number, item: any) => sum + item.quantidade * item.valor - (item.desconto?.valor ?? 0),
+        0
+      )
     );
+
+    // Total que o Bling calcula a partir do payload (produtos + frete).
+    // As parcelas DEVEM somar exatamente este valor, senão o Bling recusa.
+    const frete = round2(Number(sale.shipping_cost ?? 0));
+    const orderTotal = round2(totalProdutos + frete);
 
     // ---- Forma de pagamento / parcelas ----
     const blingFormaId =
@@ -358,14 +364,14 @@ Deno.serve(async (req) => {
       (default_forma_pagamento_id ? Number(default_forma_pagamento_id) : null) ||
       null;
 
-    const parcelas = buildParcelas(sale, blingFormaId);
+    const parcelas = buildParcelas(sale, blingFormaId, orderTotal);
 
     // ---- Payload do pedido ----
     const payload: Record<string, unknown> = {
       data: toYMD(new Date(sale.created_at)),
       contato: { id: blingContatoId },
       itens,
-      transporte: { frete: sale.shipping_cost ?? 0 },
+      transporte: { frete },
       observacoes: sale.notes ?? "",
       totalProdutos,
     };
