@@ -285,17 +285,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Em dry-run não criamos contato (mantém somente leitura). Em envio real, cria se não existir.
-    if (!blingContatoId && !isDryRun) {
-      const contatoPayload = {
-        nome: client?.name ?? "Cliente",
-        tipo: isJuridica ? "J" : "F",
-        situacao: "A",
-        numeroDocumento: docLimpo,
-        contribuinte: isJuridica ? 1 : 9,
-        telefone: (client?.phone ?? "").replace(/\D/g, "").replace(/^0+$/, "") || "",
-        email: client?.email ?? "",
-        endereco: {
+    // Payload do contato (usado tanto para criar quanto para atualizar).
+    // Na API v3 do Bling o endereço do contato fica aninhado em endereco.geral.
+    const contatoPayload = {
+      nome: client?.name ?? "Cliente",
+      tipo: isJuridica ? "J" : "F",
+      situacao: "A",
+      numeroDocumento: docLimpo,
+      contribuinte: isJuridica ? 1 : 9,
+      telefone: (client?.phone ?? "").replace(/\D/g, "").replace(/^0+$/, "") || "",
+      email: client?.email ?? "",
+      endereco: {
+        geral: {
           endereco: client?.street ?? "",
           numero: client?.number ?? "",
           complemento: client?.complement ?? "",
@@ -304,25 +305,52 @@ Deno.serve(async (req) => {
           municipio: client?.city ?? "",
           uf: client?.state ?? "",
         },
-      };
+      },
+    };
 
-      const createResponse = await fetch("https://api.bling.com.br/Api/v3/contatos", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(contatoPayload),
-      });
-      const createBody = await createResponse.text();
+    // Em dry-run não mexemos no contato (mantém somente leitura).
+    if (!isDryRun) {
+      if (blingContatoId) {
+        // Contato já existe: atualiza para garantir endereço/número corretos
+        // (necessário para a emissão da NF). Falha aqui não bloqueia o envio.
+        try {
+          const updateResponse = await fetch(
+            `https://api.bling.com.br/Api/v3/contatos/${blingContatoId}`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(contatoPayload),
+            }
+          );
+          if (!updateResponse.ok) {
+            console.error("Falha ao atualizar contato:", await updateResponse.text());
+          }
+        } catch (e) {
+          console.error("Erro ao atualizar contato:", e);
+        }
+      } else {
+        // Contato não existe: cria
+        const createResponse = await fetch("https://api.bling.com.br/Api/v3/contatos", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(contatoPayload),
+        });
+        const createBody = await createResponse.text();
 
-      if (!createResponse.ok) {
-        await writeLog({ success: false, error_message: `Erro ao criar contato: ${createBody}` });
-        return json({ error: "Erro ao criar contato no Bling", details: createBody }, 502);
+        if (!createResponse.ok) {
+          await writeLog({ success: false, error_message: `Erro ao criar contato: ${createBody}` });
+          return json({ error: "Erro ao criar contato no Bling", details: createBody }, 502);
+        }
+
+        const createData = JSON.parse(createBody);
+        blingContatoId = createData?.data?.id ?? null;
       }
-
-      const createData = JSON.parse(createBody);
-      blingContatoId = createData?.data?.id ?? null;
     }
 
     if (!blingContatoId && !isDryRun) {
