@@ -460,6 +460,26 @@ const SalesTableRow = ({
             </Tooltip>
           )}
 
+          {/* Enviar para o Bling */}
+          {onSendToBling && ['nota_fiscal', 'aguardando_entrega', 'entrega_realizada', 'finalizada'].includes(sale.status) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => !sale.bling_order_id && onSendToBling(sale.id)}
+                  disabled={sendingToBling === sale.id}
+                  className={`h-8 w-8 p-0 ${sale.bling_order_id ? 'cursor-default' : 'hover:opacity-80'}`}
+                >
+                  <img src={blingIconSrc} alt="Bling" className={`h-5 w-5 ${sale.bling_order_id ? '' : 'opacity-40 grayscale'}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{sale.bling_order_id ? `Enviado ao Bling (ID: ${sale.bling_order_id})` : sendingToBling === sale.id ? 'Enviando...' : 'Enviar para Bling'}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
           {/* Botão para visualizar volumes - só aparece se houver volumes registrados */}
           {sale.total_volumes && sale.total_volumes > 0 && (
             <Tooltip>
