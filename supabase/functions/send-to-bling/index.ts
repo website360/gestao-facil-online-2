@@ -372,6 +372,9 @@ Deno.serve(async (req) => {
 
     const codeToBlingProductId = new Map<string, number>();
     const produtosNaoEncontrados: string[] = [];
+    // Guarda o motivo real caso a BUSCA de produtos falhe (ex.: app sem
+    // permissão de Produtos -> 403). Isso fica visível no log/resposta.
+    let lookupError: string | null = null;
 
     // Bling v3: o filtro por código no GET /produtos é "codigos" (plural,
     // separados por vírgula) — NÃO "codigo". Buscamos em lotes para resolver
@@ -379,13 +382,19 @@ Deno.serve(async (req) => {
     const chunkSize = 50;
     for (let i = 0; i < uniqueCodes.length; i += chunkSize) {
       const chunk = uniqueCodes.slice(i, i + chunkSize);
+      // Codifica cada código mas mantém a vírgula literal como separador
+      const codigosParam = chunk.map((c) => encodeURIComponent(c)).join(",");
       try {
         const resp = await fetch(
-          `https://api.bling.com.br/Api/v3/produtos?codigos=${encodeURIComponent(chunk.join(","))}&limite=100`,
+          `https://api.bling.com.br/Api/v3/produtos?codigos=${codigosParam}&limite=100`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         if (!resp.ok) {
-          console.error(`Falha ao buscar produtos [${chunk.join(",")}]:`, await resp.text());
+          const errBody = await resp.text();
+          console.error(`Falha ao buscar produtos [${chunk.join(",")}]:`, errBody);
+          if (!lookupError) {
+            lookupError = `GET /produtos retornou ${resp.status}: ${errBody.slice(0, 300)}`;
+          }
           continue;
         }
         const data = await resp.json().catch(() => null);
@@ -398,6 +407,7 @@ Deno.serve(async (req) => {
         }
       } catch (e) {
         console.error(`Erro ao buscar produtos [${chunk.join(",")}]:`, e);
+        if (!lookupError) lookupError = `Erro de rede ao buscar produtos: ${(e as Error).message}`;
       }
     }
 
@@ -409,6 +419,27 @@ Deno.serve(async (req) => {
     if (produtosNaoEncontrados.length > 0) {
       console.warn("Produtos não encontrados no Bling (por código):", produtosNaoEncontrados);
     }
+
+    // Mensagem de diagnóstico legível, anexada ao log mesmo quando o envio
+    // "tem sucesso" mas os itens foram como avulso (não vinculados).
+    const buildVinculoNote = (vinculados: number, total: number): string | null => {
+      if (produtosNaoEncontrados.length === 0) return null;
+      const partes = [
+        `Itens vinculados ao cadastro do Bling: ${vinculados}/${total}.`,
+        `Não localizados pelo código: ${produtosNaoEncontrados.join(", ")}.`,
+      ];
+      if (lookupError) {
+        partes.push(
+          `A busca de produtos no Bling falhou (${lookupError}). ` +
+            `Verifique se o aplicativo autorizado tem permissão de "Produtos".`
+        );
+      } else {
+        partes.push(
+          `Confirme no Bling se esses produtos têm exatamente esse Código (SKU).`
+        );
+      }
+      return partes.join(" ");
+    };
 
     // ---- Itens ----
     // O valor enviado por item é o "valor de Nota Fiscal":
@@ -435,6 +466,9 @@ Deno.serve(async (req) => {
         valor,
       };
     });
+
+    const itensVinculados = itens.filter((it: any) => it.produto?.id).length;
+    const vinculoNote = buildVinculoNote(itensVinculados, itens.length);
 
     const totalProdutos = round2(
       itens.reduce((sum: number, item: any) => sum + item.quantidade * item.valor, 0)
@@ -475,20 +509,29 @@ Deno.serve(async (req) => {
     if (isDryRun) {
       await writeLog({
         success: true,
+        error_message: vinculoNote,
         response_payload: {
           dry_run: true,
           note: "Pedido NÃO enviado (dry-run)",
+          itens_vinculados: itensVinculados,
+          itens_total: itens.length,
           produtos_nao_encontrados: produtosNaoEncontrados,
+          lookup_error: lookupError,
           payload,
         },
       });
       return json({
         success: true,
         dry_run: true,
-        message: "Dry-run: pedido montado e validado, mas NÃO enviado ao Bling.",
+        message:
+          `Dry-run: pedido montado (itens vinculados: ${itensVinculados}/${itens.length}), NÃO enviado.` +
+          (vinculoNote ? ` ${vinculoNote}` : ""),
         parcelas_count: parcelas.length,
         forma_pagamento_id: blingFormaId,
+        itens_vinculados: itensVinculados,
+        itens_total: itens.length,
         produtos_nao_encontrados: produtosNaoEncontrados,
+        lookup_error: lookupError,
         payload,
       });
     }
@@ -545,18 +588,29 @@ Deno.serve(async (req) => {
       success: true,
       bling_order_id: blingOrderId,
       bling_order_number: blingOrderNumber,
-      response_payload: blingResult ?? blingBody,
+      // Mesmo com sucesso, registra se itens foram como avulso (não vinculados)
+      error_message: vinculoNote,
+      response_payload: {
+        itens_vinculados: itensVinculados,
+        itens_total: itens.length,
+        produtos_nao_encontrados: produtosNaoEncontrados,
+        lookup_error: lookupError,
+        bling: blingResult ?? blingBody,
+      },
     });
 
     return json({
       success: true,
       bling_order_id: blingOrderId,
       bling_order_number: blingOrderNumber,
+      itens_vinculados: itensVinculados,
+      itens_total: itens.length,
       produtos_nao_encontrados: produtosNaoEncontrados,
+      lookup_error: lookupError,
       message:
         produtosNaoEncontrados.length > 0
-          ? `Pedido enviado, mas ${produtosNaoEncontrados.length} produto(s) não foram localizados no Bling pelo código e foram enviados como item avulso: ${produtosNaoEncontrados.join(", ")}`
-          : "Pedido enviado ao Bling com sucesso!",
+          ? `Pedido enviado (itens vinculados: ${itensVinculados}/${itens.length}). ${vinculoNote}`
+          : `Pedido enviado ao Bling com sucesso! (${itensVinculados}/${itens.length} itens vinculados)`,
     });
   } catch (err) {
     console.error("send-to-bling error:", err);
