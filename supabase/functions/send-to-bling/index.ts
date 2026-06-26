@@ -358,6 +358,52 @@ Deno.serve(async (req) => {
       return json({ error: "Não foi possível obter o ID do contato no Bling" }, 400);
     }
 
+    // ---- Resolve o produto.id no Bling (por código) ----
+    // O Bling só "reconhece"/vincula o item ao produto cadastrado quando o
+    // item carrega produto.id. Enviar apenas o código cria um item avulso
+    // (não vinculado), por isso buscamos o id de cada produto pelo código.
+    const uniqueCodes = Array.from(
+      new Set(
+        (sale.sale_items ?? [])
+          .map((it: any) => (it.products?.internal_code ?? "").toString().trim())
+          .filter((c: string) => c.length > 0)
+      )
+    ) as string[];
+
+    const codeToBlingProductId = new Map<string, number>();
+    const produtosNaoEncontrados: string[] = [];
+
+    for (const code of uniqueCodes) {
+      try {
+        const resp = await fetch(
+          `https://api.bling.com.br/Api/v3/produtos?codigo=${encodeURIComponent(code)}&limite=100`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        if (!resp.ok) {
+          console.error(`Falha ao buscar produto ${code}:`, await resp.text());
+          produtosNaoEncontrados.push(code);
+          continue;
+        }
+        const data = await resp.json().catch(() => null);
+        const list: any[] = Array.isArray(data?.data) ? data.data : [];
+        // Match exato do código (a busca do Bling pode trazer correspondências parciais)
+        const found =
+          list.find((p) => (p.codigo ?? "").toString().trim() === code) ?? null;
+        if (found?.id) {
+          codeToBlingProductId.set(code, Number(found.id));
+        } else {
+          produtosNaoEncontrados.push(code);
+        }
+      } catch (e) {
+        console.error(`Erro ao buscar produto ${code}:`, e);
+        produtosNaoEncontrados.push(code);
+      }
+    }
+
+    if (produtosNaoEncontrados.length > 0) {
+      console.warn("Produtos não encontrados no Bling (por código):", produtosNaoEncontrados);
+    }
+
     // ---- Itens ----
     // O valor enviado por item é o "valor de Nota Fiscal":
     //   preço unitário × (1 − desconto%) × (% Nota Fiscal)
@@ -371,8 +417,12 @@ Deno.serve(async (req) => {
       const pct = Number(item.discount_percentage ?? 0);
       const netUnit = pct ? unit * (1 - pct / 100) : unit;
       const valor = round2(netUnit * invoiceRatio);
+      const codigo = (item.products?.internal_code ?? "").toString().trim();
+      const blingProdutoId = codeToBlingProductId.get(codigo) ?? null;
       return {
-        codigo: item.products?.internal_code ?? "",
+        // produto.id vincula o item ao cadastro do Bling (item "reconhecido")
+        ...(blingProdutoId ? { produto: { id: blingProdutoId } } : {}),
+        codigo,
         descricao: item.products?.name ?? "",
         unidade: item.products?.stock_unit ?? "UN",
         quantidade: item.quantity ?? 0,
@@ -419,7 +469,12 @@ Deno.serve(async (req) => {
     if (isDryRun) {
       await writeLog({
         success: true,
-        response_payload: { dry_run: true, note: "Pedido NÃO enviado (dry-run)", payload },
+        response_payload: {
+          dry_run: true,
+          note: "Pedido NÃO enviado (dry-run)",
+          produtos_nao_encontrados: produtosNaoEncontrados,
+          payload,
+        },
       });
       return json({
         success: true,
@@ -427,6 +482,7 @@ Deno.serve(async (req) => {
         message: "Dry-run: pedido montado e validado, mas NÃO enviado ao Bling.",
         parcelas_count: parcelas.length,
         forma_pagamento_id: blingFormaId,
+        produtos_nao_encontrados: produtosNaoEncontrados,
         payload,
       });
     }
@@ -490,7 +546,11 @@ Deno.serve(async (req) => {
       success: true,
       bling_order_id: blingOrderId,
       bling_order_number: blingOrderNumber,
-      message: "Pedido enviado ao Bling com sucesso!",
+      produtos_nao_encontrados: produtosNaoEncontrados,
+      message:
+        produtosNaoEncontrados.length > 0
+          ? `Pedido enviado, mas ${produtosNaoEncontrados.length} produto(s) não foram localizados no Bling pelo código e foram enviados como item avulso: ${produtosNaoEncontrados.join(", ")}`
+          : "Pedido enviado ao Bling com sucesso!",
     });
   } catch (err) {
     console.error("send-to-bling error:", err);
