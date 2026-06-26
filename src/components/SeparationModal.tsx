@@ -73,6 +73,16 @@ const SeparationModal: React.FC<SeparationModalProps> = ({
 
   useEffect(() => {
     if (isOpen && saleId) {
+      // Limpar o formulário ao abrir/trocar de pedido para não "vazar"
+      // o produto/estado de uma separação anterior (estado preso)
+      setCodeInput('');
+      setCodeVerification({ status: 'idle', message: '' });
+      setItemToConfirm(null);
+      setShowItemConfirmModal(false);
+      setSaleItems([]);
+      setSeparatedItems(new Set());
+      setSaleData(null);
+
       fetchSaleData();
       fetchSaleItems();
     }

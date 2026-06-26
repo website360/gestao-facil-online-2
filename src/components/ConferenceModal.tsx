@@ -73,6 +73,16 @@ const ConferenceModal: React.FC<ConferenceModalProps> = ({
   const quantityInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (isOpen && saleId) {
+      // Limpar o formulário ao abrir/trocar de pedido para não "vazar"
+      // o produto digitado de uma conferência anterior (estado preso)
+      setCodeInput('');
+      setFoundItem(null);
+      setQuantityInput('');
+      setCodeMessage('');
+      setSaleItems([]);
+      setConferenceItems([]);
+      setSaleData(null);
+
       fetchSaleData();
       fetchSaleItems();
       fetchConferenceItems();
