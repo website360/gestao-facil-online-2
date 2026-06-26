@@ -493,6 +493,7 @@ const SalesManagement = () => {
 
       {/* Modals */}
       <SeparationModal
+        key={`separation-${selectedSaleId ?? 'none'}`}
         isOpen={separationModalOpen}
         onClose={() => setSeparationModalOpen(false)}
         saleId={selectedSaleId}
@@ -500,6 +501,7 @@ const SalesManagement = () => {
       />
 
       <ConferenceModal
+        key={`conference-${selectedSaleId ?? 'none'}`}
         isOpen={conferenceModalOpen}
         onClose={() => setConferenceModalOpen(false)}
         saleId={selectedSaleId}
