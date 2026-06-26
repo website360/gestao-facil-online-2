@@ -373,31 +373,37 @@ Deno.serve(async (req) => {
     const codeToBlingProductId = new Map<string, number>();
     const produtosNaoEncontrados: string[] = [];
 
-    for (const code of uniqueCodes) {
+    // Bling v3: o filtro por código no GET /produtos é "codigos" (plural,
+    // separados por vírgula) — NÃO "codigo". Buscamos em lotes para resolver
+    // todos os códigos do pedido com poucas requisições.
+    const chunkSize = 50;
+    for (let i = 0; i < uniqueCodes.length; i += chunkSize) {
+      const chunk = uniqueCodes.slice(i, i + chunkSize);
       try {
         const resp = await fetch(
-          `https://api.bling.com.br/Api/v3/produtos?codigo=${encodeURIComponent(code)}&limite=100`,
+          `https://api.bling.com.br/Api/v3/produtos?codigos=${encodeURIComponent(chunk.join(","))}&limite=100`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         if (!resp.ok) {
-          console.error(`Falha ao buscar produto ${code}:`, await resp.text());
-          produtosNaoEncontrados.push(code);
+          console.error(`Falha ao buscar produtos [${chunk.join(",")}]:`, await resp.text());
           continue;
         }
         const data = await resp.json().catch(() => null);
         const list: any[] = Array.isArray(data?.data) ? data.data : [];
-        // Match exato do código (a busca do Bling pode trazer correspondências parciais)
-        const found =
-          list.find((p) => (p.codigo ?? "").toString().trim() === code) ?? null;
-        if (found?.id) {
-          codeToBlingProductId.set(code, Number(found.id));
-        } else {
-          produtosNaoEncontrados.push(code);
+        for (const p of list) {
+          const c = (p.codigo ?? "").toString().trim();
+          if (c && p.id && !codeToBlingProductId.has(c)) {
+            codeToBlingProductId.set(c, Number(p.id));
+          }
         }
       } catch (e) {
-        console.error(`Erro ao buscar produto ${code}:`, e);
-        produtosNaoEncontrados.push(code);
+        console.error(`Erro ao buscar produtos [${chunk.join(",")}]:`, e);
       }
+    }
+
+    // Códigos do pedido que não retornaram um id no Bling
+    for (const code of uniqueCodes) {
+      if (!codeToBlingProductId.has(code)) produtosNaoEncontrados.push(code);
     }
 
     if (produtosNaoEncontrados.length > 0) {
