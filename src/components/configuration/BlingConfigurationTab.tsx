@@ -262,7 +262,7 @@ const BlingConfigurationTab = () => {
                       <li>Acesse o <a href="https://developer.bling.com.br" target="_blank" rel="noopener noreferrer" className="underline font-medium inline-flex items-center gap-1">Painel de Desenvolvedores do Bling <ExternalLink className="h-3 w-3" /></a> e faça login.</li>
                       <li>Clique em <strong>Criar aplicativo</strong> e escolha o tipo <strong>“Aplicativo privado”</strong> (uso da própria empresa).</li>
                       <li>No campo <strong>URL de redirecionamento (callback)</strong>, cole a URL exibida na seção “URL de Callback” logo abaixo desta tela.</li>
-                      <li>Em <strong>Escopos / Permissões</strong>, marque pelo menos: <strong>Pedidos de Venda</strong>, <strong>Contatos</strong> e <strong>Formas de Pagamento</strong> (leitura e escrita).</li>
+                      <li>Em <strong>Escopos / Permissões</strong>, marque pelo menos: <strong>Pedidos de Venda</strong>, <strong>Contatos</strong>, <strong>Produtos</strong> e <strong>Formas de Pagamento</strong> (leitura e escrita). O escopo de <strong>Produtos</strong> é obrigatório para vincular os itens ao cadastro do Bling — sem ele os produtos entram como “não cadastrados”.</li>
                       <li>Salve o aplicativo e copie o <strong>Client ID</strong> e o <strong>Client Secret</strong>.</li>
                     </ol>
                   </div>
