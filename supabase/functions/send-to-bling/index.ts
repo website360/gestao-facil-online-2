@@ -476,14 +476,53 @@ Deno.serve(async (req) => {
     const orderTotal = round2(totalProdutos + frete);
 
     // ---- Forma de pagamento / parcelas ----
-    const blingFormaId =
+    let blingFormaId =
       (payment_method_map && sale.payment_method_id
         ? Number(payment_method_map[sale.payment_method_id])
         : null) ||
       (default_forma_pagamento_id ? Number(default_forma_pagamento_id) : null) ||
       null;
 
+    // Valida a forma de pagamento contra as formas reais do Bling. Um id
+    // mapeado que não existe mais (ex.: formas recriadas no Bling) faz o
+    // pedido INTEIRO ser rejeitado com "Id da forma de pagamento inválido".
+    // Se confirmarmos que o id é inválido, enviamos SEM parcelas (o pedido
+    // entra; o financeiro pode ser ajustado no Bling) e avisamos no log.
+    let formaPagamentoNote: string | null = null;
+    if (blingFormaId) {
+      try {
+        const fpResp = await fetch(
+          "https://api.bling.com.br/Api/v3/formas-pagamentos?limite=100",
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        if (fpResp.ok) {
+          const fpData = await fpResp.json().catch(() => null);
+          const validIds = new Set(
+            (Array.isArray(fpData?.data) ? fpData.data : [])
+              .map((f: any) => Number(f.id))
+              .filter((n: number) => Number.isFinite(n))
+          );
+          // Só descarta se a lista veio e o id realmente não está nela
+          if (validIds.size > 0 && !validIds.has(blingFormaId)) {
+            formaPagamentoNote =
+              `A forma de pagamento mapeada (id ${blingFormaId}) não existe mais no Bling. ` +
+              `Pedido enviado SEM parcelas — remapeie a forma em Configurações → Bling.`;
+            console.warn(formaPagamentoNote);
+            blingFormaId = null; // evita rejeição do pedido inteiro
+          }
+        } else {
+          // Falha ao listar formas: não arriscamos descartar uma forma válida
+          console.error("Falha ao validar formas de pagamento:", await fpResp.text());
+        }
+      } catch (e) {
+        console.error("Erro ao validar formas de pagamento:", e);
+      }
+    }
+
     const parcelas = buildParcelas(sale, blingFormaId, orderTotal);
+
+    // Diagnóstico combinado (vínculo de produtos + forma de pagamento)
+    const diagNote = [vinculoNote, formaPagamentoNote].filter(Boolean).join(" ") || null;
 
     // ---- Payload do pedido ----
     const payload: Record<string, unknown> = {
@@ -505,7 +544,7 @@ Deno.serve(async (req) => {
     if (isDryRun) {
       await writeLog({
         success: true,
-        error_message: vinculoNote,
+        error_message: diagNote,
         response_payload: {
           dry_run: true,
           note: "Pedido NÃO enviado (dry-run)",
@@ -513,6 +552,7 @@ Deno.serve(async (req) => {
           itens_total: itens.length,
           produtos_nao_encontrados: produtosNaoEncontrados,
           lookup_error: lookupError,
+          forma_pagamento_note: formaPagamentoNote,
           payload,
         },
       });
@@ -521,13 +561,14 @@ Deno.serve(async (req) => {
         dry_run: true,
         message:
           `Dry-run: pedido montado (itens vinculados: ${itensVinculados}/${itens.length}), NÃO enviado.` +
-          (vinculoNote ? ` ${vinculoNote}` : ""),
+          (diagNote ? ` ${diagNote}` : ""),
         parcelas_count: parcelas.length,
         forma_pagamento_id: blingFormaId,
         itens_vinculados: itensVinculados,
         itens_total: itens.length,
         produtos_nao_encontrados: produtosNaoEncontrados,
         lookup_error: lookupError,
+        forma_pagamento_note: formaPagamentoNote,
         payload,
       });
     }
@@ -584,13 +625,14 @@ Deno.serve(async (req) => {
       success: true,
       bling_order_id: blingOrderId,
       bling_order_number: blingOrderNumber,
-      // Mesmo com sucesso, registra se itens foram como avulso (não vinculados)
-      error_message: vinculoNote,
+      // Mesmo com sucesso, registra se itens foram avulso ou se a forma caiu
+      error_message: diagNote,
       response_payload: {
         itens_vinculados: itensVinculados,
         itens_total: itens.length,
         produtos_nao_encontrados: produtosNaoEncontrados,
         lookup_error: lookupError,
+        forma_pagamento_note: formaPagamentoNote,
         bling: blingResult ?? blingBody,
       },
     });
@@ -603,9 +645,10 @@ Deno.serve(async (req) => {
       itens_total: itens.length,
       produtos_nao_encontrados: produtosNaoEncontrados,
       lookup_error: lookupError,
+      forma_pagamento_note: formaPagamentoNote,
       message:
-        produtosNaoEncontrados.length > 0
-          ? `Pedido enviado (itens vinculados: ${itensVinculados}/${itens.length}). ${vinculoNote}`
+        diagNote
+          ? `Pedido enviado (itens vinculados: ${itensVinculados}/${itens.length}). ${diagNote}`
           : `Pedido enviado ao Bling com sucesso! (${itensVinculados}/${itens.length} itens vinculados)`,
     });
   } catch (err) {
