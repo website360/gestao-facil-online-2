@@ -31,17 +31,30 @@ const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
  * quando não há forma de pagamento mapeada (nesse caso o pedido é enviado
  * sem parcelas, sem travar o envio).
  */
-function buildParcelas(sale: any, blingFormaId: number | null, total: number) {
+function buildParcelas(
+  sale: any,
+  blingFormaId: number | null,
+  total: number,
+  paymentMethodName: string
+) {
   if (!total || total <= 0) return [];
 
   const saleDate = new Date(sale.created_at ?? Date.now());
 
-  // Define os "dias para vencimento" de cada parcela conforme o tipo de pagamento
+  // O tipo de pagamento define o vencimento. Importante: boleto_due_dates /
+  // check_due_dates podem vir preenchidos na venda mesmo quando NÃO é boleto/
+  // cheque (resíduo do formulário). Por isso só os usamos quando a forma de
+  // pagamento realmente for boleto/cheque. Demais formas (PIX, Dinheiro,
+  // Débito, Transferência...) são à vista.
+  const pm = (paymentMethodName || "").toLowerCase();
+  const isBoleto = pm.includes("boleto");
+  const isCheque = pm.includes("cheque");
+
   let dueDays: number[] = [];
 
-  if (Array.isArray(sale.boleto_due_dates) && sale.boleto_due_dates.length > 0) {
+  if (isBoleto && Array.isArray(sale.boleto_due_dates) && sale.boleto_due_dates.length > 0) {
     dueDays = sale.boleto_due_dates.map((d: any) => Number(d) || 0);
-  } else if (Array.isArray(sale.check_due_dates) && sale.check_due_dates.length > 0) {
+  } else if (isCheque && Array.isArray(sale.check_due_dates) && sale.check_due_dates.length > 0) {
     dueDays = sale.check_due_dates.map((d: any) => Number(d) || 0);
   } else {
     const installments = Number(
@@ -456,6 +469,17 @@ Deno.serve(async (req) => {
     const orderTotal = round2(totalProdutos + frete);
 
     // ---- Forma de pagamento / parcelas ----
+    // Nome da forma de pagamento do sistema (define se é boleto/cheque/à vista)
+    let paymentMethodName = "";
+    if (sale.payment_method_id) {
+      const { data: pm } = await supabase
+        .from("payment_methods")
+        .select("name")
+        .eq("id", sale.payment_method_id)
+        .single();
+      paymentMethodName = pm?.name ?? "";
+    }
+
     let blingFormaId =
       (payment_method_map && sale.payment_method_id
         ? Number(payment_method_map[sale.payment_method_id])
@@ -499,7 +523,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const parcelas = buildParcelas(sale, blingFormaId, orderTotal);
+    const parcelas = buildParcelas(sale, blingFormaId, orderTotal, paymentMethodName);
 
     // Diagnóstico combinado (vínculo de produtos + forma de pagamento)
     const diagNote = [vinculoNote, formaPagamentoNote].filter(Boolean).join(" ") || null;
