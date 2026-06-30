@@ -524,12 +524,22 @@ Deno.serve(async (req) => {
     // Diagnóstico combinado (vínculo de produtos + forma de pagamento)
     const diagNote = [vinculoNote, formaPagamentoNote].filter(Boolean).join(" ") || null;
 
+    // ---- Volumes e peso bruto (preenchidos na conferência) ----
+    // Bling: transporte.quantidadeVolumes (Quantidade) e transporte.pesoBruto
+    // (Peso Bruto). total_volumes/total_weight_kg vêm da venda.
+    const quantidadeVolumes =
+      Number(sale.total_volumes) > 0 ? Math.round(Number(sale.total_volumes)) : 1;
+    const pesoBruto = Math.max(
+      0,
+      Math.round(Number(sale.total_weight_kg ?? 0) * 1000) / 1000
+    );
+
     // ---- Payload do pedido ----
     const payload: Record<string, unknown> = {
       data: toYMD(new Date(sale.created_at)),
       contato: { id: blingContatoId },
       itens,
-      transporte: { frete },
+      transporte: { frete, quantidadeVolumes, pesoBruto },
       observacoes: sale.notes ?? "",
       totalProdutos,
     };
