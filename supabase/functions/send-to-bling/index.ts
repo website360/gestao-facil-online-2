@@ -376,22 +376,19 @@ Deno.serve(async (req) => {
     // permissão de Produtos -> 403). Isso fica visível no log/resposta.
     let lookupError: string | null = null;
 
-    // Bling v3: o filtro por código no GET /produtos é "codigos" (plural,
-    // separados por vírgula) — NÃO "codigo". Buscamos em lotes para resolver
-    // todos os códigos do pedido com poucas requisições.
-    const chunkSize = 50;
-    for (let i = 0; i < uniqueCodes.length; i += chunkSize) {
-      const chunk = uniqueCodes.slice(i, i + chunkSize);
-      // Codifica cada código mas mantém a vírgula literal como separador
-      const codigosParam = chunk.map((c) => encodeURIComponent(c)).join(",");
+    // Bling v3: o filtro por código no GET /produtos é "codigo" (SINGULAR,
+    // um código por requisição). O parâmetro "codigos" (plural) é IGNORADO
+    // pela API e retorna a lista inteira — verificado direto na API em
+    // 2026-06-30. Por isso buscamos um código por vez.
+    for (const code of uniqueCodes) {
       try {
         const resp = await fetch(
-          `https://api.bling.com.br/Api/v3/produtos?codigos=${codigosParam}&limite=100`,
+          `https://api.bling.com.br/Api/v3/produtos?codigo=${encodeURIComponent(code)}&limite=100`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         if (!resp.ok) {
           const errBody = await resp.text();
-          console.error(`Falha ao buscar produtos [${chunk.join(",")}]:`, errBody);
+          console.error(`Falha ao buscar produto ${code}:`, errBody);
           if (!lookupError) {
             lookupError = `GET /produtos retornou ${resp.status}: ${errBody.slice(0, 300)}`;
           }
@@ -399,14 +396,13 @@ Deno.serve(async (req) => {
         }
         const data = await resp.json().catch(() => null);
         const list: any[] = Array.isArray(data?.data) ? data.data : [];
-        for (const p of list) {
-          const c = (p.codigo ?? "").toString().trim();
-          if (c && p.id && !codeToBlingProductId.has(c)) {
-            codeToBlingProductId.set(c, Number(p.id));
-          }
+        // Match exato do código (a API pode trazer variações/parciais)
+        const found = list.find((p) => (p.codigo ?? "").toString().trim() === code) ?? null;
+        if (found?.id) {
+          codeToBlingProductId.set(code, Number(found.id));
         }
       } catch (e) {
-        console.error(`Erro ao buscar produtos [${chunk.join(",")}]:`, e);
+        console.error(`Erro ao buscar produto ${code}:`, e);
         if (!lookupError) lookupError = `Erro de rede ao buscar produtos: ${(e as Error).message}`;
       }
     }
