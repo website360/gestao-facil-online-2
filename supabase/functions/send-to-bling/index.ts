@@ -534,10 +534,18 @@ Deno.serve(async (req) => {
       Math.round(Number(sale.total_weight_kg ?? 0) * 1000) / 1000
     );
 
+    // ---- Loja e categoria (padrão fixo da empresa) ----
+    // Valores constantes confirmados na conta do Bling (canais-venda / pedido):
+    //   Loja "Inhapim 40" = 204694809 | Categoria "Venda de mercadoria" = 14619596706
+    const LOJA_ID = 204694809;
+    const CATEGORIA_ID = 14619596706;
+
     // ---- Payload do pedido ----
     const payload: Record<string, unknown> = {
       data: toYMD(new Date(sale.created_at)),
       contato: { id: blingContatoId },
+      loja: { id: LOJA_ID },
+      categoria: { id: CATEGORIA_ID },
       itens,
       transporte: { frete, quantidadeVolumes, pesoBruto },
       observacoes: sale.notes ?? "",
