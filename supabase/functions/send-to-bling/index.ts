@@ -49,6 +49,7 @@ function buildParcelas(
   const pm = (paymentMethodName || "").toLowerCase();
   const isBoleto = pm.includes("boleto");
   const isCheque = pm.includes("cheque");
+  const isPix = pm.includes("pix");
 
   let dueDays: number[] = [];
 
@@ -80,7 +81,7 @@ function buildParcelas(
     return {
       dataVencimento: addDays(saleDate, days),
       valor,
-      observacoes: `Parcela ${i + 1}/${count}`,
+      observacoes: isPix ? "PIX" : `Parcela ${i + 1}/${count}`,
       formaPagamento: { id: blingFormaId },
     };
   });
