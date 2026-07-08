@@ -553,7 +553,8 @@ Deno.serve(async (req) => {
       categoria: { id: CATEGORIA_ID },
       itens,
       transporte: { frete, quantidadeVolumes, pesoBruto },
-      observacoes: sale.notes ?? "",
+      // Observação da venda NÃO é enviada: o Bling copia "observacoes" do
+      // pedido para os Dados Adicionais da NF-e, e não queremos isso na nota.
       totalProdutos,
     };
     if (parcelas.length > 0) {
