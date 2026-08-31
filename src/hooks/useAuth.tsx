@@ -158,7 +158,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('clientData');
     } else {
       // Logout de usuário normal
-      await supabase.auth.signOut();
+      // scope: 'local' encerra apenas a sessao deste dispositivo.
+      // Sem isso o padrao e 'global', que revoga os tokens em TODOS os dispositivos.
+      await supabase.auth.signOut({ scope: 'local' });
     }
   };
 

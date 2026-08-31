@@ -155,8 +155,9 @@ const Index = () => {
       setUserProfile(data);
     } catch (error) {
       console.error('Erro ao buscar perfil do usuário:', error);
-      // If all else fails, sign out the user to force re-authentication
-      await signOut();
+      // Falha ao carregar o perfil (rede, banco, etc.) nao invalida a sessao:
+      // deslogar aqui derrubava o usuario por erros transitorios. A sessao so e
+      // encerrada acima, quando o refresh do token realmente falha.
     } finally {
       setLoading(false);
     }
