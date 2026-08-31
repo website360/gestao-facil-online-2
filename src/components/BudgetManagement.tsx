@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useBudgetManagement } from '@/hooks/useBudgetManagement';
@@ -8,7 +8,7 @@ import { useBudgetFilters } from '@/hooks/useBudgetFilters';
 import { useBulkSelection } from '@/hooks/useBulkSelection';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
-import BudgetManagementContent from './budget/BudgetManagementContent';
+import BudgetManagementContent, { BUDGETS_PER_PAGE } from './budget/BudgetManagementContent';
 import BudgetManagementDialogs from './budget/BudgetManagementDialogs';
 import BudgetManagementLoading from './budget/BudgetManagementLoading';
 import BudgetSendForApprovalDialog from './budget/BudgetSendForApprovalDialog';
@@ -31,8 +31,35 @@ const BudgetManagement = () => {
   const {
     budgets,
     loading,
-    fetchBudgets
+    fetchBudgets,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate
   } = useBudgetManagement(userProfile?.role);
+
+  const {
+    filteredBudgets,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter
+  } = useBudgetFilters(budgets, userProfile?.role);
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Busca e status mudam o tamanho da lista: voltar para a primeira pagina
+  // evita o usuario ficar parado numa pagina que deixou de existir.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  // A selecao em massa considera apenas os itens visiveis na pagina atual,
+  // para que "selecionar todos" nunca marque orcamentos fora da tela.
+  const currentPageBudgetIds = useMemo(() => {
+    const startIndex = (currentPage - 1) * BUDGETS_PER_PAGE;
+    return filteredBudgets.slice(startIndex, startIndex + BUDGETS_PER_PAGE).map(b => b.id);
+  }, [filteredBudgets, currentPage]);
 
   const {
     selectedItems,
@@ -42,15 +69,7 @@ const BudgetManagement = () => {
     toggleAll,
     clearSelection,
     selectedCount
-  } = useBulkSelection(budgets.map(b => b.id));
-
-  const {
-    filteredBudgets,
-    searchTerm,
-    setSearchTerm,
-    statusFilter,
-    setStatusFilter
-  } = useBudgetFilters(budgets, userProfile?.role);
+  } = useBulkSelection(currentPageBudgetIds);
 
   const {
     budgetToDelete,
@@ -107,6 +126,22 @@ const BudgetManagement = () => {
   const handleFormClose = () => {
     setShowForm(false);
     setEditingBudget(null);
+  };
+
+  // O periodo e filtrado no banco, entao mudar as datas so tem efeito ao aplicar
+  const handleApplyDateFilter = () => {
+    setCurrentPage(1);
+    clearSelection();
+    fetchBudgets();
+  };
+
+  const handleClearDateFilter = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setCurrentPage(1);
+    clearSelection();
+    // null (e nao undefined) sinaliza "buscar sem limite de data"
+    fetchBudgets(null, null);
   };
 
   const handleSendForApproval = (budgetId: string) => {
@@ -200,6 +235,15 @@ const BudgetManagement = () => {
         isPartiallySelected={isPartiallySelected}
         selectedCount={selectedCount}
         onBulkDelete={() => setShowBulkDeleteDialog(true)}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        onApplyDateFilter={handleApplyDateFilter}
+        onClearDateFilter={handleClearDateFilter}
+        loading={loading}
       />
 
       <BulkDeleteDialog

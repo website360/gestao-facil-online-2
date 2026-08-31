@@ -153,17 +153,6 @@ const BudgetTableRow = ({
 
   // CALCULAR SEMPRE O TOTAL EM TEMPO REAL - NUNCA USAR O VALOR DO BANCO
   const realTimeTotal = calculateBudgetTotal(budget);
-  
-  // DEBUG: Status e permissões dos botões
-  console.log('=== BUDGET BUTTONS DEBUG ===');
-  console.log('Budget ID:', budget.id);
-  console.log('Budget Status:', budget.status);
-  console.log('isAdmin:', isAdmin);
-  console.log('onApprove exists:', !!onApprove);
-  console.log('onConvert exists:', !!onConvert);
-  console.log('Can show approve button:', budget.status === 'aguardando_aprovacao' && onApprove && isAdmin);
-  console.log('Can show convert button:', budget.status === 'aprovado' && onConvert && isAdmin);
-  console.log('=== END BUDGET BUTTONS DEBUG ===');
 
   return (
     <TableRow className="hover:bg-gray-50">

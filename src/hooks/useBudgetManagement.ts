@@ -69,11 +69,23 @@ export interface LocalBudget {
   }>;
 }
 
+// Periodo padrao da listagem: ultimos 45 dias.
+// Carregar o historico inteiro a cada abertura da tela era a principal causa
+// de lentidao, entao a busca ja chega filtrada do banco.
+const getDefault45DaysAgo = () => {
+  const date = new Date();
+  date.setDate(date.getDate() - 45);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
 export const useBudgetManagement = (userRole?: string) => {
   const { user, clientData, isClient } = useAuth();
   const [budgets, setBudgets] = useState<LocalBudget[]>([]);
   const [filteredBudgets, setFilteredBudgets] = useState<LocalBudget[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState<Date | undefined>(getDefault45DaysAgo);
+  const [endDate, setEndDate] = useState<Date | undefined>(() => new Date());
 
   useEffect(() => {
     // Evitar buscar antes do contexto estar pronto para reduzir flicker
@@ -88,11 +100,16 @@ export const useBudgetManagement = (userRole?: string) => {
     fetchBudgets();
   }, [userRole, clientData, isClient, user?.id]);
 
-  const fetchBudgets = async () => {
+  const fetchBudgets = async (
+    overrideStartDate?: Date | undefined | null,
+    overrideEndDate?: Date | undefined | null
+  ) => {
+    // undefined = usar o estado atual; null = explicitamente sem limite de data
+    const effectiveStartDate = overrideStartDate !== undefined ? overrideStartDate : startDate;
+    const effectiveEndDate = overrideEndDate !== undefined ? overrideEndDate : endDate;
+
     setLoading(true);
     try {
-      console.log('=== FETCHING BUDGETS (OPTIMIZED) ===');
-      console.log('User role:', userRole);
       
       // Query otimizada: buscar apenas campos essenciais.
       // Usamos uma função para reconstruir a query a cada lote de paginação,
@@ -196,6 +213,18 @@ export const useBudgetManagement = (userRole?: string) => {
         if ((userRole === 'vendedor_externo' || userRole === 'vendedor_interno') && user?.id) {
           query = query.eq('created_by', user.id);
         }
+
+        // Filtro de periodo aplicado no banco (nao no navegador): e o que evita
+        // trazer todo o historico de orcamentos a cada abertura da tela.
+        if (effectiveStartDate instanceof Date) {
+          query = query.gte('created_at', effectiveStartDate.toISOString());
+        }
+        if (effectiveEndDate instanceof Date) {
+          const endOfDay = new Date(effectiveEndDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          query = query.lte('created_at', endOfDay.toISOString());
+        }
+
         return query;
       };
 
@@ -480,5 +509,9 @@ export const useBudgetManagement = (userRole?: string) => {
     createBudget,
     updateBudget,
     deleteBudget,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
   };
 };
