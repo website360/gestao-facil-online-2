@@ -58,6 +58,7 @@ const SalesManagement = () => {
     endDate,
     setEndDate,
     clearDateFilter,
+    isSuperAdmin,
     showingOutOfRangeSale,
     searchingById
   } = useSalesManagement();
@@ -261,9 +262,9 @@ const SalesManagement = () => {
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = async (returnStock: boolean) => {
     if (selectedSaleId) {
-      await handleDelete(selectedSaleId);
+      await handleDelete(selectedSaleId, returnStock);
       setDeleteModalOpen(false);
       setSelectedSaleId(null);
     }
@@ -435,7 +436,9 @@ const SalesManagement = () => {
   };
 
   // Get selected sale data for modals
-  const selectedSale = selectedSaleId ? sales.find(sale => sale.id === selectedSaleId) : null;
+  const selectedSale = selectedSaleId
+    ? (filteredSales.find(sale => sale.id === selectedSaleId) || sales.find(sale => sale.id === selectedSaleId))
+    : null;
   const selectedDeliverySale = selectedSaleForDelivery ? sales.find(sale => sale.id === selectedSaleForDelivery) : null;
 
   if (loading) {
@@ -480,6 +483,7 @@ const SalesManagement = () => {
         getStatusColor={getStatusColor}
         getStatusLabel={getStatusLabel}
         formatSaleId={formatSaleIdWithData}
+        isSuperAdmin={isSuperAdmin}
         getCurrentResponsible={getCurrentResponsible}
         onGenerateShippingLabel={handleGenerateShippingLabel}
         onReprintLabels={handleReprintLabels}
@@ -546,6 +550,7 @@ const SalesManagement = () => {
         onConfirm={handleDeleteConfirm}
         saleId={selectedSale ? formatSaleIdWithData(selectedSale) : ''}
         clientName={selectedSale?.clients?.name || 'N/A'}
+        saleStatus={selectedSale?.status}
         isDeleting={isDeleting}
       />
 

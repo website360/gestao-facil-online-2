@@ -5,7 +5,7 @@ import { useAuth } from './useAuth';
 
 export const useUserProfile = () => {
   const { user } = useAuth();
-  const [userProfile, setUserProfile] = useState<{ id: string; role: string; name: string; email: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ id: string; role: string; name: string; email: string; is_super_admin?: boolean } | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
@@ -14,7 +14,7 @@ export const useUserProfile = () => {
         try {
           const { data, error } = await supabase
             .from('profiles')
-            .select('id, role, name, email')
+            .select('id, role, name, email, is_super_admin')
             .eq('id', user.id)
             .single();
 
@@ -36,10 +36,12 @@ export const useUserProfile = () => {
   }, [user]);
 
   const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'gerente';
+  const isSuperAdmin = userProfile?.is_super_admin === true;
 
   return {
     userProfile,
     profileLoading,
-    isAdmin
+    isAdmin,
+    isSuperAdmin
   };
 };

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import EmptyState from '@/components/ui/empty-state';
 import { Package, User, Calendar, DollarSign, Eye, Edit, History, Trash2, Play, Check } from 'lucide-react';
 import { useIsTabletOrMobile } from '@/hooks/use-tablet-mobile';
+import { canDeleteSale } from '@/utils/salePermissions';
 import { formatCurrency } from '@/lib/formatters';
 import SalesTableHeaders from './SalesTableHeaders';
 import SalesTableRow from './SalesTableRow';
@@ -71,6 +72,7 @@ interface SalesTableProps {
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
+  isSuperAdmin?: boolean;
   getCurrentResponsible: (sale: Sale) => string;
   selectedItems?: Set<string>;
   onItemSelect?: (itemId: string) => void;
@@ -109,6 +111,7 @@ const SalesTable = ({
   getStatusColor,
   getStatusLabel,
   formatSaleId,
+  isSuperAdmin = false,
   getCurrentResponsible,
   selectedItems,
   onItemSelect,
@@ -124,7 +127,7 @@ const SalesTable = ({
   };
 
   const canDelete = (sale: any) => {
-    return userRole === 'admin';
+    return canDeleteSale(sale.status, userRole, isSuperAdmin);
   };
 
   const canStartSeparation = (sale: any) => {
@@ -367,6 +370,7 @@ const SalesTable = ({
                 getStatusColor={getStatusColor}
                 getStatusLabel={getStatusLabel}
                 formatSaleId={formatSaleId}
+                isSuperAdmin={isSuperAdmin}
                 getCurrentResponsible={getCurrentResponsible}
                 selectedItems={selectedItems}
                 onItemSelect={onItemSelect}

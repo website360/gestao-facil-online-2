@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { canDeleteSale } from '@/utils/salePermissions';
 import { Package, Trash2, CheckCircle, Percent, Eye, Edit, History, ArrowLeft, FileText, Truck, Settings, Scale, PackageCheck, Printer, Send } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import SaleAttachmentsDropdown from './SaleAttachmentsDropdown';
@@ -69,6 +70,7 @@ interface SalesTableRowProps {
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
   formatSaleId: (sale: Sale) => string;
+  isSuperAdmin?: boolean;
   getCurrentResponsible: (sale: Sale) => string;
   selectedItems?: Set<string>;
   onItemSelect?: (itemId: string) => void;
@@ -97,6 +99,7 @@ const SalesTableRow = ({
   getStatusColor,
   getStatusLabel,
   formatSaleId,
+  isSuperAdmin = false,
   getCurrentResponsible,
   selectedItems,
   onItemSelect,
@@ -794,8 +797,8 @@ const SalesTableRow = ({
             <SaleAttachmentsDropdown saleId={sale.id} saleStatus={sale.status} />
           )}
 
-          {/* Botão de excluir - não aparece se entrega realizada, finalizada ou se é gerente */}
-          {sale.status !== 'entrega_realizada' && sale.status !== 'finalizada' && userRole !== 'gerente' && (
+          {/* Botão de excluir - Super Admin exclui em qualquer etapa */}
+          {canDeleteSale(sale.status, userRole, isSuperAdmin) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

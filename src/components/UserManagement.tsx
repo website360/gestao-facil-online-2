@@ -20,6 +20,7 @@ interface User {
   name: string;
   email: string;
   role: OldRole;
+  is_super_admin?: boolean;
   created_at: string;
 }
 
@@ -116,7 +117,7 @@ const UserManagement = () => {
                   <span className="text-xs text-gray-500">Função:</span>
                   <div className="mt-0.5">
                     <Badge className={`${getRoleColor(user.role)} text-xs`}>
-                      {getRoleLabel(user.role)}
+                      {getProfileLabel(user)}
                     </Badge>
                   </div>
                 </div>
@@ -232,6 +233,10 @@ const UserManagement = () => {
     }
   };
 
+  // Super Admin e um admin com a flag ligada; na lista ele aparece com nome proprio
+  const getProfileLabel = (user: User) =>
+    user.is_super_admin ? 'Super Admin' : getRoleLabel(user.role);
+
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'admin': return 'Administrador';
@@ -298,7 +303,7 @@ const UserManagement = () => {
       header: 'Função',
       render: (user) => (
         <Badge className={`${getRoleColor(user.role)} text-xs md:text-sm`}>
-          {getRoleLabel(user.role)}
+          {getProfileLabel(user)}
         </Badge>
       ),
     },

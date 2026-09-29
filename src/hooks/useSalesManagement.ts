@@ -172,6 +172,8 @@ export const useSalesManagement = () => {
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string>('');
+  // Super Admin: exclui venda em qualquer etapa (ver src/utils/salePermissions.ts)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
@@ -429,7 +431,7 @@ export const useSalesManagement = () => {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, is_super_admin')
         .eq('id', user.id)
         .single();
 
@@ -437,12 +439,14 @@ export const useSalesManagement = () => {
         console.error('Error fetching user role:', error);
         throw error;
       }
-      
-      console.log('User role:', data.role);
+
+      console.log('User role:', data.role, 'super admin:', data.is_super_admin);
       setUserRole(data.role);
+      setIsSuperAdmin(data.is_super_admin === true);
     } catch (error) {
       console.error('Erro ao buscar role do usuário:', error);
       setUserRole('');
+      setIsSuperAdmin(false);
     }
   };
 
@@ -541,7 +545,12 @@ export const useSalesManagement = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  /**
+   * @param returnStock devolve os itens ao estoque. Nas etapas anteriores à nota
+   * fiscal é sempre true; depois dela o modal pergunta, porque a mercadoria já
+   * saiu e devolver inflaria o saldo.
+   */
+  const handleDelete = async (id: string, returnStock = true) => {
     setIsDeleting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -570,7 +579,7 @@ export const useSalesManagement = () => {
       }
 
       // Retornar estoque para cada produto
-      if (saleItems && saleItems.length > 0) {
+      if (returnStock && saleItems && saleItems.length > 0) {
         for (const item of saleItems) {
           // Buscar estoque atual do produto
           const { data: product, error: productError } = await supabase
@@ -622,7 +631,11 @@ export const useSalesManagement = () => {
 
       if (error) throw error;
       
-      toast.success('Venda excluída com sucesso! Estoque dos produtos foi retornado.');
+      toast.success(
+        returnStock
+          ? 'Venda excluída com sucesso! Estoque dos produtos foi retornado.'
+          : 'Venda excluída com sucesso! O estoque não foi alterado.'
+      );
       fetchSales();
     } catch (error) {
       console.error('Erro ao excluir venda:', error);
@@ -748,6 +761,7 @@ export const useSalesManagement = () => {
     clearDateFilter,
     // Venda localizada por ID fora do período filtrado
     showingOutOfRangeSale: outOfRangeSales.length > 0,
-    searchingById
+    searchingById,
+    isSuperAdmin
   };
 };

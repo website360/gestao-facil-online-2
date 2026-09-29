@@ -17,6 +17,7 @@ interface User {
   name: string;
   email: string;
   role: OldRole;
+  is_super_admin?: boolean;
   created_at: string;
 }
 
@@ -27,12 +28,15 @@ interface UserFormDialogProps {
   onSuccess: () => void;
 }
 
+/** Valor so da interface: 'Super Admin' grava role='admin' + is_super_admin. */
+type FormRole = OldRole | 'super_admin';
+
 const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormDialogProps) => {
-  const { userProfile } = useUserProfile();
+  const { userProfile, isSuperAdmin } = useUserProfile();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<OldRole>('vendedor_externo');
+  const [role, setRole] = useState<FormRole>('vendedor_externo');
   const [loading, setLoading] = useState(false);
   const [changePassword, setChangePassword] = useState(false);
 
@@ -40,7 +44,7 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
     if (editingUser) {
       setName(editingUser.name);
       setEmail(editingUser.email);
-      setRole(editingUser.role);
+      setRole(editingUser.is_super_admin ? 'super_admin' : editingUser.role);
       setPassword('');
       setChangePassword(false);
     } else {
@@ -55,6 +59,9 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    const wantsSuperAdmin = role === 'super_admin';
+    const dbRole: OldRole = wantsSuperAdmin ? 'admin' : role;
 
     try {
       if (editingUser) {
@@ -79,7 +86,7 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
         console.log('Updating profile with name and role...');
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({ name, role, email }) // Include email here too for consistency
+          .update({ name, role: dbRole, email, is_super_admin: wantsSuperAdmin })
           .eq('id', editingUser.id);
 
         if (profileError) {
@@ -108,7 +115,7 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
       } else {
         // Create new user
         const { data, error } = await supabase.functions.invoke('create-user', {
-          body: { name, email, password, role }
+          body: { name, email, password, role: dbRole }
         });
 
         if (error) {
@@ -118,6 +125,21 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
           return;
         }
         
+        // A edge function nao conhece a flag; marcamos logo apos criar
+        if (wantsSuperAdmin) {
+          const { error: flagError } = await supabase
+            .from('profiles')
+            .update({ is_super_admin: true })
+            .eq('email', email);
+
+          if (flagError) {
+            console.error('Error setting super admin flag:', flagError);
+            toast.error('Usuário criado, mas falhou ao marcar como Super Admin');
+            setLoading(false);
+            return;
+          }
+        }
+
         toast.success('Usuário criado com sucesso');
       }
 
@@ -220,11 +242,14 @@ const UserFormDialog = ({ showForm, editingUser, onClose, onSuccess }: UserFormD
           )}
           <div>
             <Label htmlFor="role">Função *</Label>
-            <Select value={role} onValueChange={(value: OldRole) => setRole(value)}>
+            <Select value={role} onValueChange={(value: FormRole) => setRole(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a função" />
               </SelectTrigger>
                <SelectContent>
+                 {(isSuperAdmin || role === 'super_admin') && (
+                   <SelectItem value="super_admin">Super Admin</SelectItem>
+                 )}
                  <SelectItem value="admin">Administrador</SelectItem>
                  <SelectItem value="gerente">Gerente</SelectItem>
                  <SelectItem value="vendedor_externo">Vendedor Externo</SelectItem>

@@ -76,6 +76,7 @@ interface SalesManagementContentProps {
   onEndDateChange?: (date: Date | undefined) => void;
   onApplyDateFilter?: () => void;
   onClearDateFilter?: () => void;
+  isSuperAdmin?: boolean;
   showingOutOfRangeSale?: boolean;
   searchingById?: boolean;
 }
@@ -121,6 +122,7 @@ const SalesManagementContent = ({
   onEndDateChange,
   onApplyDateFilter,
   onClearDateFilter,
+  isSuperAdmin,
   showingOutOfRangeSale,
   searchingById
 }: SalesManagementContentProps) => {
@@ -177,6 +179,7 @@ const SalesManagementContent = ({
             getStatusColor={getStatusColor}
             getStatusLabel={getStatusLabel}
             formatSaleId={formatSaleId}
+            isSuperAdmin={isSuperAdmin}
             getCurrentResponsible={getCurrentResponsible}
             onGenerateShippingLabel={onGenerateShippingLabel}
             onReprintLabels={onReprintLabels}
