@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { formatSaleId } from '@/lib/budgetFormatter';
 
 interface Sale {
   id: string;
@@ -379,33 +380,25 @@ export const useSalesManagement = () => {
     });
 
     if (searchTerm) {
-      const filteredWithOriginalIndex = filtered.map((sale) => {
-        // Encontrar o índice original na lista completa de vendas
-        const originalIndex = sales.findIndex(s => s.id === sale.id);
-        return {
-          ...sale,
-          originalIndex
-        };
-      }).filter((sale) => {
-        // Gerar o ID formatado para o índice original
-        const startIndex = (currentPage - 1) * 20;
-        const sequentialNumber = (startIndex + sale.originalIndex + 1).toString().padStart(8, '0');
-        const formattedId = `#V${sequentialNumber}`;
-        
-        const idMatch = sale.id.toLowerCase().includes(searchTerm.toLowerCase());
-        const formattedIdMatch = formattedId.toLowerCase().includes(searchTerm.toLowerCase());
-        const sequentialMatch = sequentialNumber.includes(searchTerm);
-        const clientMatch = sale.clients?.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const createdByMatch = sale.created_by_profile?.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const notesMatch = sale.notes?.toLowerCase().includes(searchTerm.toLowerCase());
-        const invoiceMatch = sale.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase());
-        const statusMatch = getStatusLabel(sale.status).toLowerCase().includes(searchTerm.toLowerCase());
-        
-        return idMatch || formattedIdMatch || sequentialMatch || clientMatch || createdByMatch || notesMatch || invoiceMatch || statusMatch;
+      const term = searchTerm.trim().toLowerCase();
+      // Normaliza para comparar com o ID exibido (#V + DDMMYY + HHMM), ignorando # e espaços
+      const normalizedTerm = term.replace(/[#\s-]/g, '');
+
+      filtered = filtered.filter((sale) => {
+        const displayedId = formatSaleId(sale.id, sale.created_at)
+          .toLowerCase()
+          .replace(/[#\s-]/g, '');
+
+        const idMatch = sale.id.toLowerCase().includes(term);
+        const displayedIdMatch = normalizedTerm.length > 0 && displayedId.includes(normalizedTerm);
+        const clientMatch = sale.clients?.name.toLowerCase().includes(term);
+        const createdByMatch = sale.created_by_profile?.name.toLowerCase().includes(term);
+        const notesMatch = sale.notes?.toLowerCase().includes(term);
+        const invoiceMatch = sale.invoice_number?.toLowerCase().includes(term);
+        const statusMatch = getStatusLabel(sale.status).toLowerCase().includes(term);
+
+        return idMatch || displayedIdMatch || clientMatch || createdByMatch || notesMatch || invoiceMatch || statusMatch;
       });
-      
-      // Remover a propriedade temporária originalIndex
-      filtered = filteredWithOriginalIndex.map(({ originalIndex, ...sale }) => sale);
     }
 
     // Filtrar por status se não for "todos"
