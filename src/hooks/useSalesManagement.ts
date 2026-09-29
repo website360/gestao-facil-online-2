@@ -431,7 +431,7 @@ export const useSalesManagement = () => {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('role, is_super_admin')
+        .select('*')
         .eq('id', user.id)
         .single();
 

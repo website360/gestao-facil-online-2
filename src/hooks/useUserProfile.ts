@@ -14,7 +14,7 @@ export const useUserProfile = () => {
         try {
           const { data, error } = await supabase
             .from('profiles')
-            .select('id, role, name, email, is_super_admin')
+            .select('*')
             .eq('id', user.id)
             .single();
 
