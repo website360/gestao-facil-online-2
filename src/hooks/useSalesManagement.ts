@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { formatSaleId } from '@/lib/budgetFormatter';
+import { formatSaleId, parseSaleIdToRange } from '@/lib/budgetFormatter';
 
 interface Sale {
   id: string;
@@ -44,6 +44,129 @@ const getDefault45DaysAgo = () => {
   return date;
 };
 
+const SALE_COLUMNS = `
+  id,
+  client_id,
+  budget_id,
+  created_by,
+  status,
+  total_amount,
+  notes,
+  created_at,
+  updated_at,
+  separation_user_id,
+  separation_completed_at,
+  conference_user_id,
+  conference_completed_at,
+  invoice_user_id,
+  invoice_completed_at,
+  delivery_user_id,
+  delivery_completed_at,
+  payment_method_id,
+  payment_type_id,
+  shipping_option_id,
+  shipping_cost,
+  tracking_code,
+  invoice_number,
+  total_volumes,
+  total_weight_kg,
+  separation_percentage,
+  separation_complete,
+  ready_for_shipping_label,
+  bling_order_id,
+  clients(name),
+  budgets(created_by)
+`;
+
+/** Linha crua de `sales` vinda do Supabase, antes de receber frete e perfis. */
+type RawSale = Record<string, unknown> & {
+  id: string;
+  client_id: string;
+  status: Sale['status'];
+  total_amount: number;
+  notes: string;
+  created_at: string;
+  created_by: string;
+  shipping_option_id?: string | null;
+  separation_user_id?: string | null;
+  conference_user_id?: string | null;
+  invoice_user_id?: string | null;
+  delivery_user_id?: string | null;
+  conference_completed_at?: string | null;
+  separation_complete?: boolean | null;
+  separation_percentage?: number | null;
+  clients?: { name: string } | null;
+  budgets?: { created_by: string } | null;
+};
+
+/**
+ * Completa as vendas cruas com opção de frete e nomes dos usuários envolvidos.
+ * Usado tanto pela listagem por período quanto pela busca de uma venda por ID.
+ */
+const enrichSales = async (rawSales: RawSale[]): Promise<Sale[]> => {
+  if (rawSales.length === 0) return [];
+
+  const shippingOptionIds = [...new Set(rawSales.map(sale => sale.shipping_option_id).filter(Boolean))];
+  const shippingOptionsMap = new Map<string, { name: string; delivery_visible: boolean }>();
+
+  if (shippingOptionIds.length > 0) {
+    const { data: shippingData, error: shippingError } = await supabase
+      .from('shipping_options')
+      .select('id, name, delivery_visible')
+      .in('id', shippingOptionIds);
+
+    if (!shippingError && shippingData) {
+      shippingData.forEach(opt => {
+        shippingOptionsMap.set(opt.id, { name: opt.name, delivery_visible: opt.delivery_visible });
+      });
+    }
+  }
+
+  const allUserIds = [...new Set([
+    ...rawSales.map(sale => sale.created_by),
+    ...rawSales.map(sale => sale.separation_user_id).filter(Boolean),
+    ...rawSales.map(sale => sale.conference_user_id).filter(Boolean),
+    ...rawSales.map(sale => sale.invoice_user_id).filter(Boolean),
+    ...rawSales.map(sale => sale.delivery_user_id).filter(Boolean)
+  ])];
+
+  const profilesMap = new Map<string, { name: string }>();
+
+  if (allUserIds.length > 0) {
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .in('id', allUserIds);
+
+    if (profilesData) {
+      profilesData.forEach(p => {
+        profilesMap.set(p.id, { name: p.name });
+      });
+    }
+  }
+
+  return rawSales.map((sale) => {
+    const shippingOption = shippingOptionsMap.get(sale.shipping_option_id || '');
+
+    return {
+      ...sale,
+      clients: sale.clients ? { name: sale.clients.name } : null,
+      budgets: sale.budgets ? { created_by: sale.budgets.created_by } : null,
+      shipping_option_visible: shippingOption?.delivery_visible || false,
+      shipping_option_name: shippingOption?.name || null,
+      created_by_profile: profilesMap.get(sale.created_by) || null,
+      separation_user_profile: sale.separation_user_id ? profilesMap.get(sale.separation_user_id) : null,
+      conference_user_profile: sale.conference_user_id ? profilesMap.get(sale.conference_user_id) : null,
+      invoice_user_profile: sale.invoice_user_id ? profilesMap.get(sale.invoice_user_id) : null,
+      delivery_user_profile: sale.delivery_user_id ? profilesMap.get(sale.delivery_user_id) : null,
+      conference_complete: sale.conference_completed_at !== null,
+      conference_percentage: sale.conference_completed_at ? 100 : 0,
+      separation_complete: sale.separation_complete || false,
+      separation_percentage: sale.separation_percentage || 0
+    };
+  });
+};
+
 export const useSalesManagement = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
@@ -57,6 +180,9 @@ export const useSalesManagement = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(getDefault45DaysAgo);
   const [endDate, setEndDate] = useState<Date | undefined>(() => new Date());
+  // Venda achada no banco por ID, fora do período carregado na tela
+  const [outOfRangeSales, setOutOfRangeSales] = useState<Sale[]>([]);
+  const [searchingById, setSearchingById] = useState(false);
 
   const checkConferenceStatus = async (saleId: string) => {
     try {
@@ -185,39 +311,7 @@ export const useSalesManagement = () => {
       while (hasMore) {
         let query = supabase
           .from('sales')
-          .select(`
-            id,
-            client_id,
-            budget_id,
-            created_by,
-            status,
-            total_amount,
-            notes,
-            created_at,
-            updated_at,
-            separation_user_id,
-            separation_completed_at,
-            conference_user_id,
-            conference_completed_at,
-            invoice_user_id,
-            invoice_completed_at,
-            delivery_user_id,
-            delivery_completed_at,
-            payment_method_id,
-            payment_type_id,
-            shipping_option_id,
-            shipping_cost,
-            tracking_code,
-            invoice_number,
-            total_volumes,
-            total_weight_kg,
-            separation_percentage,
-            separation_complete,
-            ready_for_shipping_label,
-            bling_order_id,
-            clients(name),
-            budgets(created_by)
-          `)
+          .select(SALE_COLUMNS)
           .order('created_at', { ascending: false })
           .range(from, from + PAGE_SIZE - 1);
 
@@ -256,65 +350,7 @@ export const useSalesManagement = () => {
         return;
       }
 
-      const shippingOptionIds = [...new Set(allSalesData.map(sale => sale.shipping_option_id).filter(Boolean))];
-      const shippingOptionsMap = new Map<string, { name: string; delivery_visible: boolean }>();
-
-      if (shippingOptionIds.length > 0) {
-        const { data: shippingData, error: shippingError } = await supabase
-          .from('shipping_options')
-          .select('id, name, delivery_visible')
-          .in('id', shippingOptionIds);
-
-        if (!shippingError && shippingData) {
-          shippingData.forEach(opt => {
-            shippingOptionsMap.set(opt.id, { name: opt.name, delivery_visible: opt.delivery_visible });
-          });
-        }
-      }
-
-      const allUserIds = [...new Set([
-        ...allSalesData.map(sale => sale.created_by),
-        ...allSalesData.map(sale => sale.separation_user_id).filter(Boolean),
-        ...allSalesData.map(sale => sale.conference_user_id).filter(Boolean),
-        ...allSalesData.map(sale => sale.invoice_user_id).filter(Boolean),
-        ...allSalesData.map(sale => sale.delivery_user_id).filter(Boolean)
-      ])];
-
-      const profilesMap = new Map<string, { name: string }>();
-
-      if (allUserIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, name')
-          .in('id', allUserIds);
-
-        if (profilesData) {
-          profilesData.forEach(p => {
-            profilesMap.set(p.id, { name: p.name });
-          });
-        }
-      }
-
-      const enrichedSales = allSalesData.map((sale) => {
-        const shippingOption = shippingOptionsMap.get(sale.shipping_option_id || '');
-
-        return {
-          ...sale,
-          clients: sale.clients ? { name: (sale.clients as any).name } : null,
-          budgets: sale.budgets ? { created_by: (sale.budgets as any).created_by } : null,
-          shipping_option_visible: shippingOption?.delivery_visible || false,
-          shipping_option_name: shippingOption?.name || null,
-          created_by_profile: profilesMap.get(sale.created_by) || null,
-          separation_user_profile: sale.separation_user_id ? profilesMap.get(sale.separation_user_id) : null,
-          conference_user_profile: sale.conference_user_id ? profilesMap.get(sale.conference_user_id) : null,
-          invoice_user_profile: sale.invoice_user_id ? profilesMap.get(sale.invoice_user_id) : null,
-          delivery_user_profile: sale.delivery_user_id ? profilesMap.get(sale.delivery_user_id) : null,
-          conference_complete: sale.conference_completed_at !== null,
-          conference_percentage: sale.conference_completed_at ? 100 : 0,
-          separation_complete: sale.separation_complete || false,
-          separation_percentage: sale.separation_percentage || 0
-        };
-      });
+      const enrichedSales = await enrichSales(allSalesData);
 
       console.log('Enriched sales:', enrichedSales.length, 'records');
       setSales(enrichedSales);
@@ -325,6 +361,60 @@ export const useSalesManagement = () => {
       setLoading(false);
     }
   };
+
+  /**
+   * O ID exibido (#V + DDMMYY + HHMM) codifica o minuto de criação da venda.
+   * Quando o usuário digita um ID completo que não está entre as vendas já
+   * carregadas, buscamos direto no banco por aquele minuto — assim uma venda
+   * antiga é encontrada sem precisar mexer no filtro de período.
+   */
+  useEffect(() => {
+    const range = parseSaleIdToRange(searchTerm);
+
+    if (!range) {
+      setOutOfRangeSales(prev => (prev.length === 0 ? prev : []));
+      return;
+    }
+
+    const jaCarregada = sales.some(sale => {
+      const criadaEm = new Date(sale.created_at);
+      return criadaEm >= range.start && criadaEm <= range.end;
+    });
+
+    if (jaCarregada) {
+      setOutOfRangeSales(prev => (prev.length === 0 ? prev : []));
+      return;
+    }
+
+    let cancelado = false;
+
+    const timer = setTimeout(async () => {
+      setSearchingById(true);
+      try {
+        const { data, error } = await supabase
+          .from('sales')
+          .select(SALE_COLUMNS)
+          .gte('created_at', range.start.toISOString())
+          .lte('created_at', range.end.toISOString())
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const enriched = await enrichSales(data || []);
+        if (!cancelado) setOutOfRangeSales(enriched);
+      } catch (error) {
+        console.error('Erro ao buscar venda por ID:', error);
+        if (!cancelado) setOutOfRangeSales([]);
+      } finally {
+        if (!cancelado) setSearchingById(false);
+      }
+    }, 400);
+
+    return () => {
+      cancelado = true;
+      clearTimeout(timer);
+    };
+  }, [searchTerm, sales]);
 
   const getUserRole = async () => {
     try {
@@ -357,7 +447,10 @@ export const useSalesManagement = () => {
   };
 
   const filterAndSortSales = () => {
-    let filtered = sales.filter(sale => {
+    // Achou a venda por ID fora do período: a lista passa a mostrar só ela
+    const baseSales = outOfRangeSales.length > 0 ? outOfRangeSales : sales;
+
+    let filtered = baseSales.filter(sale => {
       switch (userRole) {
         case 'admin':
         case 'gerente':
@@ -619,7 +712,7 @@ export const useSalesManagement = () => {
 
   useEffect(() => {
     filterAndSortSales();
-  }, [sales, searchTerm, statusFilter, userRole, sortField, sortDirection]);
+  }, [sales, outOfRangeSales, searchTerm, statusFilter, userRole, sortField, sortDirection]);
 
   const clearDateFilter = () => {
     setStartDate(undefined);
@@ -652,6 +745,9 @@ export const useSalesManagement = () => {
     setStartDate,
     endDate,
     setEndDate,
-    clearDateFilter
+    clearDateFilter,
+    // Venda localizada por ID fora do período filtrado
+    showingOutOfRangeSale: outOfRangeSales.length > 0,
+    searchingById
   };
 };

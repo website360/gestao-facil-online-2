@@ -57,7 +57,9 @@ const SalesManagement = () => {
     setStartDate,
     endDate,
     setEndDate,
-    clearDateFilter
+    clearDateFilter,
+    showingOutOfRangeSale,
+    searchingById
   } = useSalesManagement();
 
   // Modal states
@@ -487,6 +489,8 @@ const SalesManagement = () => {
         onEndDateChange={setEndDate}
         onApplyDateFilter={fetchSales}
         onClearDateFilter={clearDateFilter}
+        showingOutOfRangeSale={showingOutOfRangeSale}
+        searchingById={searchingById}
         onSendToBling={requestSendToBling}
         sendingToBling={sendingToBling}
       />

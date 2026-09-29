@@ -64,3 +64,44 @@ export const formatSaleId = (saleId: string, createdAt?: string): string => {
   const sequentialNumber = Math.abs(hashCode).toString().slice(-8).padStart(8, '0');
   return `#V${sequentialNumber}`;
 };
+
+/**
+ * Inverso de formatSaleId: o ID exibido (#V + DDMMYY + HHMM) não existe no banco,
+ * é derivado do created_at. Esta função o converte de volta no intervalo de um
+ * minuto em que a venda foi criada, permitindo buscar a venda direto no banco
+ * mesmo quando ela está fora do período carregado na tela.
+ *
+ * Retorna null quando o termo não é um ID de venda completo — aí a busca comum
+ * (cliente, vendedor, nota) segue valendo.
+ */
+export const parseSaleIdToRange = (term: string): { start: Date; end: Date } | null => {
+  const cleaned = term.trim().toUpperCase().replace(/[#\s-]/g, '');
+  const match = /^V?(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(cleaned);
+
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = 2000 + Number(match[3]);
+  const hours = Number(match[4]);
+  const minutes = Number(match[5]);
+
+  // Mesmo fuso usado por formatSaleId (getDate/getHours), então o round-trip fecha
+  const start = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+  // O Date faz rollover silencioso (32/09 vira 02/10), então conferimos de volta
+  if (
+    start.getDate() !== day ||
+    start.getMonth() !== month - 1 ||
+    start.getFullYear() !== year ||
+    start.getHours() !== hours ||
+    start.getMinutes() !== minutes
+  ) {
+    return null;
+  }
+
+  const end = new Date(start);
+  end.setSeconds(59, 999);
+
+  return { start, end };
+};

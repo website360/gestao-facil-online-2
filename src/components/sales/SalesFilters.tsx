@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Search, X, Filter, CalendarIcon } from 'lucide-react';
+import { Search, X, Filter, CalendarIcon, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SalesFiltersProps {
@@ -23,6 +23,8 @@ interface SalesFiltersProps {
   onApplyDateFilter?: () => void;
   onClearDateFilter?: () => void;
   loading?: boolean;
+  showingOutOfRangeSale?: boolean;
+  searchingById?: boolean;
 }
 
 const SalesFilters = ({ 
@@ -38,7 +40,9 @@ const SalesFilters = ({
   onEndDateChange,
   onApplyDateFilter,
   onClearDateFilter,
-  loading = false
+  loading = false,
+  showingOutOfRangeSale = false,
+  searchingById = false
 }: SalesFiltersProps) => {
   const clearSearch = () => {
     setSearchTerm('');
@@ -162,8 +166,18 @@ const SalesFilters = ({
           </div>
         )}
       </div>
+      {showingOutOfRangeSale && (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            Venda encontrada <strong>fora do período filtrado</strong>. A lista mostra apenas ela —
+            limpe a busca para voltar ao período selecionado.
+          </span>
+        </div>
+      )}
+
       <div className="text-sm text-muted-foreground">
-        {filteredSalesCount} registros encontrados
+        {searchingById ? 'Procurando venda pelo número...' : `${filteredSalesCount} registros encontrados`}
       </div>
     </div>
   );

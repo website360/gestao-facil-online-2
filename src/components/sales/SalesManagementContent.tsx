@@ -76,6 +76,8 @@ interface SalesManagementContentProps {
   onEndDateChange?: (date: Date | undefined) => void;
   onApplyDateFilter?: () => void;
   onClearDateFilter?: () => void;
+  showingOutOfRangeSale?: boolean;
+  searchingById?: boolean;
 }
 
 const SalesManagementContent = ({
@@ -118,7 +120,9 @@ const SalesManagementContent = ({
   onStartDateChange,
   onEndDateChange,
   onApplyDateFilter,
-  onClearDateFilter
+  onClearDateFilter,
+  showingOutOfRangeSale,
+  searchingById
 }: SalesManagementContentProps) => {
   const ITEMS_PER_PAGE = 20;
   const totalPages = Math.ceil(sales.length / ITEMS_PER_PAGE);
@@ -144,6 +148,8 @@ const SalesManagementContent = ({
             onEndDateChange={onEndDateChange}
             onApplyDateFilter={onApplyDateFilter}
             onClearDateFilter={onClearDateFilter}
+            showingOutOfRangeSale={showingOutOfRangeSale}
+            searchingById={searchingById}
           />
 
           <SalesTable
