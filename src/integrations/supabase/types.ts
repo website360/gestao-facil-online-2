@@ -1207,6 +1207,10 @@ export type Database = {
         Args: { p_token: string }
         Returns: Json
       }
+      client_portal_sale_items: {
+        Args: { p_token: string; p_sale_id: string }
+        Returns: Json
+      }
       client_portal_sales: {
         Args: { p_token: string }
         Returns: Json

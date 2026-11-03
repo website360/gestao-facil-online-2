@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Plus, Clock, CheckCircle, AlertCircle, Truck, Package, Edit, Send, Eye } from 'lucide-react';
+import { FileText, Plus, Clock, CheckCircle, AlertCircle, Truck, Package, Edit, Send, Eye, Download } from 'lucide-react';
 import { useBudgetManagement } from '@/hooks/useBudgetManagement';
 import { useAuth } from '@/hooks/useAuth';
 import BudgetManagementDialogs from './budget/BudgetManagementDialogs';
@@ -11,11 +11,11 @@ import ClientBudgetEditModal from './budget/ClientBudgetEditModal';
 import ClientOrderTrackingModal from './client/ClientOrderTrackingModal';
 import BudgetApprovalDialog from './budget/BudgetApprovalDialog';
 import { supabase } from '@/integrations/supabase/client';
-import { submitBudgetForApproval } from '@/integrations/supabase/clientPortal';
+import { getClientPortalSaleItems, submitBudgetForApproval } from '@/integrations/supabase/clientPortal';
 import { useBudgetCalculations } from '@/hooks/useBudgetCalculations';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 import { toast } from 'sonner';
-import SalePDFGenerator from './sales/SalePDFGenerator';
+import { generateSalePDF } from './sales/pdf/pdfGeneratorSimple';
 
 import { formatBudgetId, formatSaleId } from '@/lib/budgetFormatter';
 import {
@@ -84,7 +84,7 @@ const ClientWelcomeDashboard = () => {
       return false;
     }
 
-    const payload = (data || {}) as { error?: string; sales?: any[] };
+    const payload = (data || {}) as { error?: string; sales?: any[]; client?: any };
 
     // Sessão expirada ou acesso do cliente desativado: derrubar o login
     if (payload.error === 'invalid_session') {
@@ -93,7 +93,14 @@ const ClientWelcomeDashboard = () => {
       return true;
     }
 
-    setSales(Array.isArray(payload.sales) ? payload.sales : []);
+    // O cadastro do cliente vem uma vez só (são todas vendas do mesmo cliente);
+    // aqui ele é colado em cada venda, no formato que o PDF espera.
+    const loadedSales = Array.isArray(payload.sales) ? payload.sales : [];
+    setSales(
+      payload.client
+        ? loadedSales.map(sale => ({ ...sale, clients: payload.client }))
+        : loadedSales
+    );
     return true;
   };
 
@@ -254,6 +261,19 @@ const ClientWelcomeDashboard = () => {
       entregues: orders.filter(order => order.status.stepIndex === entregueIndex).length,
     };
   }, [orders]);
+
+  // PDF da venda: a listagem não traz os itens, então eles são buscados na
+  // hora do download (ou reaproveitados, quando vieram pelo caminho antigo).
+  const handleDownloadSalePDF = async (sale: any) => {
+    try {
+      const items =
+        sale.sale_items?.length > 0 ? sale.sale_items : await getClientPortalSaleItems(sale.id);
+      await generateSalePDF({ ...sale, sale_items: items || [] });
+    } catch (error) {
+      console.error('Erro ao gerar PDF da venda:', error);
+      toast.error('Erro ao gerar o PDF do pedido');
+    }
+  };
 
   const openTrackingPage = (trackingCode: string) => {
     const url = `https://www2.correios.com.br/sistemas/rastreamento/resultado.cfm?objeto=${trackingCode}`;
@@ -596,7 +616,17 @@ const ClientWelcomeDashboard = () => {
                           </Button>
                         )}
 
-                        {order.sale && <SalePDFGenerator sale={order.sale} />}
+                        {order.sale && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownloadSalePDF(order.sale)}
+                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
+                            title="Baixar PDF do pedido"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

@@ -106,6 +106,39 @@ export const clearClientPortalCache = () => {
   clientCache = null;
 };
 
+const saleItemsCache = new Map<string, any[]>();
+
+/**
+ * Itens de uma venda, sob demanda.
+ *
+ * A listagem do painel não traz itens: um cliente com centenas de vendas fazia
+ * a consulta estourar o tempo limite da API. Os itens só são buscados quando o
+ * cliente abre o pedido ou baixa o PDF.
+ */
+export const getClientPortalSaleItems = async (saleId: string): Promise<any[]> => {
+  const token = getClientPortalToken();
+  if (!token) return [];
+
+  const cached = saleItemsCache.get(saleId);
+  if (cached) return cached;
+
+  const { data, error } = await supabase.rpc('client_portal_sale_items', {
+    p_token: token,
+    p_sale_id: saleId,
+  });
+
+  if (error) {
+    console.error('Erro ao carregar itens da venda:', error);
+    return [];
+  }
+
+  const payload = (data || {}) as { error?: string; items?: any[] };
+  const items = payload.error || !Array.isArray(payload.items) ? [] : payload.items;
+
+  saleItemsCache.set(saleId, items);
+  return items;
+};
+
 /**
  * Envia o orçamento para aprovação. Pela sessão do portal quando existe, senão
  * pelo caminho antigo (update direto), que é o que o painel interno usa.

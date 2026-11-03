@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Check, Circle, Loader2, Truck, FileText } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { formatBudgetId, formatSaleId } from '@/lib/budgetFormatter';
 import { buildClientOrderTimeline, getClientOrderStatusInfo } from '@/lib/clientOrderStatus';
+import { getClientPortalSaleItems } from '@/integrations/supabase/clientPortal';
 
 interface ClientOrderTrackingModalProps {
   isOpen: boolean;
@@ -33,12 +34,39 @@ const formatDateTime = (value?: string | null) => {
 };
 
 const ClientOrderTrackingModal = ({ isOpen, onClose, order }: ClientOrderTrackingModalProps) => {
+  // Itens da venda sob demanda: a listagem do painel não os traz, porque um
+  // cliente com centenas de pedidos fazia a consulta estourar o tempo limite.
+  const [saleItems, setSaleItems] = useState<any[]>([]);
+  const saleId = order?.sale?.id as string | undefined;
+  const saleItemsFromList = order?.sale?.sale_items as any[] | undefined;
+
+  useEffect(() => {
+    if (!isOpen || !saleId || saleItemsFromList?.length) {
+      setSaleItems([]);
+      return;
+    }
+
+    let active = true;
+    getClientPortalSaleItems(saleId).then(items => {
+      if (active) setSaleItems(items);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isOpen, saleId, saleItemsFromList?.length]);
+
   if (!order) return null;
 
   const { budget, sale } = order;
   const status = getClientOrderStatusInfo(budget?.status, sale?.status);
   const timeline = buildClientOrderTimeline(budget, sale);
-  const items = sale?.sale_items?.length ? sale.sale_items : budget?.budget_items || [];
+  const items =
+    saleItemsFromList?.length
+      ? saleItemsFromList
+      : saleItems.length
+      ? saleItems
+      : budget?.budget_items || [];
   const trackingCode = order.trackingCode?.trim();
 
   const openTrackingPage = () => {
