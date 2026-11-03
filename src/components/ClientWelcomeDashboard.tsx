@@ -60,6 +60,7 @@ const ClientWelcomeDashboard = () => {
   const [trackingOrder, setTrackingOrder] = useState<ClientOrder | null>(null);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [budgetToSendForApproval, setBudgetToSendForApproval] = useState<LocalBudget | null>(null);
+  const [needsRelogin, setNeedsRelogin] = useState(false);
 
   // Chave estavel com os ids dos orcamentos, para refazer a busca de vendas
   // somente quando a lista realmente mudar (e nao a cada render).
@@ -162,6 +163,31 @@ const ClientWelcomeDashboard = () => {
     if (!clientData?.id) return;
     fetchClientSales(budgetIdsKey ? budgetIdsKey.split(',') : []);
   }, [clientData?.id, clientToken, budgetIdsKey]);
+
+  // Sessão antiga (sem token): o aviso de novo login só faz sentido se as RPCs
+  // do portal já existirem no banco. Enquanto não existirem, o caminho antigo
+  // de consulta continua valendo e não há nada para o cliente fazer.
+  useEffect(() => {
+    if (!clientData?.id || clientToken) {
+      setNeedsRelogin(false);
+      return;
+    }
+
+    let active = true;
+
+    (async () => {
+      // Token vazio: só serve para saber se a função existe
+      const { data, error } = await supabase.rpc('client_portal_budgets', { p_token: '' });
+      if (!active) return;
+
+      const payload = (data || {}) as { error?: string };
+      setNeedsRelogin(!error && payload.error === 'invalid_session');
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [clientData?.id, clientToken]);
 
   // Montar a lista de pedidos: cada orçamento é um pedido, enriquecido com a
   // venda correspondente quando ela já existe.
@@ -349,6 +375,32 @@ const ClientWelcomeDashboard = () => {
           </p>
         </CardContent>
       </Card>
+
+      {/* Sessão antiga, de antes da sessão com token: o acompanhamento do
+          pedido depende do token, então pedimos um novo login. Aviso em vez de
+          logout automático de propósito - derrubar a sessão sozinho daria um
+          laço caso a edge function client-login ainda não esteja publicada. */}
+      {needsRelogin && (
+        <Card className="border-yellow-300 bg-yellow-50">
+          <CardContent className="p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 shrink-0 text-yellow-600" />
+                <div>
+                  <p className="font-medium text-yellow-900">Entre novamente para ver seus pedidos</p>
+                  <p className="text-sm text-yellow-800">
+                    Atualizamos o acesso do portal. Saia e entre de novo para acompanhar o
+                    andamento dos seus pedidos.
+                  </p>
+                </div>
+              </div>
+              <Button variant="outline" onClick={() => signOut()} className="shrink-0">
+                Sair e entrar de novo
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
