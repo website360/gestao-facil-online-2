@@ -9,6 +9,7 @@ import { Loader2, MapPin, Calculator, Users } from 'lucide-react';
 import { useCorreiosShipping } from '@/hooks/useCorreiosShipping';
 import { formatCurrency } from '@/lib/formatters';
 import { supabase } from '@/integrations/supabase/client';
+import { getClientPortalClient, isClientPortalSession } from '@/integrations/supabase/clientPortal';
 import { toast } from 'sonner';
 import ProductDimensionsValidator from './ProductDimensionsValidator';
 import CorreiosIntegrationInfo from './CorreiosIntegrationInfo';
@@ -102,6 +103,16 @@ const ConditionalShippingSection = ({
 
   const loadClientCeps = async () => {
     try {
+      // Portal do cliente: o cadastro vem pela RPC da sessao (a tabela
+      // `clients` nao e legivel pelo portal)
+      if (isClientPortalSession()) {
+        const client = await getClientPortalClient();
+        if (client?.cep) {
+          setClientCeps([{ cep: client.cep, isMain: true }]);
+        }
+        return;
+      }
+
       const { data, error } = await supabase
         .from('clients')
         .select('cep')

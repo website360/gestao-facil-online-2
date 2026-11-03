@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { getClientPortalConfig, isClientPortalSession } from '@/integrations/supabase/clientPortal';
 
 export interface PDFConfig {
   page?: {
@@ -199,15 +200,26 @@ const DEFAULT_CONFIG: PDFConfig = {
 
 export const loadPDFConfig = async (): Promise<PDFConfig> => {
   try {
-    const { data, error } = await supabase
-      .from('system_configurations')
-      .select('value')
-      .eq('key', 'pdf_budget_config')
-      .maybeSingle();
+    // Portal do cliente: a configuração vem pela RPC de lista branca, já que
+    // system_configurations (que também guarda credenciais) não é legível lá.
+    let data: { value: string | null } | null = null;
 
-    if (error) {
-      console.error('Erro ao carregar configurações do PDF:', error);
-      return DEFAULT_CONFIG;
+    if (isClientPortalSession()) {
+      const config = await getClientPortalConfig();
+      data = { value: config.pdf_budget_config };
+    } else {
+      const result = await supabase
+        .from('system_configurations')
+        .select('value')
+        .eq('key', 'pdf_budget_config')
+        .maybeSingle();
+
+      if (result.error) {
+        console.error('Erro ao carregar configurações do PDF:', result.error);
+        return DEFAULT_CONFIG;
+      }
+
+      data = result.data;
     }
 
     if (data?.value) {

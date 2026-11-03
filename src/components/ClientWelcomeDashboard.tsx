@@ -1,86 +1,153 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Plus, Clock, CheckCircle, AlertCircle, Truck, Package, Edit, Send, Eye } from 'lucide-react';
 import { useBudgetManagement } from '@/hooks/useBudgetManagement';
-import { useBudgetFilters } from '@/hooks/useBudgetFilters';
 import { useAuth } from '@/hooks/useAuth';
 import BudgetManagementDialogs from './budget/BudgetManagementDialogs';
-import SalesDetailModal from './SalesDetailModal';
 import ClientBudgetEditModal from './budget/ClientBudgetEditModal';
+import ClientOrderTrackingModal from './client/ClientOrderTrackingModal';
 import BudgetApprovalDialog from './budget/BudgetApprovalDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { submitBudgetForApproval } from '@/integrations/supabase/clientPortal';
 import { useBudgetCalculations } from '@/hooks/useBudgetCalculations';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 import { toast } from 'sonner';
 import SalePDFGenerator from './sales/SalePDFGenerator';
 
 import { formatBudgetId, formatSaleId } from '@/lib/budgetFormatter';
+import {
+  CLIENT_ORDER_STEPS,
+  getClientOrderStatusInfo,
+  type ClientOrderStatusInfo,
+} from '@/lib/clientOrderStatus';
 
-interface CombinedItem {
-  id: string;
-  type: 'budget' | 'sale';
-  status: string;
-  created_at: string;
-  total_amount: number;
-  client_name: string;
-  tracking_code?: string;
-  original_data: any;
+/**
+ * Um pedido do ponto de vista do cliente.
+ *
+ * Internamente o pedido comeca em `budgets` e, quando aprovado, passa a existir
+ * tambem em `sales` (o orcamento fica com status `convertido`). Antes a tela
+ * escondia o orcamento convertido e dependia exclusivamente da venda aparecer
+ * na consulta - quando a venda nao vinha, o pedido simplesmente desaparecia do
+ * painel. Agora o orcamento e a base do pedido e a venda apenas enriquece o
+ * status, entao o pedido continua visivel em todas as etapas.
+ */
+interface ClientOrder {
+  key: string;
+  displayId: string;
+  createdAt: string;
+  total: number;
+  budget: LocalBudget | null;
+  sale: any | null;
+  trackingCode?: string | null;
+  status: ClientOrderStatusInfo;
 }
 
 const ClientWelcomeDashboard = () => {
-  const { clientData } = useAuth();
+  const { clientData, clientToken, signOut } = useAuth();
   const { budgets, loading, deleteBudget, fetchBudgets } = useBudgetManagement('cliente');
   const { calculateBudgetTotal } = useBudgetCalculations();
-  
+
   const [showForm, setShowForm] = useState(false);
   const [editingBudget, setEditingBudget] = useState<LocalBudget | null>(null);
   const [budgetToDelete, setBudgetToDelete] = useState<LocalBudget | null>(null);
   const [budgetToConvert, setBudgetToConvert] = useState<LocalBudget | null>(null);
   const [sales, setSales] = useState<any[]>([]);
-  const [salesLoading, setSalesLoading] = useState(false);
-  const [combinedItems, setCombinedItems] = useState<CombinedItem[]>([]);
-  const [saleDetailOpen, setSaleDetailOpen] = useState(false);
-  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
   const [budgetEditModalOpen, setBudgetEditModalOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<LocalBudget | null>(null);
+  const [trackingOrder, setTrackingOrder] = useState<ClientOrder | null>(null);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [budgetToSendForApproval, setBudgetToSendForApproval] = useState<LocalBudget | null>(null);
 
-  // Buscar vendas do cliente quando os dados estiverem disponíveis
-  const fetchClientSales = async () => {
-    if (!clientData?.id) return;
-    
-    setSalesLoading(true);
-    try {
-      // Buscar as vendas baseadas nos orçamentos do cliente
-      const { data: salesData, error } = await supabase
-        .from('sales')
-        .select(`
-          *,
-          clients(name),
-          budget_id,
-          sale_items(
-            *,
-            products(name, internal_code, price)
-          )
-        `)
-        .eq('client_id', clientData.id)
-        .order('created_at', { ascending: false });
+  // Chave estavel com os ids dos orcamentos, para refazer a busca de vendas
+  // somente quando a lista realmente mudar (e nao a cada render).
+  const budgetIdsKey = useMemo(
+    () => budgets.map(budget => budget.id).sort().join(','),
+    [budgets]
+  );
 
-      if (error) {
-        console.error('Erro ao buscar vendas:', error);
-        return;
-      }
-      
-      console.log('Vendas encontradas:', salesData);
-      setSales(salesData || []);
+  /**
+   * Retorna true quando a sessão do portal respondeu e as vendas já foram
+   * carregadas; false quando a RPC não está disponível (migration pendente) e
+   * vale tentar o caminho antigo.
+   */
+  const fetchSalesViaPortalSession = async (): Promise<boolean> => {
+    const { data, error } = await supabase.rpc('client_portal_sales', {
+      p_token: clientToken as string,
+    });
+
+    if (error) {
+      console.error('Erro na RPC client_portal_sales:', error);
+      return false;
+    }
+
+    const payload = (data || {}) as { error?: string; sales?: any[] };
+
+    // Sessão expirada ou acesso do cliente desativado: derrubar o login
+    if (payload.error === 'invalid_session') {
+      toast.error('Sua sessão expirou. Entre novamente.');
+      await signOut();
+      return true;
+    }
+
+    setSales(Array.isArray(payload.sales) ? payload.sales : []);
+    return true;
+  };
+
+  // Buscar vendas do cliente quando os dados estiverem disponíveis.
+  //
+  // Caminho preferencial: RPC client_portal_sales, que identifica o cliente
+  // pelo token da sessão do portal e devolve no servidor apenas as vendas dele.
+  // O caminho antigo (consulta direta) continua como fallback para sessões que
+  // começaram antes do token existir ou enquanto a migration/edge function não
+  // estiverem publicadas.
+  const fetchClientSales = async (budgetIds: string[]) => {
+    if (!clientData?.id) return;
+
+    if (clientToken && (await fetchSalesViaPortalSession())) return;
+
+    const saleFields = `
+      *,
+      clients(name),
+      sale_items(
+        *,
+        products(name, internal_code, price)
+      )
+    `;
+
+    try {
+      // Busca por cliente e, em paralelo, pelos orcamentos do cliente.
+      // A segunda busca garante o vinculo mesmo quando a venda foi gerada com
+      // outro client_id (ou quando o cliente foi reatribuido depois).
+      const [byClient, byBudget] = await Promise.all([
+        supabase
+          .from('sales')
+          .select(saleFields)
+          .eq('client_id', clientData.id)
+          .order('created_at', { ascending: false }),
+        budgetIds.length > 0
+          ? supabase
+              .from('sales')
+              .select(saleFields)
+              .in('budget_id', budgetIds)
+              .order('created_at', { ascending: false })
+          : Promise.resolve({ data: [], error: null } as any),
+      ]);
+
+      if (byClient.error) console.error('Erro ao buscar vendas do cliente:', byClient.error);
+      if (byBudget.error) console.error('Erro ao buscar vendas pelos orçamentos:', byBudget.error);
+
+      // Unir os dois resultados sem duplicar
+      const merged = new Map<string, any>();
+      [...(byClient.data || []), ...(byBudget.data || [])].forEach(sale => {
+        merged.set(sale.id, sale);
+      });
+
+      setSales(Array.from(merged.values()));
     } catch (error) {
       console.error('Erro ao buscar vendas:', error);
-    } finally {
-      setSalesLoading(false);
     }
   };
 
@@ -89,55 +156,78 @@ const ClientWelcomeDashboard = () => {
     if (clientData && !localStorage.getItem('clientData')) {
       localStorage.setItem('clientData', JSON.stringify(clientData));
     }
-    if (clientData?.id) {
-      fetchClientSales();
-    }
   }, [clientData]);
 
-  // Combinar orçamentos e vendas em uma única lista
   useEffect(() => {
-    const combined: CombinedItem[] = [];
+    if (!clientData?.id) return;
+    fetchClientSales(budgetIdsKey ? budgetIdsKey.split(',') : []);
+  }, [clientData?.id, clientToken, budgetIdsKey]);
 
-    // Adicionar orçamentos (apenas os que não foram convertidos em vendas)
-    budgets
-      .filter(budget => budget.status !== 'convertido')
-      .forEach(budget => {
-        combined.push({
-          id: budget.id,
-          type: 'budget',
-          status: budget.status,
-          created_at: budget.created_at,
-          total_amount: calculateBudgetTotal(budget),
-          client_name: budget.clients?.name || '',
-          original_data: budget
-        });
-      });
+  // Montar a lista de pedidos: cada orçamento é um pedido, enriquecido com a
+  // venda correspondente quando ela já existe.
+  const orders = useMemo<ClientOrder[]>(() => {
+    const salesByBudgetId = new Map<string, any>();
 
-    // Adicionar vendas
     sales.forEach(sale => {
-      combined.push({
-        id: sale.id,
-        type: 'sale',
-        status: sale.status,
-        created_at: sale.created_at,
-        total_amount: Number(sale.total_amount) || 0,
-        client_name: sale.clients?.name || '',
-        tracking_code: sale.tracking_code,
-        original_data: sale
+      if (sale.budget_id) {
+        salesByBudgetId.set(sale.budget_id, sale);
+      }
+    });
+
+    // Vendas já aproveitadas como pedido de um orçamento
+    const attachedSaleIds = new Set<string>();
+
+    const list: ClientOrder[] = budgets.map(budget => {
+      const sale = salesByBudgetId.get(budget.id) || null;
+      if (sale) attachedSaleIds.add(sale.id);
+
+      return {
+        key: `budget-${budget.id}`,
+        displayId: formatBudgetId(budget.id, budget.created_at),
+        createdAt: budget.created_at,
+        total: sale ? Number(sale.total_amount) || 0 : calculateBudgetTotal(budget),
+        budget,
+        sale,
+        trackingCode: sale?.tracking_code,
+        status: getClientOrderStatusInfo(budget.status, sale?.status),
+      };
+    });
+
+    // Vendas que não ficaram penduradas em nenhum orçamento da lista viram
+    // pedido por conta própria: venda de balcão (sem orçamento) ou pedido que a
+    // equipe montou para o cliente. Sem isso elas desapareceriam do painel.
+    sales.filter(sale => !attachedSaleIds.has(sale.id)).forEach(sale => {
+      list.push({
+        key: `sale-${sale.id}`,
+        displayId: formatSaleId(sale.id, sale.created_at),
+        createdAt: sale.created_at,
+        total: Number(sale.total_amount) || 0,
+        budget: null,
+        sale,
+        trackingCode: sale.tracking_code,
+        status: getClientOrderStatusInfo(null, sale.status),
       });
     });
 
-    // Ordenar por data (mais recente primeiro)
-    combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    
-    setCombinedItems(combined);
-  }, [budgets, sales]);
+    return list.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [budgets, sales, calculateBudgetTotal]);
 
-  // Estatísticas dos orçamentos e vendas (excluindo orçamentos convertidos)
-  const pendingBudgets = budgets.filter(b => b.status === 'aguardando_aprovacao').length;
-  const approvedBudgets = budgets.filter(b => b.status === 'aprovado').length;
-  const totalSales = sales.length; // Total de vendas
-  const finishedSales = sales.filter(s => s.status === 'entrega_realizada').length;
+  // Estatísticas do painel do cliente
+  const stats = useMemo(() => {
+    const entregueIndex = CLIENT_ORDER_STEPS.length - 1;
+    const aprovacaoIndex = CLIENT_ORDER_STEPS.findIndex(step => step.key === 'aprovacao');
+
+    return {
+      total: orders.length,
+      aguardandoAprovacao: orders.filter(order => order.status.stepIndex === aprovacaoIndex).length,
+      emAndamento: orders.filter(
+        order => order.status.stepIndex > aprovacaoIndex && order.status.stepIndex < entregueIndex
+      ).length,
+      entregues: orders.filter(order => order.status.stepIndex === entregueIndex).length,
+    };
+  }, [orders]);
 
   const openTrackingPage = (trackingCode: string) => {
     const url = `https://www2.correios.com.br/sistemas/rastreamento/resultado.cfm?objeto=${trackingCode}`;
@@ -161,21 +251,11 @@ const ClientWelcomeDashboard = () => {
     }
   };
 
-  const handleView = (item: CombinedItem) => {
-    if (item.type === 'budget') {
-      const budget = item.original_data as LocalBudget;
-      setSelectedBudget(budget);
-      setBudgetEditModalOpen(true);
-    }
-  };
-
-  const handleDuplicate = (budget: LocalBudget) => {
-    // Implementar duplicação se necessário
-    console.log('Duplicate budget:', budget);
-  };
-
-  const handleConvert = (budget: LocalBudget) => {
-    setBudgetToConvert(budget);
+  // Antes da aprovação o cliente abre o orçamento para revisar/editar;
+  // depois disso o pedido é só acompanhamento.
+  const handleViewBudget = (budget: LocalBudget) => {
+    setSelectedBudget(budget);
+    setBudgetEditModalOpen(true);
   };
 
   const handleSend = async (budget: LocalBudget) => {
@@ -187,52 +267,16 @@ const ClientWelcomeDashboard = () => {
     if (!budgetToSendForApproval) return;
 
     try {
-      console.log('=== INICIANDO ENVIO PARA APROVAÇÃO ===');
-      console.log('Budget ID:', budgetToSendForApproval.id);
-      console.log('Status atual:', budgetToSendForApproval.status);
-      console.log('Client data:', clientData);
-
-      // Primeiro, vamos verificar o status atual no banco
-      const { data: currentBudget, error: fetchError } = await supabase
-        .from('budgets')
-        .select('id, status')
-        .eq('id', budgetToSendForApproval.id)
-        .single();
-      
-      console.log('Status atual no banco ANTES do update:', currentBudget);
-
-      const { data, error } = await supabase
-        .from('budgets')
-        .update({ 
-          status: 'aguardando_aprovacao',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', budgetToSendForApproval.id)
-        .select('id, status, updated_at');
-
-      console.log('Resultado do update:', { data, error });
+      const error = await submitBudgetForApproval(budgetToSendForApproval.id);
 
       if (error) {
-        console.error('Erro Supabase ao enviar orçamento para aprovação:', error);
-        toast.error('Erro ao enviar orçamento para aprovação: ' + error.message);
+        console.error('Erro ao enviar orçamento para aprovação:', error);
+        toast.error('Erro ao enviar orçamento para aprovação: ' + error);
         return;
       }
 
-      // Verificar se o status foi realmente atualizado
-      const { data: updatedBudget, error: verifyError } = await supabase
-        .from('budgets')
-        .select('id, status, updated_at')
-        .eq('id', budgetToSendForApproval.id)
-        .single();
-      
-      console.log('Status no banco APÓS o update:', updatedBudget);
-
-      console.log('Update executado com sucesso:', data);
       toast.success('Orçamento enviado para aprovação com sucesso!');
-      
-      // Atualizar a lista local
       await fetchBudgets();
-      console.log('=== FIM ENVIO PARA APROVAÇÃO ===');
     } catch (error) {
       console.error('Erro geral ao enviar orçamento para aprovação:', error);
       toast.error('Erro ao enviar orçamento para aprovação');
@@ -269,59 +313,16 @@ const ClientWelcomeDashboard = () => {
     setBudgetToConvert(null);
   };
 
-  const handleConvertConfirm = (updatedBudget?: any, attachments?: any[]) => {
-    // Implementar conversão se necessário para clientes
-    console.log('Cliente tentando converter orçamento:', updatedBudget, attachments);
+  const handleConvertConfirm = () => {
+    // Cliente não converte orçamento em venda; quem converte é a equipe interna
     setBudgetToConvert(null);
   };
 
-  const handleViewSale = (saleId: string) => {
-    setSelectedSaleId(saleId);
-    setSaleDetailOpen(true);
-  };
-
   const handleBudgetEditSuccess = () => {
-    // Não precisamos mais chamar fetchBudgets() aqui pois o ClientBudgetEditModal
-    // já salva corretamente e fecha automaticamente. A página será recarregada
-    // quando necessário pelo próprio hook useBudgetManagement
-    console.log('Budget edit success - modal will close automatically');
+    fetchBudgets();
   };
 
-  const getStatusDisplay = (item: CombinedItem) => {
-    if (item.type === 'budget') {
-      switch (item.status) {
-        case 'aguardando_aprovacao':
-          return { text: 'Aguardando Aprovação', color: 'bg-yellow-100 text-yellow-800' };
-        case 'aprovado':
-          return { text: 'Aprovado', color: 'bg-green-100 text-green-800' };
-        case 'rejeitado':
-          return { text: 'Rejeitado', color: 'bg-red-100 text-red-800' };
-        default:
-          return { text: item.status, color: 'bg-gray-100 text-gray-800' };
-      }
-    } else {
-      switch (item.status) {
-        case 'separacao':
-          return { text: 'Separação', color: 'bg-orange-100 text-orange-800' };
-        case 'conferencia':
-          return { text: 'Conferência', color: 'bg-blue-100 text-blue-800' };
-        case 'nota_fiscal':
-          return { text: 'Nota Fiscal', color: 'bg-yellow-100 text-yellow-800' };
-        case 'entrega_realizada':
-          return { text: 'Finalizada', color: 'bg-green-100 text-green-800' };
-        default:
-          return { text: item.status, color: 'bg-gray-100 text-gray-800' };
-      }
-    }
-  };
-
-  const formatItemId = (item: CombinedItem) => {
-    return item.type === 'budget' 
-      ? formatBudgetId(item.id, item.created_at) 
-      : formatSaleId(item.id, item.created_at);
-  };
-
-  if (loading || salesLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -343,7 +344,8 @@ const ClientWelcomeDashboard = () => {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Aqui você pode acompanhar todos os seus orçamentos, criar novos pedidos e acompanhar o status de suas solicitações.
+            Aqui você cria novos pedidos e acompanha cada etapa: aprovação, separação,
+            conferência, nota fiscal e entrega.
           </p>
         </CardContent>
       </Card>
@@ -356,19 +358,7 @@ const ClientWelcomeDashboard = () => {
               <Clock className="h-5 w-5 text-yellow-500" />
               <div>
                 <p className="text-sm font-medium">Aguardando Aprovação</p>
-                <p className="text-2xl font-bold">{pendingBudgets}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-sm font-medium">Aprovados</p>
-                <p className="text-2xl font-bold">{approvedBudgets}</p>
+                <p className="text-2xl font-bold">{stats.aguardandoAprovacao}</p>
               </div>
             </div>
           </CardContent>
@@ -379,8 +369,8 @@ const ClientWelcomeDashboard = () => {
             <div className="flex items-center space-x-2">
               <Package className="h-5 w-5 text-blue-500" />
               <div>
-                <p className="text-sm font-medium">Total de Vendas</p>
-                <p className="text-2xl font-bold">{totalSales}</p>
+                <p className="text-sm font-medium">Em Andamento</p>
+                <p className="text-2xl font-bold">{stats.emAndamento}</p>
               </div>
             </div>
           </CardContent>
@@ -391,8 +381,20 @@ const ClientWelcomeDashboard = () => {
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-5 w-5 text-green-500" />
               <div>
-                <p className="text-sm font-medium">Vendas Finalizadas</p>
-                <p className="text-2xl font-bold">{finishedSales}</p>
+                <p className="text-sm font-medium">Entregues</p>
+                <p className="text-2xl font-bold">{stats.entregues}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Total de Pedidos</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
               </div>
             </div>
           </CardContent>
@@ -401,7 +403,7 @@ const ClientWelcomeDashboard = () => {
 
       {/* Header com botão de novo orçamento */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Meus Orçamentos e Vendas</h2>
+        <h2 className="text-xl font-semibold">Meus Pedidos</h2>
         <Button onClick={handleNewBudget} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Novo Orçamento
@@ -409,12 +411,12 @@ const ClientWelcomeDashboard = () => {
       </div>
 
       {/* Tabela no padrão admin */}
-      {combinedItems.length === 0 ? (
+      {orders.length === 0 ? (
         <Card>
           <CardContent className="p-12">
             <div className="text-center">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum orçamento encontrado</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum pedido encontrado</h3>
               <p className="text-gray-500 mb-4">Comece criando seu primeiro orçamento</p>
               <Button onClick={handleNewBudget}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -424,12 +426,12 @@ const ClientWelcomeDashboard = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <TableHead className="w-16 text-center">#</TableHead>
-                <TableHead>Tipo</TableHead>
+                <TableHead className="w-24 text-center">#</TableHead>
+                <TableHead>Etapa</TableHead>
                 <TableHead className="text-center">Status</TableHead>
                 <TableHead className="text-center">Data</TableHead>
                 <TableHead className="text-right">Total</TableHead>
@@ -437,112 +439,112 @@ const ClientWelcomeDashboard = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {combinedItems.map((item, index) => {
-                const statusDisplay = getStatusDisplay(item);
-                const hasTracking = item.tracking_code && item.tracking_code.trim() !== '';
-                
+              {orders.map(order => {
+                const hasTracking = !!order.trackingCode && order.trackingCode.trim() !== '';
+                // O cliente só edita/envia/exclui enquanto o pedido não entrou
+                // em produção (ou seja, enquanto não existe venda).
+                const canEditBudget =
+                  !!order.budget &&
+                  !order.sale &&
+                  (order.budget.status === 'processando' || order.budget.status === 'rejeitado');
+                const stepLabel =
+                  order.status.stepIndex >= 0
+                    ? `Etapa ${order.status.stepIndex + 1} de ${CLIENT_ORDER_STEPS.length}`
+                    : '—';
+
                 return (
-                  <TableRow key={`${item.type}-${item.id}`} className="hover:bg-gray-50">
-                    <TableCell className="text-center font-medium">
-                      {formatItemId(item)}
-                    </TableCell>
+                  <TableRow key={order.key} className="hover:bg-gray-50">
+                    <TableCell className="text-center font-medium">{order.displayId}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {item.type === 'budget' ? (
-                          <FileText className="h-4 w-4 text-blue-500" />
-                        ) : (
+                        {order.sale ? (
                           <Package className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <FileText className="h-4 w-4 text-blue-500" />
                         )}
-                        <span className="text-sm">
-                          {item.type === 'budget' ? 'Orçamento' : 'Venda'}
-                        </span>
+                        <span className="text-sm text-muted-foreground">{stepLabel}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge className={statusDisplay.color}>
-                        {statusDisplay.text}
-                      </Badge>
+                      <Badge className={order.status.color}>{order.status.label}</Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                      {new Date(order.createdAt).toLocaleDateString('pt-BR')}
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      R$ {item.total_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1 justify-center items-center">
+                        {/* Acompanhar: disponível em qualquer etapa */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setTrackingOrder(order)}
+                          className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
+                          title="Acompanhar pedido"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+
                         {hasTracking && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openTrackingPage(item.tracking_code!)}
+                            onClick={() => openTrackingPage(order.trackingCode!)}
                             className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
-                            title={`Rastrear: ${item.tracking_code}`}
+                            title={`Rastrear: ${order.trackingCode}`}
                           >
                             <Truck className="h-4 w-4" />
                           </Button>
                         )}
-                        
-                        {item.type === 'budget' ? (
+
+                        {canEditBudget && (
                           <>
-                            {/* Botão de visualizar - sempre disponível */}
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleView(item)}
-                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
-                              title="Visualizar orçamento"
+                              onClick={() => handleEdit(order.budget!)}
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
+                              title="Editar orçamento"
                             >
-                              <Eye className="h-4 w-4" />
+                              <Edit className="h-4 w-4" />
                             </Button>
-                            
-                            {/* Botões para status 'processando' e 'rejeitado' */}
-                            {(item.status === 'processando' || item.status === 'rejeitado') && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEdit(item.original_data)}
-                                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
-                                  title="Editar orçamento"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleSend(item.original_data)}
-                                  className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
-                                  title="Enviar para aprovação"
-                                >
-                                  <Send className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDelete(item.id)}
-                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                                  title="Excluir orçamento"
-                                >
-                                  <AlertCircle className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSend(order.budget!)}
+                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                              title="Enviar para aprovação"
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(order.budget!.id)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              title="Excluir orçamento"
+                            >
+                              <AlertCircle className="h-4 w-4" />
+                            </Button>
                           </>
-                        ) : (
-                          <div className="flex gap-1 justify-center items-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewSale(item.id)}
-                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700"
-                              title="Ver detalhes da venda"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <SalePDFGenerator sale={item.original_data} />
-                          </div>
                         )}
+
+                        {/* Orçamento ainda em aprovação: o cliente pode revisar os itens */}
+                        {!order.sale && order.budget?.status === 'aguardando_aprovacao' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewBudget(order.budget!)}
+                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
+                            title="Revisar orçamento"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {order.sale && <SalePDFGenerator sale={order.sale} />}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -567,11 +569,11 @@ const ClientWelcomeDashboard = () => {
         onConvertConfirm={handleConvertConfirm}
       />
 
-      {/* Modal de visualização da venda */}
-      <SalesDetailModal
-        isOpen={saleDetailOpen}
-        onClose={() => setSaleDetailOpen(false)}
-        saleId={selectedSaleId}
+      {/* Acompanhamento do pedido (orçamento + venda) */}
+      <ClientOrderTrackingModal
+        isOpen={!!trackingOrder}
+        onClose={() => setTrackingOrder(null)}
+        order={trackingOrder}
       />
 
       {/* Modal de edição do orçamento */}

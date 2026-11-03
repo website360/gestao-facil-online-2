@@ -1,6 +1,7 @@
 
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { getClientPortalToken } from '@/integrations/supabase/clientPortal';
 import type { LocalBudget } from '@/hooks/useBudgetManagement';
 
 interface BudgetFormData {
@@ -187,6 +188,109 @@ export class BudgetService {
   }
 
   // Calcular total APENAS com produtos e frete, SEM incluir nota fiscal
+  /**
+   * Itens válidos, deduplicados por product_id (a tabela tem unique em
+   * budget_id + product_id) e com o total de linha já calculado.
+   *
+   * Extraído para ser usado tanto pelas escritas diretas (painel interno)
+   * quanto pela RPC do portal do cliente - as duas precisam exatamente da
+   * mesma regra de agrupamento.
+   */
+  static buildDeduplicatedItems(formData: BudgetFormData) {
+    const validItems = formData.items.filter(
+      item => item.product_id && item.product_id.trim() !== '' && item.quantity > 0
+    );
+
+    const dedupMap = new Map<string, {
+      product_id: string;
+      quantity: number;
+      unit_price: number;
+      discount_percentage: number;
+      total_price: number;
+    }>();
+
+    for (const item of validItems) {
+      const key = item.product_id;
+      const lineTotal = item.quantity * item.unit_price * (1 - item.discount_percentage / 100);
+      const existing = dedupMap.get(key);
+
+      if (existing) {
+        existing.quantity += item.quantity;
+        existing.total_price += lineTotal; // preserva o total calculado de cada linha
+        // manter o maior desconto como representativo
+        existing.discount_percentage = Math.max(existing.discount_percentage, item.discount_percentage || 0);
+        // manter o último unit_price informado
+        existing.unit_price = item.unit_price;
+      } else {
+        dedupMap.set(key, {
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_percentage: item.discount_percentage || 0,
+          total_price: lineTotal,
+        });
+      }
+    }
+
+    return Array.from(dedupMap.values());
+  }
+
+  /**
+   * Grava o orçamento pelo portal do cliente (RPC escopada ao token da
+   * sessão). Retorna false quando não há sessão de portal, para o chamador
+   * seguir pelo caminho normal.
+   */
+  private static async saveViaClientPortal(
+    formData: BudgetFormData,
+    budgetId: string | null,
+    status: 'processando' | 'aguardando_aprovacao'
+  ): Promise<boolean> {
+    const portalToken = getClientPortalToken();
+    if (!portalToken) return false;
+
+    const budgetPayload = {
+      status,
+      notes: formData.notes,
+      total_amount: this.calculateTotalAmount(formData),
+      discount_percentage: formData.discount_percentage,
+      invoice_percentage: formData.invoice_percentage,
+      taxes_amount: formData.taxes_amount,
+      payment_method_id: formData.payment_method_id || null,
+      payment_type_id: formData.payment_type_id || null,
+      shipping_option_id: formData.shipping_option_id || null,
+      shipping_cost: formData.shipping_cost,
+      local_delivery_info: formData.local_delivery_info || null,
+      installments: formData.installments,
+      check_installments: formData.check_installments,
+      check_due_dates: formData.check_due_dates,
+      boleto_installments: formData.boleto_installments,
+      boleto_due_dates: formData.boleto_due_dates,
+    };
+
+    const { data, error } = await supabase.rpc('client_portal_save_budget', {
+      p_token: portalToken,
+      p_budget_id: budgetId,
+      p_budget: budgetPayload,
+      p_items: this.buildDeduplicatedItems(formData),
+    });
+
+    if (error) throw error;
+
+    const payload = (data || {}) as { error?: string; budget_id?: string };
+
+    if (payload.error === 'not_editable') {
+      throw new Error('Este orçamento já está em aprovação e não pode mais ser alterado.');
+    }
+    if (payload.error === 'invalid_session') {
+      throw new Error('Sua sessão expirou. Entre novamente.');
+    }
+    if (payload.error) {
+      throw new Error('Não foi possível salvar o orçamento.');
+    }
+
+    return true;
+  }
+
   static calculateTotalAmount(formData: BudgetFormData): number {
     const itemsTotal = formData.items.reduce((sum, item) => {
       if (!item.product_id || item.quantity <= 0) return sum;
@@ -225,6 +329,13 @@ export class BudgetService {
         return;
       }
       
+      // Portal do cliente: gravação pela RPC escopada à sessão
+      if (await this.saveViaClientPortal(formData, null, 'processando')) {
+        console.log('Budget created via client portal RPC');
+        toast.success('Orçamento criado com sucesso!');
+        return;
+      }
+
       console.log('Calculating total amount...');
       const totalAmount = this.calculateTotalAmount(formData);
       console.log('Total amount calculated:', totalAmount);
@@ -265,44 +376,11 @@ export class BudgetService {
 
       console.log('Budget created successfully:', budgetData);
 
-      // Filtrar e DEDUPLICAR itens válidos por product_id para respeitar a unique constraint
-      const validItems = formData.items
-        .filter(item => item.product_id && item.product_id.trim() !== '' && item.quantity > 0);
-
-      // Agrupar por product_id somando quantidades e total_price (preserva valor final mesmo com descontos diferentes)
-      const dedupMap = new Map<string, {
-        budget_id: string;
-        product_id: string;
-        quantity: number;
-        unit_price: number;
-        discount_percentage: number;
-        total_price: number;
-      }>();
-
-      for (const item of validItems) {
-        const key = item.product_id;
-        const lineTotal = item.quantity * item.unit_price * (1 - item.discount_percentage / 100);
-        if (dedupMap.has(key)) {
-          const existing = dedupMap.get(key)!;
-          existing.quantity += item.quantity;
-          existing.total_price += lineTotal; // preserva o total calculado de cada linha
-          // manter o maior desconto como representativo
-          existing.discount_percentage = Math.max(existing.discount_percentage, item.discount_percentage || 0);
-          // manter o último unit_price informado
-          existing.unit_price = item.unit_price;
-        } else {
-          dedupMap.set(key, {
-            budget_id: budgetData.id,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            discount_percentage: item.discount_percentage || 0,
-            total_price: lineTotal,
-          });
-        }
-      }
-
-      const budgetItems = Array.from(dedupMap.values());
+      // Itens válidos e deduplicados por product_id (unique constraint)
+      const budgetItems = this.buildDeduplicatedItems(formData).map(item => ({
+        ...item,
+        budget_id: budgetData.id,
+      }));
 
       console.log('Budget items to insert (deduplicated):', budgetItems);
 
@@ -384,6 +462,18 @@ export class BudgetService {
         console.log('Using form status or default processando:', newStatus);
       }
 
+      // Portal do cliente: gravação pela RPC escopada à sessão.
+      // O status segue a mesma regra acima (editar volta para processando).
+      if (await this.saveViaClientPortal(
+        formData,
+        editingBudget.id,
+        newStatus === 'aguardando_aprovacao' ? 'aguardando_aprovacao' : 'processando'
+      )) {
+        console.log('Budget updated via client portal RPC');
+        toast.success('Orçamento atualizado com sucesso!');
+        return;
+      }
+
       const budgetPayload = {
         client_id: formData.client_id,
         notes: formData.notes,
@@ -420,41 +510,11 @@ export class BudgetService {
 
       console.log('Budget updated successfully');
 
-      // Filtrar e DEDUPLICAR itens válidos por product_id para respeitar a unique constraint
-      const validItems = formData.items
-        .filter(item => item.product_id && item.product_id.trim() !== '' && item.quantity > 0);
-
-      const dedupMap = new Map<string, {
-        budget_id: string;
-        product_id: string;
-        quantity: number;
-        unit_price: number;
-        discount_percentage: number;
-        total_price: number;
-      }>();
-
-      for (const item of validItems) {
-        const key = item.product_id;
-        const lineTotal = item.quantity * item.unit_price * (1 - item.discount_percentage / 100);
-        if (dedupMap.has(key)) {
-          const existing = dedupMap.get(key)!;
-          existing.quantity += item.quantity;
-          existing.total_price += lineTotal;
-          existing.discount_percentage = Math.max(existing.discount_percentage, item.discount_percentage || 0);
-          existing.unit_price = item.unit_price;
-        } else {
-          dedupMap.set(key, {
-            budget_id: editingBudget.id,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            discount_percentage: item.discount_percentage || 0,
-            total_price: lineTotal,
-          });
-        }
-      }
-
-      const budgetItems = Array.from(dedupMap.values());
+      // Itens válidos e deduplicados por product_id (unique constraint)
+      const budgetItems = this.buildDeduplicatedItems(formData).map(item => ({
+        ...item,
+        budget_id: editingBudget.id,
+      }));
 
       console.log('Budget items to upsert (deduplicated):', budgetItems);
 

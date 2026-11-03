@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getClientPortalConfig, isClientPortalSession } from '@/integrations/supabase/clientPortal';
 import { toast } from 'sonner';
 
 interface ShippingCalculation {
@@ -51,6 +52,13 @@ export const useCorreiosShipping = () => {
 
   const isCorreiosEnabled = async (): Promise<boolean> => {
     try {
+      // Portal do cliente: só o booleano vem pela RPC. As credenciais dos
+      // Correios ficam em system_configurations, que o portal não lê.
+      if (isClientPortalSession()) {
+        const config = await getClientPortalConfig();
+        return config.correios_enabled;
+      }
+
       const { data, error } = await supabase
         .from('system_configurations')
         .select('value')

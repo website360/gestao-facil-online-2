@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getClientPortalConfig, isClientPortalSession } from '@/integrations/supabase/clientPortal';
 import { useAuth } from './useAuth';
 import { useUserProfile } from './useUserProfile';
 
@@ -22,6 +23,18 @@ export const useDiscountPermissions = () => {
     try {
       console.log('=== FETCHING DISCOUNT CONFIG ===');
       console.log('User profile:', userProfile);
+
+      // Portal do cliente: a tabela system_configurations guarda credenciais e
+      // não é legível pelo portal; o desconto máximo vem pela RPC de lista
+      // branca das configurações.
+      if (isClientPortalSession()) {
+        const config = await getClientPortalConfig();
+        const parsed = Number(config.max_discount_sales);
+        setMaxDiscount(Number.isNaN(parsed) ? 10 : parsed);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('system_configurations')
         .select('key, value')

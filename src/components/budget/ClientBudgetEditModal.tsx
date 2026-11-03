@@ -10,6 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { Send, Edit3, Eye, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  getClientPortalToken,
+  isClientPortalSession,
+  submitBudgetForApproval,
+} from '@/integrations/supabase/clientPortal';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { useBudgetCalculations } from '@/hooks/useBudgetCalculations';
 import { useAuth } from '@/hooks/useAuth';
@@ -127,18 +132,28 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
       console.log('=== CARREGANDO DADOS DO ORÇAMENTO ===');
       console.log('Budget ID:', budget.id);
       
-      // Buscar dados atualizados (apenas itens com quantidade > 0)
-      const { data: items, error } = await supabase
-        .from('budget_items')
-        .select(`
-          *,
-          products(id, name, internal_code, price)
-        `)
-        .eq('budget_id', budget.id)
-        .gt('quantity', 0)
-        .order('created_at', { ascending: true });
+      // Portal do cliente: os itens já vêm no orçamento carregado pela RPC
+      // client_portal_budgets (que só traz itens com quantidade > 0). Fora do
+      // portal, busca os dados atualizados direto da tabela.
+      let items: any[] | null;
 
-      if (error) throw error;
+      if (isClientPortalSession()) {
+        items = budget.budget_items || [];
+      } else {
+        const result = await supabase
+          .from('budget_items')
+          .select(`
+            *,
+            products(id, name, internal_code, price)
+          `)
+          .eq('budget_id', budget.id)
+          .gt('quantity', 0)
+          .order('created_at', { ascending: true });
+
+        if (result.error) throw result.error;
+
+        items = result.data;
+      }
 
       console.log('Itens carregados do banco:', items);
       console.log('Quantidade de itens:', items?.length || 0);
@@ -229,15 +244,9 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
     try {
       setLoading(true);
 
-      const { error } = await supabase
-        .from('budgets')
-        .update({ 
-          status: 'aguardando_aprovacao',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', budget.id);
+      const error = await submitBudgetForApproval(budget.id);
 
-      if (error) throw error;
+      if (error) throw new Error(error);
 
       toast.success('Orçamento enviado para aprovação!');
       onSuccess();
@@ -282,6 +291,65 @@ const ClientBudgetEditModal: React.FC<ClientBudgetEditModalProps> = ({
       }
       const itemsToPersist = Array.from(itemsMap.values());
       console.log('Itens após deduplicação:', itemsToPersist);
+
+      // Portal do cliente: itens e orçamento são gravados numa única RPC,
+      // escopada ao token da sessão. Isso também permite REMOVER itens - sem a
+      // RPC o cliente não tinha permissão de DELETE em budget_items, e o
+      // caminho abaixo precisava zerar a quantidade e fazer upsert.
+      const portalToken = getClientPortalToken();
+
+      if (portalToken) {
+        const itemsForTotal = itemsToPersist.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_percentage: item.discount_percentage || 0
+        }));
+        const finalTotal = calculateTotalWithDiscount(itemsForTotal as any) + shippingCost;
+
+        const { data, error } = await supabase.rpc('client_portal_save_budget', {
+          p_token: portalToken,
+          p_budget_id: budget.id,
+          p_budget: {
+            // Mantém o status atual: este modal revisa o orçamento, não o reenvia
+            status: budget.status === 'aguardando_aprovacao' ? 'aguardando_aprovacao' : 'processando',
+            notes,
+            payment_method_id: paymentMethodId || null,
+            payment_type_id: paymentTypeId || null,
+            shipping_option_id: shippingOptionId || null,
+            shipping_cost: shippingCost,
+            local_delivery_info: localDeliveryInfo || null,
+            installments,
+            total_amount: finalTotal
+          },
+          p_items: itemsToPersist.map(item => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.total_price,
+            discount_percentage: item.discount_percentage || 0
+          }))
+        });
+
+        if (error) throw error;
+
+        const payload = (data || {}) as { error?: string };
+        if (payload.error === 'not_editable') {
+          throw new Error('Este orçamento já está em aprovação e não pode mais ser alterado.');
+        }
+        if (payload.error === 'invalid_session') {
+          throw new Error('Sua sessão expirou. Entre novamente.');
+        }
+        if (payload.error) {
+          throw new Error('Não foi possível salvar o orçamento.');
+        }
+
+        toast.success('Orçamento atualizado com sucesso!');
+        setIsEditing(false);
+        onSuccess();
+        onClose();
+        return;
+      }
 
       // Sincronizar itens conforme o tipo de usuário
       if (isClient) {

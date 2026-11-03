@@ -3,12 +3,29 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+const CLIENT_DATA_KEY = 'clientData';
+const CLIENT_TOKEN_KEY = 'clientSessionToken';
+
+/**
+ * A edge function client-login antiga devolvia a linha inteira do cliente -
+ * senha do portal inclusive - e ela ficava em texto puro no localStorage.
+ * Removemos o campo tanto do que e salvo agora quanto do que ja estava salvo.
+ */
+const sanitizeClientData = (data: any) => {
+  if (!data || typeof data !== 'object') return data;
+  if (!('system_password' in data)) return data;
+  const { system_password: _omitted, ...safe } = data;
+  return safe;
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   isClient: boolean;
   clientData: any;
+  /** Token da sessao do portal do cliente; identifica o cliente nas RPCs client_portal_* */
+  clientToken: string | null;
   userProfile: any;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInAsClient: (email: string, password: string) => Promise<{ error: any; client?: any }>;
@@ -21,6 +38,7 @@ const defaultAuthContext: AuthContextType = {
   loading: true,
   isClient: false,
   clientData: null,
+  clientToken: null,
   userProfile: null,
   signIn: async () => ({ error: null }),
   signInAsClient: async () => ({ error: null }),
@@ -35,21 +53,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const [clientData, setClientData] = useState<any>(null);
+  const [clientToken, setClientToken] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     // Verificar se há dados de cliente salvos no localStorage
-    const savedClientData = localStorage.getItem('clientData');
+    const savedClientData = localStorage.getItem(CLIENT_DATA_KEY);
     if (savedClientData) {
       try {
-        const clientData = JSON.parse(savedClientData);
+        const parsed = JSON.parse(savedClientData);
+        const safeClientData = sanitizeClientData(parsed);
+
+        // Limpa a senha de sessões que já estavam salvas antes desta mudança
+        if (safeClientData !== parsed) {
+          localStorage.setItem(CLIENT_DATA_KEY, JSON.stringify(safeClientData));
+        }
+
         setIsClient(true);
-        setClientData(clientData);
+        setClientData(safeClientData);
+        setClientToken(localStorage.getItem(CLIENT_TOKEN_KEY));
         setLoading(false);
         return;
       } catch (error) {
         console.error('Erro ao carregar dados do cliente:', error);
-        localStorage.removeItem('clientData');
+        localStorage.removeItem(CLIENT_DATA_KEY);
+        localStorage.removeItem(CLIENT_TOKEN_KEY);
       }
     }
 
@@ -133,17 +161,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: { message: data?.error || 'Email ou senha incorretos' } };
       }
 
-      console.log('Cliente encontrado, fazendo login:', data.client);
-      
+      const safeClient = sanitizeClientData(data.client);
+
       // Simular autenticação de cliente e salvar no localStorage
       setIsClient(true);
-      setClientData(data.client);
+      setClientData(safeClient);
       setLoading(false);
-      
-      // Salvar dados do cliente no localStorage para persistência
-      localStorage.setItem('clientData', JSON.stringify(data.client));
 
-      return { error: null, client: data.client };
+      // Salvar dados do cliente no localStorage para persistência
+      localStorage.setItem(CLIENT_DATA_KEY, JSON.stringify(safeClient));
+
+      // Token da sessão do portal. Ausente quando a edge function ainda não
+      // foi atualizada - nesse caso o painel usa o caminho antigo de consulta.
+      if (data.token) {
+        setClientToken(data.token);
+        localStorage.setItem(CLIENT_TOKEN_KEY, data.token);
+      } else {
+        setClientToken(null);
+        localStorage.removeItem(CLIENT_TOKEN_KEY);
+      }
+
+      return { error: null, client: safeClient };
     } catch (error: any) {
       console.error('Erro no login de cliente:', error);
       return { error: { message: 'Erro ao fazer login' } };
@@ -152,10 +190,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     if (isClient) {
-      // Logout de cliente - limpar localStorage
+      // Logout de cliente - encerrar a sessão no banco e limpar localStorage
+      const token = clientToken || localStorage.getItem(CLIENT_TOKEN_KEY);
+
+      if (token) {
+        try {
+          await supabase.rpc('client_portal_logout', { p_token: token });
+        } catch (error) {
+          // Sessão expira sozinha; não travar o logout do navegador por isso
+          console.error('Erro ao encerrar sessão do portal:', error);
+        }
+      }
+
       setIsClient(false);
       setClientData(null);
-      localStorage.removeItem('clientData');
+      setClientToken(null);
+      localStorage.removeItem(CLIENT_DATA_KEY);
+      localStorage.removeItem(CLIENT_TOKEN_KEY);
     } else {
       // Logout de usuário normal
       // scope: 'local' encerra apenas a sessao deste dispositivo.
@@ -171,6 +222,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loading,
       isClient,
       clientData,
+      clientToken,
       userProfile,
       signIn,
       signInAsClient,

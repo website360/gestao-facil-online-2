@@ -1187,6 +1187,38 @@ export type Database = {
         Args: { p_budget_id: string }
         Returns: boolean
       }
+      client_portal_budgets: {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      client_portal_config: {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      client_portal_delete_budget: {
+        Args: { p_token: string; p_budget_id: string }
+        Returns: Json
+      }
+      client_portal_logout: {
+        Args: { p_token: string }
+        Returns: undefined
+      }
+      client_portal_me: {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      client_portal_sales: {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      client_portal_save_budget: {
+        Args: { p_token: string; p_budget_id: string | null; p_budget: Json; p_items: Json }
+        Returns: Json
+      }
+      client_portal_submit_budget: {
+        Args: { p_token: string; p_budget_id: string }
+        Returns: Json
+      }
       check_budget_stock_availability: {
         Args: { budget_id_param: string }
         Returns: Json

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { getClientPortalToken } from '@/integrations/supabase/clientPortal';
 
 export interface LocalBudget {
   id: string;
@@ -100,6 +101,35 @@ export const useBudgetManagement = (userRole?: string) => {
     fetchBudgets();
   }, [userRole, clientData, isClient, user?.id]);
 
+  /**
+   * Carrega os orçamentos do portal pela RPC client_portal_budgets.
+   * Retorna false quando a RPC não está disponível (migration ainda não
+   * aplicada), para o chamador cair no caminho antigo de consulta.
+   */
+  const fetchBudgetsViaPortalSession = async (portalToken: string): Promise<boolean> => {
+    const { data, error } = await supabase.rpc('client_portal_budgets', {
+      p_token: portalToken,
+    });
+
+    if (error) {
+      console.error('Erro na RPC client_portal_budgets:', error);
+      return false;
+    }
+
+    const payload = (data || {}) as { error?: string; budgets?: LocalBudget[] };
+
+    if (payload.error === 'invalid_session') {
+      setBudgets([]);
+      setFilteredBudgets([]);
+      return true;
+    }
+
+    const loadedBudgets = Array.isArray(payload.budgets) ? payload.budgets : [];
+    setBudgets(loadedBudgets);
+    setFilteredBudgets(loadedBudgets);
+    return true;
+  };
+
   const fetchBudgets = async (
     overrideStartDate?: Date | undefined | null,
     overrideEndDate?: Date | undefined | null
@@ -110,7 +140,18 @@ export const useBudgetManagement = (userRole?: string) => {
 
     setLoading(true);
     try {
-      
+      // Portal do cliente: os orçamentos vêm por RPC escopada ao token da
+      // sessão, e não por consulta direta como role anon.
+      const portalToken = userRole === 'cliente' ? getClientPortalToken() : null;
+      if (portalToken) {
+        const loaded = await fetchBudgetsViaPortalSession(portalToken);
+        if (loaded) {
+          setLoading(false);
+          return;
+        }
+        // RPC indisponível (migration pendente): segue no caminho antigo
+      }
+
       // Query otimizada: buscar apenas campos essenciais.
       // Usamos uma função para reconstruir a query a cada lote de paginação,
       // pois o query builder do Supabase não pode ser reutilizado após o await.
@@ -216,10 +257,15 @@ export const useBudgetManagement = (userRole?: string) => {
 
         // Filtro de periodo aplicado no banco (nao no navegador): e o que evita
         // trazer todo o historico de orcamentos a cada abertura da tela.
-        if (effectiveStartDate instanceof Date) {
+        // No painel do cliente nao aplicamos recorte de periodo: sao poucos
+        // registros por cliente e um pedido em andamento por mais de 45 dias
+        // simplesmente desaparecia da tela dele.
+        const applyDateFilter = userRole !== 'cliente';
+
+        if (applyDateFilter && effectiveStartDate instanceof Date) {
           query = query.gte('created_at', effectiveStartDate.toISOString());
         }
-        if (effectiveEndDate instanceof Date) {
+        if (applyDateFilter && effectiveEndDate instanceof Date) {
           const endOfDay = new Date(effectiveEndDate);
           endOfDay.setHours(23, 59, 59, 999);
           query = query.lte('created_at', endOfDay.toISOString());
@@ -432,6 +478,31 @@ export const useBudgetManagement = (userRole?: string) => {
   const deleteBudget = async (id: string) => {
     setLoading(true);
     try {
+      // Portal do cliente: exclusão pela RPC, que confere o dono do orçamento
+      const portalToken = getClientPortalToken();
+      if (portalToken) {
+        const { data, error } = await supabase.rpc('client_portal_delete_budget', {
+          p_token: portalToken,
+          p_budget_id: id,
+        });
+
+        const payload = (data || {}) as { error?: string };
+
+        if (error || payload.error) {
+          console.error('Erro ao excluir orçamento pelo portal:', error || payload.error);
+          toast.error(
+            payload.error === 'not_found'
+              ? 'Este orçamento não pode mais ser excluído.'
+              : 'Erro ao excluir orçamento'
+          );
+          return;
+        }
+
+        toast.success('Orçamento excluído com sucesso!');
+        fetchBudgets();
+        return;
+      }
+
       // Delete budget items first
       const { error: itemsError } = await supabase
         .from('budget_items')
